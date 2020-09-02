@@ -2,4 +2,4 @@
 
 # SQA Study Notes
 
-[Start](guide)
+[Guide](guide)

@@ -2,7 +2,7 @@ Java是SUN公司的詹姆斯·高斯林在90年代初开发的一种编程语言
 
 ![img](https://qwq.lsaiah.cn/usr/uploads/Picture/tiobe.png)
 
-## 基础
+## 基础语法
 
 ### 二维数组
 
@@ -1074,6 +1074,8 @@ public static void main(String[] args) {
     System.out.println(x);
 }
 ```
+
+## 日志
 
 ### 使用JDK Logging
 
@@ -3012,7 +3014,7 @@ try (Writer writer = new OutputStreamWriter(new FileOutputStream("readme.txt"), 
 
 `PrintWriter`是基于`Writer`的输出。
 
-## 日期与时间
+## 日期与实践
 
 ### Locale
 

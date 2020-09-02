@@ -6,7 +6,7 @@
 
 > [直播](https://www.lsaiah.cn/live)
 
-> [q群]()
+> [q群](906594631)
 
 > [tg群]()
 

@@ -143,12 +143,12 @@ save change and reload firewalld
 1. Authenticate：login sync github repository
 2. Enable repository：Settings > Activate repository add webhook notify drone when push code.
 3. configure pipeline：Creat `.drone.yml` file to root of git repository.
-
+   
    ```
    kind: pipeline # 定义对象种类为管道，其它种类是Secrets和signature（https://docs.drone.io/signature）
    type: docker # 定义管道的类型为docker，每个管道的步骤都在docker容器内执行，不支持不同类型的管道执行环境（docker,kubernetes,exec,ssh,digital ocean,macstadium）
    name: default # 定义管道的名称
-
+   
    steps: # 定义一系列管道步骤，如果任何步骤失败将立刻退出。
    - name: greeting # 定义管道步骤的名称
      image: alpine # 定义其中执行shell命令的docker镜像
@@ -156,41 +156,39 @@ save change and reload firewalld
      - echo hello
      - echo world
    ```
-
-
+   
    添加多个步骤：
-
+   
    ```
    kind: pipeline
    type: docker
    name: greeting
-
+   
    steps:
    - name: en
      image: alpine
      commands:
      - echo hello world
-
+   
    - name: fr
      image: alpine
      commands:
      - echo bonjour monde
    ```
-
-
+   
    根据分支或webhook事件限制步骤：
-
+   
    ```
    kind: pipeline
    type: docker
    name: greeting
-
+   
    steps:
    - name: en
      image: alpine
      commands:
      - echo hello world
-
+   
    - name: fr
      image: alpine
      commands:
@@ -199,41 +197,39 @@ save change and reload firewalld
        branch:
        - develop
    ```
-
-
+   
    定义多个管道：
-
+   
    ```
    kind: pipeline
    type: docker
    name: en
-
+   
    steps:
    - name: greeting
      image: alpine
      commands:
      - echo hello world
-
+   
    ---
    kind: pipeline
    type: docker
    name: fr
-
+   
    steps:
    - name: greeting
      image: alpine
      commands:
      - echo bonjour monde
    ```
-
-
+   
    在docker注册表中使用任何图像：
-
+   
    ```
    kind: pipeline
    type: docker
    name: default
-
+   
    steps:
    - name: test
      image: golang:1.13
@@ -241,64 +237,61 @@ save change and reload firewalld
      - go build
      - go test -v
    ```
-
-
+   
    定义用于集成测试的服务容器：
-
+   
    ```
    kind: pipeline
    type: docker
    name: default
-
+   
    steps:
    - name: test
      image: golang:1.13
      commands:
      - go build
      - go test -v
-
+   
    services:
    - name: redis
      image: redis
    ```
-
-
+   
    使用插件与第三方系统集成并执行常见的任务：如通知，发布，部署。
-
+   
    ```
    kind: pipeline
    type: docker
    name: default
-
+   
    steps:
    - name: test
      image: golang:1.13
      commands:
      - go build
      - go test -v
-
+   
    - name: notify
      image: plugins/slack
      settings:
        channel: dev
        webhook: https://hooks.slack.com/services/...
    ```
-
-
+   
    从Secrets中获取敏感参数：
-
+   
    ```
    kind: pipeline
    type: docker
    name: default
-
+   
    steps:
    - name: test
      image: golang:1.13
      commands:
      - go build
      - go test -v
-
+   
    - name: notify
      image: plugins/slack
      settings:
