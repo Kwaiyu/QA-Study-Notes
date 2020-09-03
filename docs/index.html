@@ -42,9 +42,7 @@
         }
       ],
 	  plugins: [
-        /*来必力评论*/
         function (hook, vm) {
-          // load livere
           hook.beforeEach(function(content) {
             var comment = "<div id='lv-container' data-id='city' data-uid='MTAyMC80MzA4MC8xOTYyNg=='></div>\n\n----\n"
             return content + comment;
@@ -71,7 +69,6 @@
 		pre: '<hr/>',
 		style: 'text-align: left;',
 	  },
-
 	  search: {
         paths: 'auto',
         placeholder: '🔍 搜索',
@@ -79,36 +76,41 @@
         depth: 6,
         maxAge: 86400000,
       },
-	  $(document).ready(function () {
-      $.goup({
-        trigger: 100,
-        bottomOffset: 32,
-        locationOffset: 32,
-        title: 'TOP',
-        titleAsText: true
-      });
-    });
+	  'flexible-alerts': {
+		style: 'flat'
+		}
     }
   </script>
   <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
+  <!-- 添加页脚 -->
   <script src="//unpkg.com/docsify-footer-enh/dist/docsify-footer-enh.min.js"></script>
+  <!-- 搜索功能 -->
   <script src="//cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/plugin/search.main.js"></script>
+  <!-- 返回顶部 -->
   <script src="//cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/plugin/jquery.js"></script>
   <script src="//cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/plugin/jquery.goup.js"></script>
+  <!-- 点击动画 -->
   <script src="//cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/plugin/click_heart.js"></script>
-
+  <!-- 弹窗样式 -->
   <link rel="stylesheet" href="https://cdn.bootcss.com/sweetalert/1.1.3/sweetalert.min.css" type='text/css' media='all' />
   <script src="https://cdn.bootcss.com/sweetalert/1.1.3/sweetalert.min.js"></script>
+  <!-- 分享
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/external-script.min.js"></script>
+  -->
+  <!-- 图片放大 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
+	<!-- 复制弹窗提醒 -->
 	<script>
 	document.body.oncopy = function () {
 		swal("复制成功 🎉",
             "若要转载或引用请务必保留原文链接并申明来源。",
             "success"); };
 	</script>
-	
-<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+	<!-- 访问量 -->
+	<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+	<!-- 运行时间 -->
 	<script language=javascript>
-  function siteTime() {
+	function siteTime() {
     window.setTimeout("siteTime()", 1000);
     var seconds = 1000;
     var minutes = seconds * 60;
@@ -130,7 +132,7 @@
     minutes - 0-59之间的整数，做为date对象的分钟数
     seconds - 0-59之间的整数，做为date对象的秒数
     microseconds - 0-999之间的整数，做为date对象的毫秒数 */
-    var t1 = Date.UTC(2020, 02, 10, 00, 00, 00); //北京时间2020-02-10 00:00:00
+    var t1 = Date.UTC(2020, 09, 01, 00, 00, 00); //北京时间2020-02-10 00:00:00
     var t2 = Date.UTC(todayYear, todayMonth, todayDate, todayHour, todayMinute, todaySecond);
     var diff = t2 - t1;
     var diffYears = Math.floor(diff / years);
@@ -139,10 +141,24 @@
     var diffMinutes = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours) / minutes);
     var diffSeconds = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours - diffMinutes * minutes) / seconds);
     document.getElementById("sitetime").innerHTML = " 本网站已运行 " + diffYears + " 年 " + diffDays + " 天 " + diffHours + " 小时 " + diffMinutes + " 分钟 " + diffSeconds + " 秒 ";
-  }
-  siteTime();
+	}
+	siteTime();
 	</script>
-	<script src="https://unpkg.com/docsify-plugin-flexible-alerts"></script>
+	<!-- 美化提示 -->
+	<script src="//cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docsify-plugin-flexible-alerts"></script>
+	<!-- 阅读时间字数 -->
 	<script src="//unpkg.com/docsify-count/dist/countable.js"></script>
+
+	<script type="text/javascript">
+    $(document).ready(function () {
+      $.goup({
+        trigger: 100,
+        bottomOffset: 32,
+        locationOffset: 32,
+        title: 'TOP',
+        titleAsText: true
+      });
+    });// 返回顶部按钮
+	</script>
 </body>
 </html>
