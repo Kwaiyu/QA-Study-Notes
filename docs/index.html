@@ -297,7 +297,7 @@
     .advertisement {
       position: fixed;
       right: 20px;
-      top: 100px;
+      top: 200px;
       width: 110px;
       box-shadow: -1px 0 2px 0px #c5ebda;
       padding: 10px;
@@ -410,30 +410,32 @@
 
 </head>
 <body>
-<div id="app">🏃‍🏃‍🏃‍💨 加载中...</div>
+<div id="app">加载中... 🏃‍🏃‍🏃‍💨</div>
 
 <div class="aside_container">
     <div class="advertisement">
       <div class="Tencent_code">
-        <h4>关注公众号一起学习</h4>
-        <p style="font-size: 12px;">记录学习，分享乐趣</p>
-        <img src="?" alt="葵语软件测试开发" />
+        <h4>关注公众号</h4>
+        <p style="font-size: 12px;">一起学习，共同进步</p>
+        <img src="?" alt="" />
       </div>
     </div>
 </div>
 
   <script>
     window.$docsify = {
-      name: "<p>🌈 SQA Study Notes</p>",
+      name: "<p>🌈 Home</p>",
       nameLink: 'https://qwq.dog/',
-      repo: 'Kwaiyu/SQA-Study-Notes',
-      themeColor: '#007be8', // 主题颜色
+      //repo: 'Kwaiyu/SQA-Study-Notes',
+      themeColor: '#007be8',
+	  relativePath: true,
+	  autoHeader: true,
       loadSidebar: true,//_sidebar.md如果为真，则从_sidebar.md文件加载边栏，否则从指定的路径加载
       auto2top: true,  //当路线改变时,滚动到屏幕的顶部
       loadNavbar: true,//_navbar.md如果为真，则从_navbar.md文件加载navbar ，否则从指定的路径加载
-      mergeNavbar: false,//Navbar将在小屏幕上与侧边栏合并
+      mergeNavbar: true,//Navbar将在小屏幕上与侧边栏合并
       executeScript: true,//执行页面上的脚本。只解析第一个脚本标记（演示）。如果存在Vue，则默认开
-      maxLevel: 6,//最大的内容表级别
+      maxLevel: 4,//最大的内容表级别6
       //subMaxLevel: 6,//在自定义边栏中添加目录（TOC)
       externalLinkTarget: '_blank', //外链打开方式：_blank表示在新标签页中打开
       coverpage: true,
