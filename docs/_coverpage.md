@@ -1,5 +1,3 @@
-<!-- _coverpage.md -->
-
 ![icon](./_media/logo.png)
 
 ## 葵语测试笔记

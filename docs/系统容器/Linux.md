@@ -1,3 +1,5 @@
+# Linux常用命令
+
 ## 环境变量
 
 ### 当前会话
@@ -507,3 +509,30 @@ curl https://www.example.com
   curl -x socks5://james:cats@myproxy.com:8080 https://www.example.com
   ```
 - -X 指定HTTP请求方法
+
+
+
+# CentOS8
+
+> 在 保存更改并重新加载firewalld时更改
+> `sudo nano /etc/firewalld/firewalld.conf`
+> 配置文件的快速解决方法
+> `FirewallBackend=nftables`
+>
+> ```
+> FirewallBackend=iptables
+> sudo systemctl restart firewalld.service
+> ```
+>
+> 它应该可以帮助您使用docker，但我建议在docker提供解决方案时回滚此设置。
+
+> fast workaround
+> `sudo nano /etc/firewalld/firewalld.conf`
+> in config file change
+> `FirewallBackend=nftables`
+> on
+> `FirewallBackend=iptables`
+> save change and reload firewalld
+> `sudo systemctl restart firewalld.service`
+>
+> it should help you work with docker but I advise rollback this setting when docker provides solution.

@@ -5425,3 +5425,496 @@ try (var ctx = new UserContext("Bob")) {
 ```
 
 这样就在`UserContext`中完全封装了`ThreadLocal`，外部代码在`try (resource) {...}`内部可以随时调用`UserContext.currentUser()`获取当前线程绑定的用户名。
+
+## 网络编程
+
+### TCP编程
+
+- 服务器端用`ServerSocket`监听指定端口；
+- 客户端使用`Socket(InetAddress, port)`连接服务器；
+- 服务器端用`accept()`接收连接并返回`Socket`；
+- 双方通过`Socket`打开`InputStream`/`OutputStream`读写数据；
+- 服务器端通常使用多线程同时处理多个客户端连接，利用线程池可大幅提升效率；
+- `flush()`用于强制输出缓冲区到网络。
+
+当Socket连接成功地在服务器端和客户端之间建立后：
+
+- 对服务器端来说，它的Socket是指定的IP地址和指定的端口号；
+- 对客户端来说，它的Socket是它所在计算机的IP地址和一个由操作系统分配的随机端口号。
+
+#### 服务器端
+
+Java标准库提供了`ServerSocket`来实现对指定IP和指定端口的监听。
+
+```
+public class Server {
+    public static void main(String[] args) throws IOException {
+        ServerSocket ss = new ServerSocket(6666); // 监听指定端口
+        System.out.println("server is running...");
+        for (;;) {
+            Socket sock = ss.accept(); // ss.accept()表示每当有新的客户端连接进来后，就返回一个Socket实例，这个Socket实例就是用来和刚连接的客户端进行通信的。由于客户端很多，要实现并发处理，我们就必须为每个新的Socket创建一个新线程来处理，这样，主线程的作用就是接收新的连接，每当收到新连接后，就创建一个新线程进行处理。这里也完全可以利用线程池来处理客户端连接，能大大提高运行效率。
+            System.out.println("connected from " + sock.getRemoteSocketAddress());
+            Thread t = new Handler(sock);
+            t.start();
+        }
+    }
+}
+
+class Handler extends Thread {
+    Socket sock;
+
+    public Handler(Socket sock) {
+        this.sock = sock;
+    }
+
+    @Override
+    public void run() {
+        try (InputStream input = this.sock.getInputStream()) {
+            try (OutputStream output = this.sock.getOutputStream()) {
+                handle(input, output);
+            }
+        } catch (Exception e) {
+            try {
+                this.sock.close();
+            } catch (IOException ioe) {
+            }
+            System.out.println("client disconnected.");
+        }
+    }
+
+    private void handle(InputStream input, OutputStream output) throws IOException {
+        var writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
+        var reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+        writer.write("hello\n");
+        writer.flush();
+        for (;;) {
+            String s = reader.readLine();
+            if (s.equals("bye")) {
+                writer.write("bye\n");
+                writer.flush();
+                break;
+            }
+            writer.write("ok: " + s + "\n");
+            writer.flush();
+        }
+    }
+}
+```
+
+
+
+#### 客户端
+
+```
+public class Client {
+    public static void main(String[] args) throws IOException {
+        Socket sock = new Socket("localhost", 6666); // 连接指定服务器和端口
+        try (InputStream input = sock.getInputStream()) {
+            try (OutputStream output = sock.getOutputStream()) {
+                handle(input, output);
+            }
+        }
+        sock.close();
+        System.out.println("disconnected.");
+    }
+
+    private static void handle(InputStream input, OutputStream output) throws IOException {
+        var writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
+        var reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("[server] " + reader.readLine());
+        for (;;) {
+            System.out.print(">>> "); // 打印提示
+            String s = scanner.nextLine(); // 读取一行输入
+            writer.write(s);
+            writer.newLine();
+            writer.flush();
+            String resp = reader.readLine();
+            System.out.println("<<< " + resp);
+            if (resp.equals("bye")) {
+                break;
+            }
+        }
+    }
+}
+```
+
+#### Socket流
+
+因为TCP是一种基于流的协议，因此，Java标准库使用`InputStream`和`OutputStream`来封装Socket的数据流，这样我们使用Socket的流，和普通IO流类似：
+
+```
+// 用于读取网络数据:
+InputStream in = sock.getInputStream();
+// 用于写入网络数据:
+OutputStream out = sock.getOutputStream();
+```
+
+### UDP编程
+
+使用UDP协议通信时，服务器和客户端双方无需建立连接，UDP端口和TCP端口虽然都使用0~65535，但他们是两套独立的端口：
+
+- 服务器端用`DatagramSocket(port)`监听端口；
+- 客户端使用`DatagramSocket.connect()`指定远程地址和端口；
+- 双方通过`receive()`和`send()`读写数据；
+- `DatagramSocket`没有IO流接口，数据被直接写入`byte[]`缓冲区。
+
+#### 服务器端
+
+在服务器端，使用UDP也需要监听指定的端口。Java提供了`DatagramSocket`来实现这个功能。
+
+```
+DatagramSocket ds = new DatagramSocket(6666); // 监听指定端口
+for (;;) { // 无限循环
+    // 数据缓冲区:
+    byte[] buffer = new byte[1024];
+    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+    ds.receive(packet); // 收取一个UDP数据包
+    // 收取到的数据存储在buffer中，由packet.getOffset(), packet.getLength()指定起始位置和长度
+    // 将其按UTF-8编码转换为String:
+    String s = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8);
+    // 发送数据:
+    byte[] data = "ACK".getBytes(StandardCharsets.UTF_8);
+    packet.setData(data);
+    ds.send(packet);
+}
+```
+
+#### 客户端
+
+```
+DatagramSocket ds = new DatagramSocket();
+ds.setSoTimeout(1000);
+ds.connect(InetAddress.getByName("localhost"), 6666); // 连接指定服务器和端口
+// 发送:
+byte[] data = "Hello".getBytes();
+DatagramPacket packet = new DatagramPacket(data, data.length);
+ds.send(packet);
+// 接收:
+byte[] buffer = new byte[1024];
+packet = new DatagramPacket(buffer, buffer.length);
+ds.receive(packet);
+String resp = new String(packet.getData(), packet.getOffset(), packet.getLength());
+ds.disconnect();
+```
+
+
+
+### 发送Email
+
+使用JavaMail API发送邮件本质上是一个MUA软件通过SMTP协议发送邮件至MTA服务器；
+
+打开调试模式可以看到详细的SMTP交互信息；
+
+某些邮件服务商需要开启SMTP，并需要独立的SMTP登录密码。
+
+#### 准备SMTP登陆信息
+
+MUA：Mail User Agent
+
+MTA：Mail Transfer Agent
+
+MDA：Mail Delivery Agent
+
+SMTP协议：Simple Mail Transport Protocol，使用标准端口25，也可以使用加密端口465或587。
+
+- QQ邮箱：SMTP服务器是smtp.qq.com，端口是465/587；
+- 163邮箱：SMTP服务器是smtp.163.com，端口是465；
+- Gmail邮箱：SMTP服务器是smtp.gmail.com，端口是465/587。
+
+有了服务器和端口还需要用户名和口令。
+
+**创建Mave工程，添加JavaMail依赖**
+
+```
+<dependencies>
+    <dependency>
+        <groupId>javax.mail</groupId>
+        <artifactId>javax.mail-api</artifactId>
+        <version>1.6.2</version>
+    </dependency>
+    <dependency>
+        <groupId>com.sun.mail</groupId>
+        <artifactId>javax.mail</artifactId>
+        <version>1.6.2</version>
+    </dependency>
+    ...
+```
+
+**通过JavaMail的API连接SMTP服务器**
+
+以587端口为例，连接SMTP服务器时，需要准备一个Properties对象，填入相关信息。最后获取Session实例时，如果服务器需要认证，还需要传入一个Authenticator对象，并返回指定的用户名和口令。当我们获取到Session实例后，打开调试模式可以看到SMTP通信的详细内容。
+
+```
+// 服务器地址:
+String smtp = "smtp.office365.com";
+// 登录用户名:
+String username = "jxsmtp101@outlook.com";
+// 登录口令:
+String password = "********";
+// 连接到SMTP服务器587端口:
+Properties props = new Properties();
+props.put("mail.smtp.host", smtp); // SMTP主机名
+props.put("mail.smtp.port", "587"); // 主机端口号
+props.put("mail.smtp.auth", "true"); // 是否需要用户认证
+props.put("mail.smtp.starttls.enable", "true"); // 启用TLS加密
+// 获取Session实例:
+Session session = Session.getInstance(props, new Authenticator() {
+    protected PasswordAuthentication getPasswordAuthentication() {
+        return new PasswordAuthentication(username, password);
+    }
+});
+// 设置debug模式便于调试:
+session.setDebug(true);
+```
+
+#### 发送邮件
+
+构造一个`Message`对象，然后调用`Transport.send(Message)`即可完成发送，绝大多数邮件服务器要求发送方地址和登录用户名必须一致，否则发送将失败。
+
+```
+MimeMessage message = new MimeMessage(session);
+// 设置发送方地址:
+message.setFrom(new InternetAddress("me@example.com"));
+// 设置接收方地址:
+message.setRecipient(Message.RecipientType.TO, new InternetAddress("xiaoming@somewhere.com"));
+// 设置邮件主题:
+message.setSubject("Hello", "UTF-8");
+// 设置邮件正文:
+message.setText("Hi Xiaoming...", "UTF-8");
+// 发送:
+Transport.send(message);
+```
+
+```
+这是JavaMail打印的调试信息:
+DEBUG: setDebug: JavaMail version 1.6.2
+DEBUG: getProvider() returning javax.mail.Provider[TRANSPORT,smtp,com.sun.mail.smtp.SMTPTransport,Oracle]
+DEBUG SMTP: need username and password for authentication
+DEBUG SMTP: protocolConnect returning false, host=smtp.office365.com, ...
+DEBUG SMTP: useEhlo true, useAuth true
+开始尝试连接smtp.office365.com:
+DEBUG SMTP: trying to connect to host "smtp.office365.com", port 587, ...
+DEBUG SMTP: connected to host "smtp.office365.com", port: 587
+发送命令EHLO:
+EHLO localhost
+SMTP服务器响应250:
+250-SG3P274CA0024.outlook.office365.com Hello
+250-SIZE 157286400
+...
+DEBUG SMTP: Found extension "SIZE", arg "157286400"
+发送命令STARTTLS:
+STARTTLS
+SMTP服务器响应220:
+220 2.0.0 SMTP server ready
+EHLO localhost
+250-SG3P274CA0024.outlook.office365.com Hello [111.196.164.63]
+250-SIZE 157286400
+250-PIPELINING
+250-...
+DEBUG SMTP: Found extension "SIZE", arg "157286400"
+...
+尝试登录:
+DEBUG SMTP: protocolConnect login, host=smtp.office365.com, user=********, password=********
+DEBUG SMTP: Attempt to authenticate using mechanisms: LOGIN PLAIN DIGEST-MD5 NTLM XOAUTH2 
+DEBUG SMTP: Using mechanism LOGIN
+DEBUG SMTP: AUTH LOGIN command trace suppressed
+登录成功:
+DEBUG SMTP: AUTH LOGIN succeeded
+DEBUG SMTP: use8bit false
+开发发送邮件，设置FROM:
+MAIL FROM:<********@outlook.com>
+250 2.1.0 Sender OK
+设置TO:
+RCPT TO:<********@sina.com>
+250 2.1.5 Recipient OK
+发送邮件数据:
+DATA
+服务器响应354:
+354 Start mail input; end with <CRLF>.<CRLF>
+真正的邮件数据:
+Date: Mon, 2 Dec 2019 09:37:52 +0800 (CST)
+From: ********@outlook.com
+To: ********001@sina.com
+Message-ID: <1617791695.0.1575250672483@localhost>
+邮件主题是编码后的文本:
+Subject: =?UTF-8?Q?JavaMail=E9=82=AE=E4=BB=B6?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: base64
+
+邮件正文是Base64编码的文本:
+SGVsbG8sIOi/meaYr+S4gOWwgeadpeiHqmphdmFtYWls55qE6YKu5Lu277yB
+.
+邮件数据发送完成后，以\r\n.\r\n结束，服务器响应250表示发送成功:
+250 2.0.0 OK <HK0PR03MB4961.apcprd03.prod.outlook.com> [Hostname=HK0PR03MB4961.apcprd03.prod.outlook.com]
+DEBUG SMTP: message successfully delivered to mail server
+发送QUIT命令:
+QUIT
+服务器响应221结束TCP连接:
+221 2.0.0 Service closing transmission channel
+```
+
+[SMTP协议响应码](https://www.iana.org/assignments/smtp-enhanced-status-codes/smtp-enhanced-status-codes.txt)
+
+#### 发送HTML邮件
+
+```
+message.setText(body, "UTF-8");
+改为：
+message.setText(body, "UTF-8", "html");
+```
+
+#### 发送附件
+
+发送附件不能直接调用`message.setText()`方法，而是要构造一个`Multipart`对象， 一个`Multipart`对象可以添加若干个`BodyPart`，其中第一个`BodyPart`是文本，即邮件正文，后面的BodyPart是附件。`BodyPart`依靠`setContent()`决定添加的内容，如果添加文本，用`setContent("...", "text/plain;charset=utf-8")`添加纯文本，或者用`setContent("...", "text/html;charset=utf-8")`添加HTML文本。如果添加附件，需要设置文件名（不一定和真实文件名一致），并且添加一个`DataHandler()`，传入文件的MIME类型。二进制文件可以用`application/octet-stream`，Word文档则是`application/msword`。最后，通过`setContent()`把`Multipart`添加到`Message`中即可发送。
+
+```
+Multipart multipart = new MimeMultipart();
+// 添加text:
+BodyPart textpart = new MimeBodyPart();
+textpart.setContent(body, "text/html;charset=utf-8");
+multipart.addBodyPart(textpart);
+// 添加image:
+BodyPart imagepart = new MimeBodyPart();
+imagepart.setFileName(fileName);
+imagepart.setDataHandler(new DataHandler(new ByteArrayDataSource(input, "application/octet-stream")));
+multipart.addBodyPart(imagepart);
+// 设置邮件内容为multipart:
+message.setContent(multipart);
+```
+
+#### 发送内嵌图片的HTML邮件
+
+如果给一个`<img src="http://example.com/test.jpg">`，这样的外部图片链接通常会被邮件客户端过滤，并提示用户显示图片并不安全。只有内嵌的图片才能正常在邮件中显示。内嵌图片实际上也是一个附件即邮件本身也是`Multipart`，但需要做额外的处理：在HTML邮件中引用图片时，需要设定一个ID，用类似`<img src=\"cid:img01\">`引用，然后，在添加图片作为BodyPart时，除了要正确设置MIME类型（根据图片类型使用`image/jpeg`或`image/png`），还需要设置一个Header：`imagepart.setHeader("Content-ID", "<img01>");` 这个ID和HTML中引用的ID对应起来，邮件客户端就可以正常显示内嵌图片。
+
+```
+Multipart multipart = new MimeMultipart();
+// 添加text:
+BodyPart textpart = new MimeBodyPart();
+textpart.setContent("<h1>Hello</h1><p><img src=\"cid:img01\"></p>", "text/html;charset=utf-8");
+multipart.addBodyPart(textpart);
+// 添加image:
+BodyPart imagepart = new MimeBodyPart();
+imagepart.setFileName(fileName);
+imagepart.setDataHandler(new DataHandler(new ByteArrayDataSource(input, "image/jpeg")));
+// 与HTML的<img src="cid:img01">关联:
+imagepart.setHeader("Content-ID", "<img01>");
+multipart.addBodyPart(imagepart);
+```
+
+### 接收Email
+
+- 使用Java接收Email时，可以用POP3协议或IMAP协议。
+- 使用POP3协议时，需要用Maven引入JavaMail依赖，并确定POP3服务器的域名／端口／是否使用SSL等，然后，调用相关API接收Email。
+- 设置debug模式可以查看通信详细内容，便于排查错误。
+
+发送邮件客户端总是通过SMTP协议把邮件发送给MTA。接收Email则想反，收件人用自己的客户端把邮件从MDA服务器上抓取到本地的过程。
+
+POP3：标准端口110，加密端口995
+
+IMAP：标准端口143，加密端口993
+
+IMAP和POP3的主要区别是，IMAP协议在本地的所有操作都会自动同步到服务器上，并且IMAP可以允许用户在邮件服务器的收件箱中创建文件夹。
+
+POP3收取Email：
+
+```
+// 准备登录信息:
+String host = "pop3.example.com";
+int port = 995;
+String username = "bob@example.com";
+String password = "password";
+
+Properties props = new Properties();
+props.setProperty("mail.store.protocol", "pop3"); // 协议名称
+props.setProperty("mail.pop3.host", host);// POP3主机名
+props.setProperty("mail.pop3.port", String.valueOf(port)); // 端口号
+// 启动SSL:
+props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+props.put("mail.smtp.socketFactory.port", String.valueOf(port));
+
+// 连接到Store:
+URLName url = new URLName("pop3", host, post, "", username, password);
+Session session = Session.getInstance(props, null);
+session.setDebug(true); // 显示调试信息
+Store store = new POP3SSLStore(session, url);
+store.connect();
+```
+
+一个`Store`对象表示整个邮箱的存储，要收取邮件，我们需要通过`Store`访问指定的`Folder`（文件夹），通常是`INBOX`表示收件箱：
+
+```
+// 获取收件箱:
+Folder folder = store.getFolder("INBOX");
+// 以读写方式打开:
+folder.open(Folder.READ_WRITE);
+// 打印邮件总数/新邮件数量/未读数量/已删除数量:
+System.out.println("Total messages: " + folder.getMessageCount());
+System.out.println("New messages: " + folder.getNewMessageCount());
+System.out.println("Unread messages: " + folder.getUnreadMessageCount());
+System.out.println("Deleted messages: " + folder.getDeletedMessageCount());
+// 获取每一封邮件:
+Message[] messages = folder.getMessages();
+for (Message message : messages) {
+    // 打印每一封邮件:
+    printMessage((MimeMessage) message);
+}
+```
+
+当我们获取到一个`Message`对象时，可以强制转型为MimeMessage，然后打印出邮件主题、发件人、收件人等信息：
+
+```
+void printMessage(MimeMessage msg) throws IOException, MessagingException {
+    // 邮件主题:
+    System.out.println("Subject: " + MimeUtility.decodeText(msg.getSubject()));
+    // 发件人:
+    Address[] froms = msg.getFrom();
+    InternetAddress address = (InternetAddress) froms[0];
+    String personal = address.getPersonal();
+    String from = personal == null ? address.getAddress() : (MimeUtility.decodeText(personal) + " <" + address.getAddress() + ">");
+    System.out.println("From: " + from);
+    // 继续打印收件人:
+    ...
+}
+```
+
+比较麻烦的是获取邮件的正文。一个`MimeMessage`对象也是一个`Part`对象，它可能只包含一个文本，也可能是一个`Multipart`对象，即由几个`Part`构成，因此，需要递归地解析出完整的正文：
+
+```
+String getBody(Part part) throws MessagingException, IOException {
+    if (part.isMimeType("text/*")) {
+        // Part是文本:
+        return part.getContent().toString();
+    }
+    if (part.isMimeType("multipart/*")) {
+        // Part是一个Multipart对象:
+        Multipart multipart = (Multipart) part.getContent();
+        // 循环解析每个子Part:
+        for (int i = 0; i < multipart.getCount(); i++) {
+            BodyPart bodyPart = multipart.getBodyPart(i);
+            String body = getBody(bodyPart);
+            if (!body.isEmpty()) {
+                return body;
+            }
+        }
+    }
+    return "";
+}
+```
+
+最后关闭`Folder`和`Store`：
+
+```
+folder.close(true); // 传入true表示删除操作会同步到服务器上（即删除服务器收件箱的邮件）
+store.close();
+```
+
+### HTTP编程
+
+- Java提供了`HttpClient`作为新的HTTP客户端编程接口用于取代老的`HttpURLConnection`接口；
+- `HttpClient`使用链式调用并通过内置的`BodyPublishers`和`BodyHandlers`来更方便地处理数据。
+
+
+
+### RMI远程调用
