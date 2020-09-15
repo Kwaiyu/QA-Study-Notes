@@ -120,6 +120,13 @@ grep [-abcEFGhHilLnqrsvVwxy][-A<显示列数>][-B<显示列数>][-C<显示列数
 - **-x --line-regexp** : 只显示全列符合的列。
 - **-y** : 此参数的效果和指定"-i"参数相同。
 
+### paste
+
+```
+paste file1 file2 合并两个文件或两栏的内容   
+paste -d '+' file1 file2 合并两个文件或两栏的内容，中间用"+"区分  
+```
+
 ### awk
 
 AWK 是一种处理文本文件的语言，是一个强大的文本分析工具。
@@ -226,6 +233,14 @@ sort [-bcdfimMnr][-o<输出文件>][-t<分隔字符>][+<起始栏位>-<结束栏
 - --help 显示帮助。
 - --version 显示版本信息。
 
+### comm
+
+```
+comm -1 file1 file2 比较两个文件的内容只删除 'file1' 所包含的内容   
+comm -2 file1 file2 比较两个文件的内容只删除 'file2' 所包含的内容   
+comm -3 file1 file2 比较两个文件的内容只删除两个文件共有的部分  
+```
+
 ### uniq
 
 用于检查及删除文本文件中重复出现的行列，一般与sort结合使用
@@ -291,6 +306,34 @@ exp1 -or exp2
 exp1, exp2
 ```
 
+### tar
+
+```
+-c ：新建打包文件  
+-t ：查看打包文件的内容含有哪些文件名  
+-x ：解打包或解压缩的功能，可以搭配-C（大写）指定解压的目录，注意-c,-t,-x不能同时出现在同一条命令中  
+-j ：通过bzip2的支持进行压缩/解压缩  
+-z ：通过gzip的支持进行压缩/解压缩  
+-v ：在压缩/解压缩过程中，将正在处理的文件名显示出来  
+-f filename ：filename为要处理的文件  
+-C dir ：指定压缩/解压缩的目录dir  
+```
+
+```
+bunzip2 file1.bz2 解压一个叫做 'file1.bz2'的文件   
+bzip2 file1 压缩一个叫做 'file1' 的文件   
+gunzip file1.gz 解压一个叫做 'file1.gz'的文件   
+gzip file1 压缩一个叫做 'file1'的文件   
+gzip -9 file1 最大程度压缩   
+rar a file1.rar test_file 创建一个叫做 'file1.rar' 的包   
+rar a file1.rar file1 file2 dir1 同时压缩 'file1', 'file2' 以及目录 'dir1'   
+rar x file1.rar 解压rar包  
+  
+zip file1.zip file1 创建一个zip格式的压缩包   
+unzip file1.zip 解压一个zip格式压缩包   
+zip -r file1.zip file1 file2 dir1 将几个文件和目录同时压缩成一个zip格式的压缩包  
+```
+
 ## 进程
 
 ### ps
@@ -328,6 +371,16 @@ ps [options] [--help]
 - START: 行程开始时间
 - TIME: 执行的时间
 - COMMAND:所执行的指令
+
+### kill
+
+```
+-l  信号，若果不加信号的编号参数，则使用“-l”参数会列出全部的信号名称  
+-a  当处理当前进程时，不限制命令名和进程号的对应关系  
+-p  指定kill 命令只打印相关进程的进程号，而不发送任何信号  
+-s  指定发送信号  
+-u  指定用户  
+```
 
 ### top
 
