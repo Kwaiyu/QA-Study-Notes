@@ -5915,6 +5915,59 @@ store.close();
 - Java提供了`HttpClient`作为新的HTTP客户端编程接口用于取代老的`HttpURLConnection`接口；
 - `HttpClient`使用链式调用并通过内置的`BodyPublishers`和`BodyHandlers`来更方便地处理数据。
 
+**HTTP请求**
+
+HTTP请求由HTTP Header和HTTP Body两部分组成，Header的第一行总是`请求方法 路径 HTTP版本`，后续的每一行都是固定的`Header: Value`格式：
+
+- Host：表示请求的域名，因为一台服务器上可能有多个网站，因此有必要依靠Host来识别用于请求；
+- User-Agent：表示客户端自身标识信息，不同的浏览器有不同的标识，服务器依靠User-Agent判断客户端类型；
+- Accept：表示客户端能处理的HTTP响应格式，`*/*`表示任意格式，`text/*`表示任意文本，`image/png`表示PNG格式的图片；
+- Accept-Language：表示客户端接收的语言，多种语言按优先级排序，服务器依靠该字段给用户返回特定语言的网页版本。
+
+如果是`GET`请求那么该HTTP请求只有Header没有Body，参数必须附加在URL上，并以URLEncode方式编码，URL长度限制参数不能太多。如果是`POST`请求则带有Body，以一个空行分隔，通常要设置`Content-Type`表示Body的类型，`Content-Length`表示Body的长度。
+
+```
+POST /login HTTP/1.1
+Host: www.example.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 30
+
+username=hello&password=123456
+```
+
+**HTTP响应**
+
+响应也是由Header和Body组成，第一行总是HTTP版本 响应代码 响应说明。HTTP/1.1协议允许在一个TCP连接中反复发送-响应，但发送一个请求后必须等待服务器响应才能发送下一个请求，HTTP/2.0允许客户端在没有收到响应的时候，发送多个HTTP请求，服务器返回响应的时候，不一定按顺序返回，只要双方能识别出哪个响应对应哪个请求，就可以做到并行发送和接收。
+
+```
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 133251
+
+<!DOCTYPE html>
+<html><body>
+<h1>Hello</h1>
+...
+```
+
+HTTP有固定的响应代码：
+
+- 1xx：表示一个提示性响应，例如101表示将切换协议，常见于WebSocket连接；
+- 2xx：表示一个成功的响应，例如200表示成功，206表示只发送了部分内容；
+- 3xx：表示一个重定向的响应，例如301表示永久重定向，303表示客户端应该按指定路径重新发送请求；
+- 4xx：表示一个因为客户端问题导致的错误响应，例如400表示因为Content-Type等各种原因导致的无效请求，404表示指定的路径不存在；
+- 5xx：表示一个因为服务器问题导致的错误响应，例如500表示服务器内部故障，503表示服务器暂时无法响应。
+
+**HTTP服务端**
+
+ 
+
+**HTTP客户端**
+
+发送请求后获取响应内容，Java标准库提供基于HTTP的包，早期通过`HttpURLConnection`访问HTTP：
+
+
+
 
 
 ### RMI远程调用
