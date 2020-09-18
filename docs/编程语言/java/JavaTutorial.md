@@ -5966,8 +5966,531 @@ HTTP有固定的响应代码：
 
 发送请求后获取响应内容，Java标准库提供基于HTTP的包，早期通过`HttpURLConnection`访问HTTP：
 
+```
+URL url = new URL("http://www.example.com/path/to/target?a=1&b=2");
+HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+conn.setRequestMethod("GET");
+conn.setUseCaches(false);
+conn.setConnectTimeout(5000); // 请求超时5秒
+// 设置HTTP头:
+conn.setRequestProperty("Accept", "*/*");
+conn.setRequestProperty("User-Agent", "Mozilla/5.0 (compatible; MSIE 11; Windows NT 5.1)");
+// 连接并发送HTTP请求:
+conn.connect();
+// 判断HTTP响应是否200:
+if (conn.getResponseCode() != 200) {
+    throw new RuntimeException("bad response");
+}		
+// 获取所有响应Header:
+Map<String, List<String>> map = conn.getHeaderFields();
+for (String key : map.keySet()) {
+    System.out.println(key + ": " + map.get(key));
+}
+// 获取响应内容:
+InputStream input = conn.getInputStream();
+...
+```
 
+上面的代码比较繁琐并且需要手动处理`InputStream`，从Java 11开始引入了新的`HttpClient`使用链式调用API简化HTTP处理，因为`HttpClient`内部使用线程池优化多个HTTP连接，可以复用。
+
+**使用`GET`请求获取文本内容：**
+
+```
+import java.net.URI;
+import java.net.http.*;
+import java.net.http.HttpClient.Version;
+import java.time.Duration;
+import java.util.*;
+
+public class Main {
+    // 全局HttpClient:
+    static HttpClient httpClient = HttpClient.newBuilder().build();
+
+    public static void main(String[] args) throws Exception {
+        String url = "https://www.sina.com.cn/";
+        HttpRequest request = HttpRequest.newBuilder(new URI(url))
+            // 设置Header:
+            .header("User-Agent", "Java HttpClient").header("Accept", "*/*")
+            // 设置超时:
+            .timeout(Duration.ofSeconds(5))
+            // 设置版本:
+            .version(Version.HTTP_2).build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        // HTTP允许重复的Header，因此一个Header可对应多个Value:
+        Map<String, List<String>> headers = response.headers().map();
+        for (String header : headers.keySet()) {
+            System.out.println(header + ": " + headers.get(header).get(0));
+        }
+        System.out.println(response.body().substring(0, 1024) + "...");
+    }
+}
+```
+
+如果我们要获取图片这样的二进制内容，只需要把`HttpResponse.BodyHandlers.ofString()`换成`HttpResponse.BodyHandlers.ofByteArray()`，就可以获得一个`HttpResponse<byte[]>`对象。如果响应的内容很大，不希望一次性全部加载到内存，可以使用`HttpResponse.BodyHandlers.ofInputStream()`获取一个`InputStream`流。
+
+**使用`POST`请求要准备好发送的Body数据并正确设置`Content-Type`：**
+
+```
+String url = "http://www.example.com/login";
+String body = "username=bob&password=123456";
+HttpRequest request = HttpRequest.newBuilder(new URI(url))
+    // 设置Header:
+    .header("Accept", "*/*")
+    .header("Content-Type", "application/x-www-form-urlencoded")
+    // 设置超时:
+    .timeout(Duration.ofSeconds(5))
+    // 设置版本:
+    .version(Version.HTTP_2)
+    // 使用POST并设置Body:
+    .POST(BodyPublishers.ofString(body, StandardCharsets.UTF_8)).build();
+HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+String s = response.body();
+```
 
 
 
 ### RMI远程调用
+
+- Java提供了RMI实现远程方法调用：
+- RMI通过自动生成stub和skeleton实现网络调用，客户端只需要查找服务并获得接口实例，服务器端只需要编写实现类并注册为服务；
+- RMI的序列化和反序列化可能会造成安全漏洞，因此调用双方必须是内网互相信任的机器，不要把1099端口暴露在公网上作为对外服务。
+
+RMI是Remote Method Invocation的缩写，是指一个JVM中的代码可以通过网络实现远程调用另一个JVM的某个方法。要实现RMI服务端和客户端必须共享同一接口，此接口必须派生自`java.rmi.Remote`，并在每个方法声明抛出`RemoteException`。
+
+```
+public interface WorldClock extends Remote {
+    LocalDateTime getLocalDateTime(String zoneId) throws RemoteException;
+}
+```
+
+服务器实现类：
+
+```
+public class WorldClockService implements WorldClock {
+    @Override
+    public LocalDateTime getLocalDateTime(String zoneId) throws RemoteException {
+        return LocalDateTime.now(ZoneId.of(zoneId)).withNano(0);
+    }
+}
+```
+
+通过Java RMI提供的一系列底层接口把编写的服务以RMI形式暴露在网络上给客户端调用：
+
+```
+public class Server {
+    public static void main(String[] args) throws RemoteException {
+        System.out.println("create World clock remote service...");
+        // 实例化一个WorldClock:
+        WorldClock worldClock = new WorldClockService();
+        // 将此服务转换为远程服务接口:
+        WorldClock skeleton = (WorldClock) UnicastRemoteObject.exportObject(worldClock, 0);
+        // 将RMI服务注册到1099端口:
+        Registry registry = LocateRegistry.createRegistry(1099);
+        // 注册此服务，服务名为"WorldClock":
+        registry.rebind("WorldClock", skeleton);
+    }
+}
+```
+
+将`WorldClock.java`这个接口文件复制到客户端实现RMI调用：
+
+```
+public class Client {
+    public static void main(String[] args) throws RemoteException, NotBoundException {
+        // 连接到服务器localhost，端口1099:
+        Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+        // 查找名称为"WorldClock"的服务并强制转型为WorldClock接口:
+        WorldClock worldClock = (WorldClock) registry.lookup("WorldClock");
+        // 正常调用接口方法:
+        LocalDateTime now = worldClock.getLocalDateTime("Asia/Shanghai");
+        // 打印调用结果:
+        System.out.println(now);
+    }
+}
+```
+
+把客户端的“实现类”称为`stub`，而服务器端的网络服务类称为`skeleton`，是由`Registry`内部动态生成的，整个过程由RMI底层负责实现序列化和反序列化，可能会造成严重的安全漏洞，调用双方必须是内网互相信任的机器，不要把默认的1099端口暴露在公网对外服务，RMI双方必须是JAVA程序，不同语言进行RPC调用可选择通用协议[gRPC](https://grpc.io/)
+
+```ascii
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ┐         ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+  ┌─────────────┐                                 ┌─────────────┐
+│ │   Service   │ │         │                     │   Service   │ │
+  └─────────────┘                                 └─────────────┘
+│        ▲        │         │                            ▲        │
+         │                                               │
+│        │        │         │                            │        │
+  ┌─────────────┐   Network   ┌───────────────┐   ┌─────────────┐
+│ │ Client Stub ├─┼─────────┼>│Server Skeleton│──>│Service Impl │ │
+  └─────────────┘             └───────────────┘   └─────────────┘
+└ ─ ─ ─ ─ ─ ─ ─ ─ ┘         └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+```
+
+## XML与JSON
+
+- XML使用嵌套结构的数据表示方式，支持格式验证；
+- XML常用于配置文件、网络消息传输等。
+
+**XML结构**
+
+首行必定是声明版本、编码，接着声明文档定义类型，然后是XML文档内容，有且只有一个根元素，根元素可以包含任意子元素，子元素可以包含属性且必须正确嵌套，空元素用`<tag/>`表示。
+
+```
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE note SYSTEM "book.dtd">
+<book id="1">
+    <name>Java核心技术</name>
+    <author>Cay S. Horstmann</author>
+    <isbn lang="CN">1234567</isbn>
+    <tags>
+        <tag>Java</tag>
+        <tag>Network</tag>
+    </tags>
+    <pubDate/>
+</book>
+```
+
+特殊符号需要转义：
+
+| 字符 | 表示    |
+| :--- | :------ |
+| <    | & lt;   |
+| >    | & gt;   |
+| &    | & amp;  |
+| "    | & quot; |
+| '    | & apos; |
+
+DTD文档可以指定一系列规则，例如：
+
+- 根元素必须是`book`
+- `book`元素必须包含`name`，`author`等指定元素
+- `isbn`元素必须包含属性`lang`
+
+XML是一个技术体系，除了我们经常用到的XML文档本身外，XML还支持：
+
+- DTD和XSD：验证XML结构和数据是否有效；
+- Namespace：XML节点和属性的名字空间；
+- XSLT：把XML转化为另一种文本；
+- XPath：一种XML节点查询语言；
+
+### 使用DOM
+
+- Java提供的DOM API可以将XML解析为DOM结构，以Document对象表示；
+- DOM可在内存中完整表示XML数据结构；
+- DOM解析速度慢，内存占用大。
+
+XML是一种树形结构的文档，标准解析API：
+
+- DOM：从根节点开始一次性读取XML，并在内存中表示为树形结构；
+- SAX：以流的形式读取XML，使用事件回调。
+
+上面的XML结构解析为DOM结构：
+
+```ascii
+                      ┌─────────┐
+                      │document │
+                      └─────────┘
+                           │
+                           ▼
+                      ┌─────────┐
+                      │  book   │
+                      └─────────┘
+                           │
+     ┌──────────┬──────────┼──────────┬──────────┐
+     ▼          ▼          ▼          ▼          ▼
+┌─────────┐┌─────────┐┌─────────┐┌─────────┐┌─────────┐
+│  name   ││ author  ││  isbn   ││  tags   ││ pubDate │
+└─────────┘└─────────┘└─────────┘└─────────┘└─────────┘
+                                      │
+                                 ┌────┴────┐
+                                 ▼         ▼
+                             ┌───────┐ ┌───────┐
+                             │  tag  │ │  tag  │
+                             └───────┘ └───────┘
+```
+
+Java提供DOM API解析XML：
+
+- Document：代表整个XML文档；
+- Element：代表一个XML元素；
+- Attribute：代表一个元素的某个属性。
+
+`DocumentBuilder.parse()`用于解析一个XML，它可以接收InputStream，File或者URL，如果解析无误将获得一个Document对象。
+
+```
+InputStream input = Main.class.getResourceAsStream("/book.xml");
+DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+DocumentBuilder db = dbf.newDocumentBuilder();
+Document doc = db.parse(input);
+```
+
+这个对象代表了整个XML文档的树形结构，需要遍历以便读取指定元素的值：
+
+```
+void printNode(Node n, int indent) {
+    for (int i = 0; i < indent; i++) {
+        System.out.print(' ');
+    }
+    switch (n.getNodeType()) {
+    case Node.DOCUMENT_NODE: // Document节点
+        System.out.println("Document: " + n.getNodeName());
+        break;
+    case Node.ELEMENT_NODE: // 元素节点
+        System.out.println("Element: " + n.getNodeName());
+        break;
+    case Node.TEXT_NODE: // 文本
+        System.out.println("Text: " + n.getNodeName() + " = " + n.getNodeValue());
+        break;
+    case Node.ATTRIBUTE_NODE: // 属性
+        System.out.println("Attr: " + n.getNodeName() + " = " + n.getNodeValue());
+        break;
+    default: // 其他
+        System.out.println("NodeType: " + n.getNodeType() + ", NodeName: " + n.getNodeName());
+    }
+    for (Node child = n.getFirstChild(); child != null; child = child.getNextSibling()) {
+        printNode(child, indent + 1);
+    }
+}
+```
+
+
+
+### 使用SAX
+
+- SAX是一种流式解析XML的API；
+- SAX通过事件触发，读取速度快，消耗内存少；
+- 调用方必须通过回调方法获得解析过程中的数据。
+
+使用DOM解析XML优点是用起来省事，主要缺点是内存占用太大。另一种解析XML的方式SAX是Simple API for XML的缩写，基于流的解析方式边读取XML边解析并以事件回调的方式让调用者获取数据。
+
+SAX解析会触发一系列事件：
+
+- startDocument：开始读取XML文档；
+- startElement：读取到了一个元素，例如`<book>`；
+- characters：读取到了字符；
+- endElement：读取到了一个结束的元素，例如`</book>`；
+- endDocument：读取XML文档结束。
+
+用SAX API解析XML：
+
+```
+InputStream input = Main.class.getResourceAsStream("/book.xml");
+SAXParserFactory spf = SAXParserFactory.newInstance();
+SAXParser saxParser = spf.newSAXParser();
+saxParser.parse(input, new MyHandler());
+```
+
+传入回调对象`MyHandler`继承自`DefaultHandler`：
+
+```
+class MyHandler extends DefaultHandler {
+    public void startDocument() throws SAXException {
+        print("start document");
+    }
+
+    public void endDocument() throws SAXException {
+        print("end document");
+    }
+
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        print("start element:", localName, qName);
+    }
+
+    public void endElement(String uri, String localName, String qName) throws SAXException {
+        print("end element:", localName, qName);
+    }
+
+    public void characters(char[] ch, int start, int length) throws SAXException {
+        print("characters:", new String(ch, start, length));
+    }
+
+    public void error(SAXParseException e) throws SAXException {
+        print("error:", e);
+    }
+
+    void print(Object... objs) {
+        for (Object obj : objs) {
+            System.out.print(obj);
+            System.out.print(" ");
+        }
+        System.out.println();
+    }
+}
+```
+
+
+
+### 使用Jackson
+
+使用Jackson解析XML，可以直接把XML解析为JavaBean。
+
+**添加Maven依赖**
+
+```
+<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml -->
+<dependency>
+    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <artifactId>jackson-dataformat-xml</artifactId>
+    <version>2.11.2</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.codehaus.woodstox/woodstox-core-asl -->
+<dependency>
+    <groupId>org.codehaus.woodstox</groupId>
+    <artifactId>woodstox-core-asl</artifactId>
+    <version>4.4.1</version>
+</dependency>
+
+```
+
+定义JavaBean通过Jackson创建`XmlMapper`调用`readValue(InputStream, Class)`解析XML返回一个JavaBean：
+
+```
+<?xml version="1.0" encoding="UTF-8" ?>
+<book id="1">
+    <name>Java核心技术</name>
+    <author>Cay S. Horstmann</author>
+    <isbn lang="CN">1234567</isbn>
+    <tags>
+        <tag>Java</tag>
+        <tag>Network</tag>
+    </tags>
+    <pubDate/>
+</book>
+```
+
+```
+public class Book {
+    public long id;
+    public String name;
+    public String author;
+    public String isbn;
+    public List<String> tags;
+    public String pubDate;
+}
+
+InputStream input = Main.class.getResourceAsStream("/book.xml");
+JacksonXmlModule module = new JacksonXmlModule();
+XmlMapper mapper = new XmlMapper(module);
+Book book = mapper.readValue(input, Book.class);
+System.out.println(book.id);
+System.out.println(book.name);
+System.out.println(book.author);
+System.out.println(book.isbn);
+System.out.println(book.tags);
+System.out.println(book.pubDate);
+```
+
+
+
+### 使用JSON
+
+- JSON是轻量级的数据表示方式，常用于Web应用；
+- Jackson可以实现JavaBean和JSON之间的转换；
+- 可以通过Module扩展Jackson能处理的数据类型；
+- 可以自定义`JsonSerializer`和`JsonDeserializer`来定制序列化和反序列化。
+
+JSON是JavaScript Object Notation的缩写，去除了JavaScript执行代码保留对象格式。逐渐代替了标签繁琐，格式复杂的XML。JSON的显著优点：
+
+- JSON只允许使用UTF-8编码，不存在编码问题；
+- JSON只允许使用双引号作为key，特殊字符用`\`转义，格式简单；
+- 浏览器内置JSON支持，如果把数据用JSON发送给浏览器，可以用JavaScript直接处理。
+
+仅支持以下几种数据类型：
+
+- 键值对：`{"key": value}`
+- 数组：`[1, 2, 3]`
+- 字符串：`"abc"`
+- 数值（整数和浮点数）：`12.34`
+- 布尔值：`true`或`false`
+- 空值：`null`
+
+浏览器支持使用JavaScript对JSON进行读写：
+
+```
+// JSON string to JavaScript object:
+jsObj = JSON.parse(jsonStr);
+// JavaScript object to JSON string:
+jsonStr = JSON.stringify(jsObj);
+```
+
+在Java中对JSON也有标准的JSR 353 API，XML可以通过Jackson和JavaBean相互转换，JSON和JavaBean相互转换也可以通过第三方库Jackson实现，或其他第三方库Gson、Fastjson。
+
+```
+<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.11.2</version>
+</dependency>
+```
+
+创建一个`ObjectMapper`对象，关闭`DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES`功能使得解析时如果JavaBean不存在该属性时解析不会报错。
+
+```
+InputStream input = Main.class.getResourceAsStream("/book.json");
+ObjectMapper mapper = new ObjectMapper();
+// 反序列化时忽略不存在的JavaBean属性:
+mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+Book book = mapper.readValue(input, Book.clas);
+```
+
+把JavaBean解析为JSON为序列化：
+
+```
+String json = mapper.writeValueAsString(book);
+```
+
+要把JSON的某些值解析为特定的JAVA对象，如`LocalDate`：
+
+```
+{
+    "name": "Java核心技术",
+    "pubDate": "2016-09-01"
+}
+```
+
+解析为：
+
+```
+public class Book {
+    public String name;
+    public LocalDate pubDate;
+}
+```
+
+需要进入标准库的JSR 310关于JavaTime的数据格式定义至Maven，然后在创建`ObjectMapper`时注册一个新的`JavaTimeModule`：
+
+```
+<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+<dependency>
+    <groupId>com.fasterxml.jackson.datatype</groupId>
+    <artifactId>jackson-datatype-jsr310</artifactId>
+    <version>2.11.2</version>
+</dependency>
+
+```
+
+```
+ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+```
+
+如果内置的解析规则和扩展的解析规则都不满足需求可自定义解析：
+
+如`Book`类的`isbn`是一个`BigInteger`：
+
+```
+public class Book {
+	public String name;
+	public BigInteger isbn;
+}
+```
+
+但JSON数据并不是标准的整型格式：
+
+```
+{
+    "name": "Java核心技术",
+    "isbn": "978-7-111-54742-6"
+}
+```
+
