@@ -30,9 +30,7 @@ echo $PATH
 
 ### yum(Centos8弃用yum,改为dnf)
 
-yum软件包管理器阿里镜像：
-
-[](https://mirrors.aliyun.com/repo/Centos-7.repo)
+[yum软件包管理器阿里镜像](https://mirrors.aliyun.com/repo/Centos-7.repo)
 
 ```
 mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
@@ -81,8 +79,28 @@ yum常用命令：
   - yum clean oldheaders: 清除缓存目录下旧的 headers
   - yum clean, yum clean all (= yum clean packages; yum clean oldheaders) :清除缓存目录下的软件包及旧的headers
 - 9. yum provides /usr/bin/ab 查找包含程序的软件包
+- 10. yum repolist 查看仓库源
 
 ### apt
+
+### rpm
+
+- -i 　显示套件的相关信息。
+- -v 　显示指令执行过程
+- -h或--hash 　套件安装时列出标记。
+- -U<套件档>或--upgrade<套件档> 升级指定的套件档。
+- -q 　使用询问模式，当遇到任何问题时，rpm指令会先询问用户。
+- -a 　查询所有套件。
+- -e<套件档>或--erase<套件档> 　删除指定的套件。
+
+```
+# 安装
+rpm -hvi dejagnu-1.4.2-10.noarch.rpm
+# 查询
+rpm -qa|grep mariadb
+# 删除
+rpm -e --nodeps mariadb-libs
+```
 
 ### grep
 

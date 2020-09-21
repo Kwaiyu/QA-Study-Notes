@@ -6494,3 +6494,194 @@ public class Book {
 }
 ```
 
+直接解析报错，需定义一个`IsbnDeserializer`，用于解析含有非数字的字符串：
+
+```
+public class IsbnDeserializer extends JsonDeserializer<BigInteger> {
+    public BigInteger deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        // 读取原始的JSON字符串内容:
+        String s = p.getValueAsString();
+        if (s != null) {
+            try {
+                return new BigInteger(s.replace("-", ""));
+            } catch (NumberFormatException e) {
+                throw new JsonParseException(p, s, e);
+            }
+        }
+        return null;
+    }
+}
+```
+
+然后在`Book`类中使用注解标注：
+
+```
+public class Book {
+    public String name;
+    // 表示反序列化isbn时使用自定义的IsbnDeserializer:
+    @JsonDeserialize(using = IsbnDeserializer.class)
+    public BigInteger isbn;
+}
+```
+
+## JDBC编程
+
+### JDBC简介
+
+JDBC是Java DataBase Connectivity的缩写，它是Java程序访问数据库的标准接口。
+
+- 各数据库厂商使用相同的接口，Java代码不需要针对不同数据库分别开发；
+- Java程序编译期仅依赖java.sql包，不依赖具体数据库的jar包；
+- 可随时替换底层数据库，访问数据库的Java代码基本不变。
+
+**关系数据库**
+
+#### 安装Mysql≥5.5.3
+
+在Mac或Linux上，需要编辑MySQL的配置文件，把数据库默认的编码全部改为UTF-8。MySQL的配置文件默认存放在`/etc/my.cnf`或者`/etc/mysql/my.cnf`：
+
+```
+[client]
+default-character-set = utf8
+
+[mysqld]
+default-storage-engine = INNODB
+character-set-server = utf8
+collation-server = utf8_general_ci
+
+# 重启后通过命令查看编码
+mysql> show variables like '%char%';
+```
+
+**NoSQL**
+
+**JDBC**
+
+Java标准库自带的JDBC接口其实就是定义了一组接口，而某个具体的JDBC驱动其实就是实现了这些接口的类：
+
+```ascii
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+
+│  ┌───────────────┐  │
+   │   Java App    │
+│  └───────────────┘  │
+           │
+│          ▼          │
+   ┌───────────────┐
+│  │JDBC Interface │<─┼─── JDK
+   └───────────────┘
+│          │          │
+           ▼
+│  ┌───────────────┐  │
+   │ MySQL Driver  │<───── Oracle
+│  └───────────────┘  │
+           │
+└ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ┘
+           ▼
+   ┌───────────────┐
+   │     MySQL     │
+   └───────────────┘
+```
+
+一个MySQL的JDBC的驱动就是一个jar包，它本身也是纯Java编写的。我们自己编写的代码只需要引用Java标准库提供的java.sql包下面的相关接口，由此再间接地通过MySQL驱动的jar包通过网络访问MySQL服务器，所有复杂的网络通讯都被封装到JDBC驱动中，因此，Java程序本身只需要引入一个MySQL驱动的jar包就可以正常访问MySQL服务器：
+
+```ascii
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+   ┌───────────────┐
+│  │   App.class   │  │
+   └───────────────┘
+│          │          │
+           ▼
+│  ┌───────────────┐  │
+   │  java.sql.*   │
+│  └───────────────┘  │
+           │
+│          ▼          │
+   ┌───────────────┐     TCP    ┌───────────────┐
+│  │ mysql-xxx.jar │──┼────────>│     MySQL     │
+   └───────────────┘            └───────────────┘
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+          JVM
+```
+
+### JDBC查询
+
+- JDBC接口的`Connection`代表一个JDBC连接；
+- 使用JDBC查询时，总是使用`PreparedStatement`进行查询而不是`Statement`；
+- 查询结果总是`ResultSet`，即使使用聚合查询也不例外。
+
+Java的标准库`java.sql`大部分都是接口，接口不能直接实例化而是必须实例化对应的实现类，通过JDBC驱动实现JDBC接口。当选择MySQL 5.x.x数据库要找到JDBC的驱动其实就是一个JAR包，通过Maven添加`scope`是`runtime`的依赖，只有在运行期间才使用。
+
+```
+<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>5.1.47</version>
+    <scope>runtime</scope>
+</dependency>
+```
+
+通过脚本插入数据：
+
+```
+-- 创建数据库learjdbc:
+DROP DATABASE IF EXISTS learnjdbc;
+CREATE DATABASE learnjdbc;
+
+-- 创建登录用户learn/口令learnpassword
+CREATE USER IF NOT EXISTS learn@'%' IDENTIFIED BY 'learnpassword';
+GRANT ALL PRIVILEGES ON learnjdbc.* TO learn@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+-- 创建表students:
+USE learnjdbc;
+CREATE TABLE students (
+  id BIGINT AUTO_INCREMENT NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  gender TINYINT(1) NOT NULL,
+  grade INT NOT NULL,
+  score INT NOT NULL,
+  PRIMARY KEY(id)
+) Engine=INNODB DEFAULT CHARSET=UTF8;
+
+-- 插入初始数据:
+INSERT INTO students (name, gender, grade, score) VALUES ('小明', 1, 1, 88);
+INSERT INTO students (name, gender, grade, score) VALUES ('小红', 1, 1, 95);
+INSERT INTO students (name, gender, grade, score) VALUES ('小军', 0, 1, 93);
+INSERT INTO students (name, gender, grade, score) VALUES ('小白', 0, 1, 100);
+INSERT INTO students (name, gender, grade, score) VALUES ('小牛', 1, 2, 96);
+INSERT INTO students (name, gender, grade, score) VALUES ('小兵', 1, 2, 99);
+INSERT INTO students (name, gender, grade, score) VALUES ('小强', 0, 2, 86);
+INSERT INTO students (name, gender, grade, score) VALUES ('小乔', 0, 2, 79);
+INSERT INTO students (name, gender, grade, score) VALUES ('小青', 1, 3, 85);
+INSERT INTO students (name, gender, grade, score) VALUES ('小王', 1, 3, 90);
+INSERT INTO students (name, gender, grade, score) VALUES ('小林', 0, 3, 91);
+INSERT INTO students (name, gender, grade, score) VALUES ('小贝', 0, 3, 77);
+```
+
+#### JDBC连接
+
+Connection代表一个JDBC连接，它相当于Java程序到数据库的连接（通常是TCP连接）。打开一个Connection时，需要准备URL、用户名和口令才能成功连接到数据库。
+
+URL是由数据库厂商指定的格式，例如，MySQL的URL是：
+
+```
+jdbc:mysql://<hostname>:<port>/<db>?key1=value1&key2=value2
+jdbc:mysql://localhost:3306/learnjdbc?useSSL=false&characterEncoding=utf8
+```
+
+```
+// JDBC连接的URL, 不同数据库有不同的格式:
+String JDBC_URL = "jdbc:mysql://localhost:3306/test";
+String JDBC_USER = "root";
+String JDBC_PASSWORD = "password";
+// 获取连接:
+Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD);
+// TODO: 访问数据库...
+// 关闭连接:
+conn.close();
+```
+
+#### JDBC查询
+
