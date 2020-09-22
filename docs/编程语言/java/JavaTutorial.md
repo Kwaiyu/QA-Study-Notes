@@ -6685,3 +6685,149 @@ conn.close();
 
 #### JDBC查询
 
+1. 通过`Connection`提供的`createStatement()`方法创建一个`Statement`对象，用于执行一个查询；
+2. 执行`Statement`对象提供的`executeQuery("SELECT * FROM students")`并传入SQL语句，执行查询并获得返回的结果集，使用`ResultSet`来引用这个结果集；
+3. 反复调用`ResultSet`的`next()`方法并读取每一行结果。
+
+`Statment`和`ResultSet`都是需要关闭的资源，因此嵌套使用`try (resource)`确保及时关闭；`rs.next()`用于判断是否有下一行记录，如果有，将自动把当前行移动到下一行；`ResultSet`获取列时，索引从`1`开始而不是`0`；必须根据`SELECT`的列的对应位置的数据类型来调用`getLong(1)`，`getString(2)`这些方法。
+
+```
+try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
+    try (Statement stmt = conn.createStatement()) {
+        try (ResultSet rs = stmt.executeQuery("SELECT id, grade, name, gender FROM students WHERE gender=1")) {
+            while (rs.next()) {	//
+                long id = rs.getLong(1); // 注意：索引从1开始
+                long grade = rs.getLong(2);
+                String name = rs.getString(3);
+                int gender = rs.getInt(4);
+            }
+        }
+    }
+}
+```
+
+#### SQL注入
+
+使用`Statement`拼字符串非常容易引发SQL注入，因为SQL参数是从方法传入的。
+
+```
+User login(String name, String pass) {
+	    ...
+    stmt.executeQuery("SELECT * FROM user WHERE login='" + name + "' AND pass='" + pass + "'");
+    ...
+}
+```
+
+`name`和`pass`通常是Web页面输入后由程序接收的，如果用户输入是程序期待的值就可以拼出正确的SQL。但是如果用户输入是精心构造的字符串就可以拼出意想不到的SQL。
+
+```
+SELECT * FROM user WHERE login='bob' OR pass=' AND pass=' OR pass=''
+```
+
+这样就不用判断口令是否正确，登录形同虚设。要避免SQL注入攻击，可以针对所有字符串参数进行转义，但很麻烦，而且需要在任何使用SQL的地方增加转义代码。还有一种办法就是使用`PreparedStatement`可以完全避免SQL注入的问题，因为`PreparedStatement`始终使用`?`作为占位符，并且把数据连同SQL本身传给数据库，这样可以保证每次传给数据库的SQL是相同的，只是占位符的数据不同，还能高效利用数据库本身对查询的缓存，所以，`PreparedStatement`比`Statement`更安全，而且更快。改写如下：
+
+```
+User login(String name, String pass) {
+    ...
+    String sql = "SELECT * FROM user WHERE login=? AND pass=?";
+    PreparedStatement ps = conn.prepareStatement(sql);
+    ps.setObject(1, name);
+    ps.setObject(2, pass);
+    ...
+}
+```
+
+使用`PreparedStatement`和`Statement`稍有不同，必须首先调用`setObject()`设置每个占位符`?`的值，最后获取的仍然是`ResultSet`对象。从结果集读取列时，使用`String`类型的列名比索引要易读，而且不易出错。
+
+```
+try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
+    try (PreparedStatement ps = conn.prepareStatement("SELECT id, grade, name, gender FROM students WHERE gender=? AND grade=?")) {
+        ps.setObject(1, "M"); // 注意：索引从1开始
+        ps.setObject(2, 3);
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                long id = rs.getLong("id");
+                long grade = rs.getLong("grade");
+                String name = rs.getString("name");
+                String gender = rs.getString("gender");
+            }
+        }
+    }
+}
+```
+
+#### 数据类型
+
+JDBC在`java.sql.Types`定义了一组常量来表示如何映射SQL数据类型：
+
+| SQL数据类型   | Java数据类型             |
+| :------------ | :----------------------- |
+| BIT, BOOL     | boolean                  |
+| INTEGER       | int                      |
+| BIGINT        | long                     |
+| REAL          | float                    |
+| FLOAT, DOUBLE | double                   |
+| CHAR, VARCHAR | String                   |
+| DECIMAL       | BigDecimal               |
+| DATE          | java.sql.Date, LocalDate |
+| TIME          | java.sql.Time, LocalTime |
+
+### JDBC更新
+
+- 使用JDBC执行`INSERT`、`UPDATE`和`DELETE`都可视为更新操作；
+- 更新操作使用`PreparedStatement`的`executeUpdate()`进行，返回受影响的行数。
+
+增删改查，行话叫CRUD：Create，Retrieve，Update和Delete。查询可以使用`PreparedStatement`进行各种`SELECT`然后处理结果集。
+
+#### 插入
+
+设置参数和查询一样，有几个`?`占位符就必须要设置对应的参数，当成功执行`executeUpdate()`后，返回值是`int`表示插入的记录数量。此出因为只插入了一条记录返回`1`。
+
+```
+try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
+    try (PreparedStatement ps = conn.prepareStatement(
+            "INSERT INTO students (id, grade, name, gender) VALUES (?,?,?,?)")) {
+        ps.setObject(1, 999); // 注意：索引从1开始
+        ps.setObject(2, 1); // grade
+        ps.setObject(3, "Bob"); // name
+        ps.setObject(4, "M"); // gender
+        int n = ps.executeUpdate(); // 1
+    }
+}
+```
+
+
+
+#### 插入并获取主键
+
+对于使用自增主键的程序需要获取插入后自增主键的值，要获取自增主键不能先插入再查询，因为两条SQL执行期间可能有别的程序也插入了同一个表，获取自增主键的正确写法是在创建`PreparedStatement`的时候，指定一个`RETURN_GENERATED_KEYS`标志位，表示JDBC驱动必须返回插入的自增主键。
+
+```
+try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
+    try (PreparedStatement ps = conn.prepareStatement(
+            "INSERT INTO students (grade, name, gender) VALUES (?,?,?)",
+            Statement.RETURN_GENERATED_KEYS)) {
+        ps.setObject(1, 1); // grade
+        ps.setObject(2, "Bob"); // name
+        ps.setObject(3, "M"); // gender
+        int n = ps.executeUpdate(); // 1
+        try (ResultSet rs = ps.getGeneratedKeys()) {
+            if (rs.next()) {
+                long id = rs.getLong(1); // 注意：索引从1开始
+            }
+        }
+    }
+}
+```
+
+
+
+#### 更新
+
+#### 删除
+
+### JDBC事物
+
+### JDBC Batch
+
+### JDBC连接池
