@@ -6824,10 +6824,90 @@ try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PAS
 
 #### 更新
 
+更新操作是`UPDATE`语句，它可以一次更新若干列的记录。`executeUpdate()`返回数据库实际更新的行数，返回结果可能是正数，也可能是0表示没有更新。
+
+```
+try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
+    try (PreparedStatement ps = conn.prepareStatement("UPDATE students SET name=? WHERE id=?")) {
+        ps.setObject(1, "Bob"); // 注意：索引从1开始
+        ps.setObject(2, 999);
+        int n = ps.executeUpdate(); // 返回更新的行数
+    }
+}
+```
+
+
+
 #### 删除
+
+删除操作是`DELETE`语句，它可以一次删除若干列。
+
+```
+try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
+    try (PreparedStatement ps = conn.prepareStatement("DELETE FROM students WHERE id=?")) {
+        ps.setObject(1, 999); // 注意：索引从1开始
+        int n = ps.executeUpdate(); // 删除的行数
+    }
+}
+```
+
+
 
 ### JDBC事物
 
+数据库事务（Transaction）是由若干个SQL语句构成的一个操作序列，有点类似于Java的`synchronized`同步。数据库系统保证在一个事务中的所有SQL要么全部执行成功，要么全部不执行。
+
+数据库事务（Transaction）具有ACID特性：
+
+- Atomicity：原子性
+- Consistency：一致性
+- Isolation：隔离性
+- Durability：持久性
+
+JDBC提供了事务的支持，使用Connection可以开启、提交或回滚事务。
+
+对应用程序来说，数据库事务非常重要，很多运行着关键任务的应用程序，都必须依赖数据库事务保证程序的结果正常。假设小明准备给小红支付100，两人在数据库中的记录主键分别是`123`和`456`，那么用两条SQL语句操作如下：
+
+```
+UPDATE accounts SET balance = balance - 100 WHERE id=123 AND balance >= 100;
+UPDATE accounts SET balance = balance + 100 WHERE id=456;
+```
+
+这两条语句必须以事物的方式执行才能保证业务正确，因为一旦第一条SQL执行成功而第二条SQL失败的话，系统的钱就会凭空减少100，而有了事务要么这笔转账成功，要么转账失败双方账户的钱都不变。
+
+在JDBC执行事物就是把多条SQL包裹在一个数据库事物中心执行。
+
+```
+Connection conn = openConnection();
+try {
+    // 关闭自动提交:
+    conn.setAutoCommit(false);
+    // 执行多条SQL语句:
+    insert(); update(); delete();
+    // 提交事务可能失败抛出异常:
+    conn.commit();
+} catch (SQLException e) {
+    // 回滚事务，把Connection对象状态恢复到初始值:
+    conn.rollback();
+} finally {
+    conn.setAutoCommit(true);
+    conn.close();
+}
+```
+
+默认有种“隐式事务”自动提交。只要关闭了`Connection`的`autoCommit`，那么就可以在一个事务中执行多条语句，事务以`commit()`方法结束。
+
+**设定事务的隔离级别：**
+
+```
+// 设定隔离级别为READ COMMITTED:
+conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+```
+
 ### JDBC Batch
+
+使用JDBC的batch操作会大大提高执行效率，对内容相同，参数不同的SQL，要优先考虑batch操作。
+
+
 
 ### JDBC连接池

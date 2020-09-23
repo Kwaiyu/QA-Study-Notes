@@ -12,6 +12,7 @@
 <br>
 
 [Github](https://github.com/Kwaiyu/)
+[Blog](https://www.lsaiah.cn/)
 [开始阅读](/README.md)
 
 <!-- 背景色 -->
