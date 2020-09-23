@@ -6999,3 +6999,54 @@ try (Connection conn = ds.getConnection()) { // 在此获取连接
 
 通常连接池提供了大量的参数可以配置，例如，维护的最小、最大活动连接数，指定一个连接在空闲一段时间后自动关闭等，需要根据应用程序的负载合理地配置这些参数。此外，大多数连接池都提供了详细的实时状态以便进行监控。
 
+## 函数式编程
+
+函数时一种最基本的任务，大型程序就是一个顶层函数调用若干底层函数，被调用的函数又可以调用其他函数。是面向过程程序设计的基本单元。
+
+### Lambda基础
+
+- 单方法接口被称为`FunctionalInterface`。
+- 接收`FunctionalInterface`作为参数的时候，可以把实例化的匿名类改写为Lambda表达式，能大大简化代码。
+- Lambda表达式的参数和返回值均可由编译器自动推断。
+
+函数式编程（Functional Programming）是把函数作为基本运算单元，函数可以作为变量，可以接收函数，还可以返回函数。历史上研究函数式编程的理论是Lambda演算，所以把支持函数式编程的编码风格称为Lambda表达式。
+
+#### Lambda表达式
+
+在Java程序中经常会遇到一些单方法接口：
+
+- Comparator
+- Runnable
+- Callable
+
+以`Comparator`为例，调用`Arrays.sort()`时，可以传入一个`Comparator`实例，以匿名类方式编写如下：
+
+```
+String[] array = ...
+Arrays.sort(array, new Comparator<String>() {
+    public int compare(String s1, String s2) {
+        return s1.compareTo(s2);
+    }
+});
+```
+
+上面的写法非常繁琐，Java8可以用Lambda表达式替换单方法接口。改写如下：
+
+```
+import java.util.Arrays;
+public class Main {
+    public static void main(String[] args) {
+        String[] array = new String[] { "Apple", "Orange", "Banana", "Lemon" };
+        Arrays.sort(array, (s1, s2) -> {
+            return s1.compareTo(s2);
+        });
+        System.out.println(String.join(", ", array));
+    }
+}
+```
+
+
+
+### 方法引用
+
+### 使用Stream
