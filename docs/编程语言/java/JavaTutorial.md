@@ -7596,6 +7596,212 @@ List<String> list = List.of("Apple", "Banana", "Orange");
 String[] array = list.stream().toArray(String[]::new);
 ```
 
+**输出为Map**
 
+如果我们要把Stream的元素收集到Map中，就稍微麻烦一点。因为对于每个元素，添加到Map时需要key和value，因此，我们要指定两个映射函数，分别把元素映射为key和value：
+
+```
+import java.util.*;
+import java.util.stream.*;
+public class Main {
+    public static void main(String[] args) {
+        Stream<String> stream = Stream.of("APPL:Apple", "MSFT:Microsoft");
+        Map<String, String> map = stream
+                .collect(Collectors.toMap(
+                        // 把元素s映射为key:
+                        s -> s.substring(0, s.indexOf(':')),
+                        // 把元素s映射为value:
+                        s -> s.substring(s.indexOf(':') + 1)));
+        System.out.println(map);
+    }
+}
+
+```
+
+**分组输出**
+
+`Stream`可以按组输出，使用`Collectors.groupingBy()`，它需要提供两个函数：一个是分组的key，这里使用`s -> s.substring(0, 1)`，表示只要首字母相同的`String`分到一组，第二个是分组的value，这里直接使用`Collectors.toList()`，表示输出为`List`：
+
+```
+import java.util.*;
+import java.util.stream.*;
+public class Main {
+    public static void main(String[] args) {
+        List<String> list = List.of("Apple", "Banana", "Blackberry", "Coconut", "Avocado", "Cherry", "Apricots");
+        Map<String, List<String>> groups = list.stream()
+                .collect(Collectors.groupingBy(s -> s.substring(0, 1), Collectors.toList()));
+        System.out.println(groups);
+    }
+}
+```
+
+```
+{
+    A=[Apple, Avocado, Apricots],
+    B=[Banana, Blackberry],
+    C=[Coconut, Cherry]
+}
+```
 
 #### 其他操作
+
+`Stream`的常用操作：
+
+转换操作：`map()`，`filter()`，`sorted()`，`distinct()`；
+
+合并操作：`concat()`，`flatMap()`；
+
+并行处理：`parallel()`；
+
+聚合操作：`reduce()`，`collect()`，`count()`，`max()`，`min()`，`sum()`，`average()`；
+
+其他操作：`allMatch()`, `anyMatch()`, `forEach()`。
+
+**排序**
+
+`Stream`排序只需调用`sorted()`方法：
+
+```
+import java.util.*;
+import java.util.stream.*;
+public class Main {
+    public static void main(String[] args) {
+        List<String> list = List.of("Orange", "apple", "Banana")
+            .stream()
+            .sorted()
+            .collect(Collectors.toList());
+        System.out.println(list);
+    }
+}
+```
+
+此方法要求`Stream`的每个元素必须实现`Comparable`接口。如果要自定义排序，传入指定的`Comparator`即可：
+
+```
+List<String> list = List.of("Orange", "apple", "Banana")
+    .stream()
+    .sorted(String::compareToIgnoreCase)
+    .collect(Collectors.toList());
+```
+
+**去重**
+
+可以直接用`distinct()`：
+
+```
+List.of("A", "B", "A", "C", "B", "D")
+    .stream()
+    .distinct()
+    .collect(Collectors.toList()); // [A, B, C, D]
+```
+
+**截取**
+
+`skip()`用于跳过当前`Stream`的前N个元素，`limit()`用于截取当前`Stream`最多前N个元素：
+
+```
+List.of("A", "B", "C", "D", "E", "F")
+    .stream()
+    .skip(2) // 跳过A, B
+    .limit(3) // 截取C, D, E
+    .collect(Collectors.toList()); // [C, D, E]
+```
+
+**合并**
+
+使用静态方法`concat()`：
+
+```
+Stream<String> s1 = List.of("A", "B", "C").stream();
+Stream<String> s2 = List.of("D", "E").stream();
+// 合并:
+Stream<String> s = Stream.concat(s1, s2);
+System.out.println(s.collect(Collectors.toList())); // [A, B, C, D, E]
+```
+
+**flatMap**
+
+如果`Stream`元素是集合：
+
+```
+Stream<List<Integer>> s = Stream.of(
+        Arrays.asList(1, 2, 3),
+        Arrays.asList(4, 5, 6),
+        Arrays.asList(7, 8, 9));
+```
+
+转换为`Stream<Integer>`，就可以使用`flatMap()`：
+
+```
+Stream<Integer> i = s.flatMap(list -> list.stream());
+```
+
+**并行**
+
+对`Stream`的元素进行处理是单线程的，在元素数量非常大的情况，多线程并行处理可以大大加快处理速度。只需要用`parallel()`进行转换：
+
+```
+Stream<String> s = ...
+String[] result = s.parallel() // 变成一个可以并行处理的Stream
+                   .sorted() // 可以进行并行排序
+                   .toArray(String[]::new);
+```
+
+**其他聚合方法**
+
+除了`reduce()`和`collect()`外，`Stream`还有一些常用的聚合方法：
+
+- `count()`：用于返回元素个数；
+- `max(Comparator<? super T> cp)`：找出最大元素；
+- `min(Comparator<? super T> cp)`：找出最小元素。
+
+针对`IntStream`、`LongStream`和`DoubleStream`，还额外提供了以下聚合方法：
+
+- `sum()`：对所有元素求和；
+- `average()`：对所有元素求平均数。
+
+还有一些方法，用来测试`Stream`的元素是否满足以下条件：
+
+- `boolean allMatch(Predicate<? super T>)`：测试是否所有元素均满足测试条件；
+- `boolean anyMatch(Predicate<? super T>)`：测试是否至少有一个元素满足测试条件。
+
+最后一个常用的方法是`forEach()`，它可以循环处理`Stream`的每个元素，我们经常传入`System.out::println`来打印`Stream`的元素：
+
+```
+Stream<String> s = ...
+s.forEach(str -> {
+    System.out.println("Hello, " + str);
+});
+```
+
+## 设计模式
+
+设计模式，即Design Patterns，是指在软件设计中，被反复使用的一种代码设计经验。使用设计模式的目的是为了可重用代码，提高代码的可扩展性和可维护性。主要是基于OOP编程提炼的，它基于以下几个原则：
+
+**开闭原则**
+
+### 创建型模式
+
+#### 工厂方法
+
+
+
+#### 抽象方法
+
+#### 建造者
+
+#### 原型
+
+#### 单例
+
+### 结构型模式
+
+### 行为型模式
+
+## Web开发
+
+## Spring开发
+
+## Spring Boot开发
+
+## Spring Cloud开发
