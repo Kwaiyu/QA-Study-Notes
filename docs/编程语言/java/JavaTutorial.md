@@ -7778,11 +7778,37 @@ s.forEach(str -> {
 
 设计模式，即Design Patterns，是指在软件设计中，被反复使用的一种代码设计经验。使用设计模式的目的是为了可重用代码，提高代码的可扩展性和可维护性。主要是基于OOP编程提炼的，它基于以下几个原则：
 
-**开闭原则**
+**开闭原则Open Closed Principle**
+
+开闭原则是指软件应该对扩展开放，而对修改关闭。意思是在增加新功能的时候，能不改代码就尽量不要改，最好只增加代码就完成了新功能。
+
+**里氏替换原则**
+
+里氏替换是一种面向对象的设计原则，即如果我们调用一个父类的方法可以成功，那么替换成子类调用也应该完全可以运行。
 
 ### 创建型模式
 
 #### 工厂方法
+
+定义一个用于创建对象的接口，让子类决定实例化哪一个类。Factory Method使一个类的实例化延迟到其子类。
+
+定义一个解析字符串到`Number`的`Factory`：
+
+```
+public interface Factory {
+    Number parse(String s);
+}
+```
+
+有了工厂接口再编写一个工厂的实现类：
+
+```
+public class NumberFactoryImpl implements NumberFactory {
+    public Number parse(String s) {
+        return new BigDecimal(s);
+    }
+}
+```
 
 
 
@@ -7800,8 +7826,8 @@ s.forEach(str -> {
 
 ## Web开发
 
-## Spring开发
+## Spring
 
-## Spring Boot开发
+## Spring Boot
 
-## Spring Cloud开发
+## Spring Cloud
