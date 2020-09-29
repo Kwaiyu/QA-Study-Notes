@@ -7810,9 +7810,90 @@ public class NumberFactoryImpl implements NumberFactory {
 }
 ```
 
+客户端在`NumberFactory`接口中定义一个静态方法`getFactory()`来返回真正的子类：
 
+```
+public interface NumberFactory {
+    // 创建方法:
+    Number parse(String s);
+
+    // 获取工厂实例:
+    static NumberFactory getFactory() {
+        return impl;
+    }
+
+    static NumberFactory impl = new NumberFactoryImpl();
+}
+```
+
+在客户端中只需要和工厂接口`NumberFactory`以及抽象产品`Number`打交道：
+
+```
+NumberFactory factory = NumberFactory.getFactory();
+Number result = factory.parse("123.456");
+```
+
+可以完全忽略真正的工厂`NumberFactoryImpl`和实际的产品`BigDecimal`，这样做的好处是允许创建产品的代码独立地变换，而不会影响到调用方。实际上大多数情况下我们并不需要抽象工厂，而是通过静态方法直接返回产品。
+
+```
+public class NumberFactory {
+    public static Number parse(String s) {
+        return new BigDecimal(s);
+    }
+}
+```
+
+这种简化的使用静态方法创建产品的方式称为静态工厂方法（Static Factory Method）。静态工厂方法广泛地应用在Java标准库中，例如：
+
+```
+Integer n = Integer.valueOf(100);
+```
+
+`Integer`既是产品又是静态工厂。它提供了静态方法`valueOf()`来创建`Integer`。那么这种方式和直接写`new Integer(100)`有何区别呢？我们观察`valueOf()`方法：
+
+```
+public final class Integer {
+    public static Integer valueOf(int i) {
+        if (i >= IntegerCache.low && i <= IntegerCache.high)
+            return IntegerCache.cache[i + (-IntegerCache.low)];
+        return new Integer(i);
+    }
+    ...
+}
+```
+
+好处在于`valueOf()`内部可能会使用`new`创建一个新的`Integer`实例，但也可能直接返回一个缓存的`Integer`实例。对于调用方来说，没必要知道`Integer`创建的细节。如果调用方直接使用`Integer n = new Integer(100)`，那么就失去了使用缓存优化的可能性。**工厂方法可以隐藏创建产品的细节，且不一定每次都会真正创建产品，完全可以返回缓存的产品，从而提升速度并减少内存消耗。**
+
+另一个经常使用的静态工厂方法是`List.of()`：
+
+```
+List<String> list = List.of("A", "B", "C");
+```
+
+这个静态工厂方法接收可变参数，然后返回`List`接口。需要注意的是，调用方获取的产品总是`List`接口，而且并不关心它的实际类型。即使调用方知道`List`产品的实际类型是`java.util.ImmutableCollections$ListN`，也不要去强制转型为子类，因为静态工厂方法`List.of()`保证返回`List`，但也完全可以修改为返回`java.util.ArrayList`。这就是里氏替换原则：返回实现接口的任意子类都可以满足该方法的要求，且不影响调用方。
+
+**总是引用接口而非实现类，能允许变换子类而不影响调用方，即尽可能面向抽象编程。**
+
+和`List.of()`类似，我们使用`MessageDigest`时，为了创建某个摘要算法，总是使用静态工厂方法`getInstance(String)`：
+
+```
+MessageDigest md5 = MessageDigest.getInstance("MD5");
+MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+```
+
+调用方通过产品名称获得产品实例，不但调用简单，而且获得的引用仍然是`MessageDigest`这个抽象类。
 
 #### 抽象方法
+
+抽象工厂模式是为了让创建工厂和一组产品与使用相分离，并可以随时切换到另一个工厂以及另一组产品；
+
+抽象工厂模式实现的关键点是定义工厂接口和产品接口，但如何实现工厂与产品本身需要留给具体的子类实现，客户端只和抽象工厂与抽象产品打交道。
+
+> 提供一个创建一系列相关或相互依赖对象的接口，而无需指定它们具体的类。
+
+抽象工厂模式（Abstract Factory）和工厂方法不太一样，它要解决的问题比较复杂，不但工厂是抽象的，产品是抽象的，而且有多个产品需要创建。因此，这个抽象工厂会对应到多个实际工厂，每个实际工厂负责创建多个实际产品：
+
+
 
 #### 建造者
 
