@@ -8603,17 +8603,1357 @@ public interface Node {
 
 对于一个`<abc>`这样的节点，我们可以称之为`ElementNode`，它可以作为容器包含多个子节点：
 
+```
+public class ElementNode implements Node {
+    private String name;
+    private List<Node> list = new ArrayList<>();
+
+    public ElementNode(String name) {
+        this.name = name;
+    }
+
+    public Node add(Node node) {
+        list.add(node);
+        return this;
+    }
+
+    public List<Node> children() {
+        return list;
+    }
+
+    public String toXml() {
+        String start = "<" + name + ">\n";
+        String end = "</" + name + ">\n";
+        StringJoiner sj = new StringJoiner("", start, end);
+        list.forEach(node -> {
+            sj.add(node.toXml() + "\n");
+        });
+        return sj.toString();
+    }
+}
+```
+
+对于普通文本，把它看作`TextNode`，没有子节点：
+
+```
+public class TextNode implements Node {
+	private String text;
+
+	public TextNode(String text) {
+		this.text = text;
+	}
+
+	public Node add(Node node) {
+		throw new UnsupportedOperationException();
+	}
+
+	public List<Node> children() {
+		return List.of();
+	}
+
+	public String toXml() {
+		return text;
+	}
+}
+```
+
+还可以有注释节点：
+
+```
+public class CommentNode implements Node {
+	private String text;
+
+	public CommentNode(String text) {
+		this.text = text;
+	}
+
+	public Node add(Node node) {
+		throw new UnsupportedOperationException();
+	}
+
+	public List<Node> children() {
+		return List.of();
+	}
+
+	public String toXml() {
+		return "<!-- " + text + " -->";
+	}
+}
+```
+
+通过`ElementNode`、`TextNode`和`CommentNode`，我们就可以构造出一颗树：
+
+```
+Node root = new ElementNode("school");
+root.add(new ElementNode("classA")
+        .add(new TextNode("Tom"))
+        .add(new TextNode("Alice")));
+root.add(new ElementNode("classB")
+        .add(new TextNode("Bob"))
+        .add(new TextNode("Grace"))
+        .add(new CommentNode("comment...")));
+System.out.println(root.toXml());
+```
+
+通过`root`节点输出XML如下：
+
+```
+<school>
+<classA>
+Tom
+Alice
+</classA>
+<classB>
+Bob
+Grace
+<!-- comment... -->
+</classB>
+</school>
+```
+
+可见，使用组合Composite模式时需要先统一单个节点以及容器节点的接口，作为容器节点的`ElementNode`又可以添加任意个`Node`，这样就可以构成层级结构。
+
+```ascii
+             ┌───────────┐
+             │   Node    │
+             └───────────┘
+                   ▲
+      ┌────────────┼────────────┐
+      │            │            │
+┌───────────┐┌───────────┐┌───────────┐
+│ElementNode││ TextNode  ││CommentNode│
+└───────────┘└───────────┘└───────────┘
+```
+
 
 
 #### 装饰器
 
+使用Decorator模式，可以独立增加核心功能，也可以独立增加附加功能，二者互不影响；在运行期动态地给核心功能增加任意个附加功能。
+
+> 动态地给一个对象添加一些额外的职责，就增加功能来说，相比生成子类更为灵活。
+
+如果要给不同的最终数据源增加缓冲功能、计算签名功能、加密解密功能，那么3个最终数据源，3个功能一共需要9个子类，如果继续增加子类会爆炸式增长，显然不可取。
+
+装饰器Decorator模式的目的就是把一个个的附加功能用装饰器的方式给一层一层地累加到原始数据源上，最终，通过组合获得我们想要的功能。
+
+如：给`FileInputStream`增加缓冲和解压缩功能，用Decorator模式写出来如下。
+
+```
+// 创建原始的数据源:
+InputStream fis = new FileInputStream("test.gz");
+// 增加缓冲功能:
+InputStream bis = new BufferedInputStream(fis);
+// 增加解压缩功能:
+InputStream gis = new GZIPInputStream(bis);
+```
+
+或者一次性写成：
+
+```
+InputStream input = new GZIPInputStream( // 第二层装饰
+                        new BufferedInputStream( // 第一层装饰
+                            new FileInputStream("test.gz") // 核心功能
+                        ));
+```
+
+`BufferedInputStream`和`GZIPInputStream`，它们实际上都是从`FilterInputStream`继承的，这个`FilterInputStream`就是一个抽象的Decorator。我们用图把Decorator模式画出来如下：
+
+```ascii
+             ┌───────────┐
+             │ Component │
+             └───────────┘
+                   ▲
+      ┌────────────┼─────────────────┐
+      │            │                 │
+┌───────────┐┌───────────┐     ┌───────────┐
+│ComponentA ││ComponentB │...  │ Decorator │
+└───────────┘└───────────┘     └───────────┘
+                                     ▲
+                              ┌──────┴──────┐
+                              │             │
+                        ┌───────────┐ ┌───────────┐
+                        │DecoratorA │ │DecoratorB │...
+                        └───────────┘ └───────────┘
+```
+
+最顶层的Component是接口，对应到IO的就是`InputStream`这个抽象类。ComponentA、ComponentB是实际的子类，对应到IO的就是`FileInputStream`、`ServletInputStream`这些数据源。Decorator是用于实现各个附加功能的抽象装饰器，对应到IO的就是`FilterInputStream`。而从Decorator派生的就是一个一个的装饰器，它们每个都有独立的功能，对应到IO的就是`BufferedInputStream`、`GZIPInputStream`等。
+
+Decorator模式它实际上把核心功能和附加功能给分开了。核心功能指`FileInputStream`这些真正读数据的源头，附加功能指加缓冲、压缩、解密这些功能。如果我们要新增核心功能，就增加Component的子类，例如`ByteInputStream`。如果我们要增加附加功能，就增加Decorator的子类，例如`CipherInputStream`。两部分都可以独立地扩展，而具体如何附加功能，由调用方自由组合，从而极大地增强了灵活性。
+
+假设需要渲染一个HTML文本，但是文本还可以附加一些效果，比如加粗、斜体、下划线等。为了实现动态附加效果，可以采用Decorator模式。
+
+ 首先定义顶层接口`TextNode`：
+
+```
+public interface TextNode {
+    // 设置text:
+    void setText(String text);
+    // 获取text:
+    String getText();
+}
+```
+
+对于核心节点，例如`<span>`，需要从`TextNode`直接继承：
+
+```
+public class SpanNode implements TextNode {
+    private String text;
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getText() {
+        return "<span>" + text + "</span>";
+    }
+}
+```
+
+为了实现Decorator模式需要有一个抽象的Decorator类：
+
+```
+public abstract class NodeDecorator implements TextNode {
+    protected final TextNode target;
+
+    protected NodeDecorator(TextNode target) {
+        this.target = target;
+    }
+
+    public void setText(String text) {
+        this.target.setText(text);
+    }
+}
+```
+
+这个`NodeDecorator`类的核心是持有一个`TextNode`，即将要把功能附加到的`TextNode`实例。接下来就可以写一个加粗功能：
+
+```
+public class BoldDecorator extends NodeDecorator {
+    public BoldDecorator(TextNode target) {
+        super(target);
+    }
+
+    public String getText() {
+        return "<b>" + target.getText() + "</b>";
+    }
+}
+```
+
+类似的可以继续加`ItalicDecorator`、`UnderlineDecorator`等。客户端可以自由组合这些Decorator：
+
+```
+TextNode n1 = new SpanNode();
+TextNode n2 = new BoldDecorator(new UnderlineDecorator(new SpanNode()));
+TextNode n3 = new ItalicDecorator(new BoldDecorator(new SpanNode()));
+n1.setText("Hello");
+n2.setText("Decorated");
+n3.setText("World");
+System.out.println(n1.getText());
+// 输出<span>Hello</span>
+
+System.out.println(n2.getText());
+// 输出<b><u><span>Decorated</span></u></b>
+
+System.out.println(n3.getText());
+// 输出<i><b><span>World</span></b></i>
+```
+
+
+
 #### 外观
+
+Facade模式是为了给客户端提供一个统一入口，并对外屏蔽内部子系统的调用细节。
+
+> 为子系统中的一组接口提供一个一致的界面，Facade模式定义了一个高层接口，这个接口使得这一子系统更容易使用。
+
+如果客户端要跟许多子系统打交道，那么客户端需要了解各个子系统的接口，比较麻烦。如果有一个统一的“中介”，让客户端只跟中介打交道，中介再去跟各个子系统打交道，对客户端来说就比较简单。所以Facade就相当于搞了一个中介。
+
+以注册公司为例，假设注册公司需要三步：
+
+1. 向工商局申请公司营业执照；
+2. 在银行开设账户；
+3. 在税务局开设纳税号。
+
+以下是三个系统的接口：
+
+```
+// 工商注册:
+public class AdminOfIndustry {
+    public Company register(String name) {
+        ...
+    }
+}
+
+// 银行开户:
+public class Bank {
+    public String openAccount(String companyId) {
+        ...
+    }
+}
+
+// 纳税登记:
+public class Taxation {
+    public String applyTaxCode(String companyId) {
+        ...
+    }
+}
+```
+
+如果子系统比较复杂，并且客户对流程不熟悉，那就把这些流程全部委托给中介：
+
+```
+public class Facade {
+    public Company openCompany(String name) {
+        Company c = this.admin.register(name);
+        String bankAccount = this.bank.openAccount(c.getId());
+        c.setBankAccount(bankAccount);
+        String taxCode = this.taxation.applyTaxCode(c.getId());
+        c.setTaxCode(taxCode);
+        return c;
+    }
+}
+```
+
+这样客户端只跟Facade打交道，一次完成公司注册的所有繁琐流程：
+
+```
+Company c = facade.openCompany("Facade Software Ltd.");
+```
+
+很多Web程序，内部有多个子系统提供服务，经常使用一个统一的Facade入口，例如一个`RestApiController`，使得外部用户调用的时候，只关心Facade提供的接口，不用管内部到底是哪个子系统处理的。
+
+更复杂的Web程序，会有多个Web服务，这个时候，经常会使用一个统一的网关入口来自动转发到不同的Web服务，这种提供统一入口的网关就是Gateway，它本质上也是一个Facade，但可以附加一些用户认证、限流限速的额外服务。
 
 #### 享元
 
+> 运用共享技术有效地支持大量细粒度的对象
+
+享元模式的设计思想是尽量复用已创建的对象，常用于工厂方法内部的优化。享元（Flyweight）的核心思想很简单：如果一个对象实例一经创建就不可变，那么反复创建相同的实例就没有必要，直接向调用方返回一个共享的实例就行，这样即节省内存，又可以减少创建对象的过程，提高运行速度。
+
+享元模式在Java标准库中有很多应用，包装类型如`Byte`、`Integer`都是不变类，因此，反复创建同一个值相同的包装类型是没有必要的。以`Integer`为例，如果我们通过`Integer.valueOf()`这个静态工厂方法创建`Integer`实例，当传入的`int`范围在`-128`~`+127`之间时，会直接返回缓存的`Integer`实例：
+
+```
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+        Integer n1 = Integer.valueOf(100);
+        Integer n2 = Integer.valueOf(100);
+        System.out.println(n1 == n2); // true
+    }
+}
+```
+
+对于`Byte`来说，因为它一共只有256个状态，所以，通过`Byte.valueOf()`创建的`Byte`实例，全部都是缓存对象。
+
+因此，享元模式就是通过工厂方法创建对象，在工厂方法内部，很可能返回缓存的实例，而不是新创建实例，从而实现不可变实例的复用。
+
+> 总是使用工厂方法而不是new操作符创建实例，可获得享元模式的好处。
+
+在实际应用中，享元模式主要应用于缓存，即客户端如果重复请求某些对象，不必每次查询数据库或者读取文件，而是直接返回内存中缓存的数据。
+
+以`Student`为例，设计一个静态工厂方法，它在内部可以返回缓存的对象：
+
+```
+public class Student {
+    // 持有缓存:
+    private static final Map<String, Student> cache = new HashMap<>();
+
+    // 静态工厂方法:
+    public static Student create(int id, String name) {
+        String key = id + "\n" + name;
+        // 先查找缓存:
+        Student std = cache.get(key);
+        if (std == null) {
+            // 未找到,创建新对象:
+            System.out.println(String.format("create new Student(%s, %s)", id, name));
+            std = new Student(id, name);
+            // 放入缓存:
+            cache.put(key, std);
+        } else {
+            // 缓存中存在:
+            System.out.println(String.format("return cached Student(%s, %s)", std.id, std.name));
+        }
+        return std;
+    }
+
+    private final int id;
+    private final String name;
+
+    public Student(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+}
+```
+
+在实际应用中，我们经常使用成熟的缓存库，例如[Guava](https://github.com/google/guava)的[Cache](https://github.com/google/guava/blob/master/guava/src/com/google/common/cache/Cache.java)，因为它提供了最大缓存数量限制、定时过期等实用功能。
+
 #### 代理
 
+> 为其他对象提供一种代理以控制对这个对象的访问
+
+代理模式通过封装一个已有接口，并向调用方返回相同的接口类型，能让调用方在不改变任何代码的前提下增强某些功能（例如，鉴权、延迟加载、连接池复用等）。
+
+使用Proxy模式要求调用方持有接口，作为Proxy的类也必须实现相同的接口类型。
+
+它和Adapter模式类似，Adapter模式用于把A接口转换为B接口：
+
+```
+public BAdapter implements B {
+    private A a;
+    public BAdapter(A a) {
+        this.a = a;
+    }
+    public void b() {
+        a.a();
+    }
+}
+```
+
+而Proxy模式不是把A接口转换为B接口，它还是转换成A接口：
+
+```
+public AProxy implements A {
+    private A a;
+    public AProxy(A a) {
+        this.a = a;
+    }
+    public void a() {
+        this.a.a();
+    }
+}
+```
+
+Proxy就是给A接口再包一层，在调用`a.a()`的前后，加一些额外的代码：
+
+```
+public void a() {
+    if (getCurrentUser().isRoot()) {
+        this.a.a();
+    } else {
+        throw new SecurityException("Forbidden");
+    }
+}
+```
+
+这样一来，我们就实现了权限检查，只有符合要求的用户，才会真正调用目标方法，否则，会直接抛出异常。
+
+用Proxy实现这个权限检查，我们可以获得更清晰、更简洁的代码：
+
+- A接口：只定义接口；
+- ABusiness类：只实现A接口的业务逻辑；
+- APermissionProxy类：只实现A接口的权限检查代理。
+
+如果我们希望编写其他类型的代理，可以继续增加类似ALogProxy，而不必对现有的A接口、ABusiness类进行修改。
+
+Proxy还广泛应用在：
+
+**远程代理**
+
+远程代理即Remote Proxy，本地的调用者持有的接口实际上是一个代理，这个代理负责把对接口的方法访问转换成远程调用，然后返回结果。Java内置的RMI机制就是一个完整的远程代理模式。
+
+**虚代理**
+
+虚代理即Virtual Proxy，它让调用者先持有一个代理对象，但真正的对象尚未创建。如果没有必要，这个真正的对象是不会被创建的，直到客户端需要真的必须调用时，才创建真正的对象。JDBC的连接池返回的JDBC连接（Connection对象）就可以是一个虚代理，即获取连接时根本没有任何实际的数据库连接，直到第一次执行JDBC查询或更新操作时，才真正创建实际的JDBC连接。
+
+**保护代理**
+
+保护代理即Protection Proxy，它用代理对象控制对原始对象的访问，常用于鉴权。
+
+**智能引用**
+
+智能引用即Smart Reference，它也是一种代理对象，如果有很多客户端对它进行访问，通过内部的计数器可以在外部调用者都不使用后自动释放它。
+
+我们来看一下如何应用代理模式编写一个JDBC连接池（`DataSource`）。我们首先来编写一个虚代理，即如果调用者获取到`Connection`后，并没有执行任何SQL操作，那么这个Connection Proxy实际上并不会真正打开JDBC连接。调用者代码如下：
+
+```
+DataSource lazyDataSource = new LazyDataSource(jdbcUrl, jdbcUsername, jdbcPassword);
+System.out.println("get lazy connection...");
+try (Connection conn1 = lazyDataSource.getConnection()) {
+    // 并没有实际打开真正的Connection
+}
+System.out.println("get lazy connection...");
+try (Connection conn2 = lazyDataSource.getConnection()) {
+    try (PreparedStatement ps = conn2.prepareStatement("SELECT * FROM students")) { // 打开了真正的Connection
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                System.out.println(rs.getString("name"));
+            }
+        }
+    }
+}
+```
+
+现在我们来思考如何实现这个`LazyConnectionProxy`。为了简化代码，我们首先针对`Connection`接口做一个抽象的代理类：
+
+```
+public abstract class AbstractConnectionProxy implements Connection {
+
+    // 抽象方法获取实际的Connection:
+    protected abstract Connection getRealConnection();
+
+    // 实现Connection接口的每一个方法:
+    public Statement createStatement() throws SQLException {
+        return getRealConnection().createStatement();
+    }
+
+    public PreparedStatement prepareStatement(String sql) throws SQLException {
+        return getRealConnection().prepareStatement(sql);
+    }
+
+    ...其他代理方法...
+}
+```
+
+这个`AbstractConnectionProxy`代理类的作用是把`Connection`接口定义的方法全部实现一遍，因为`Connection`接口定义的方法太多了，后面我们要编写的`LazyConnectionProxy`只需要继承`AbstractConnectionProxy`，就不必再把`Connection`接口方法挨个实现一遍。
+
+`LazyConnectionProxy`实现如下：
+
+```
+public class LazyConnectionProxy extends AbstractConnectionProxy {
+    private Supplier<Connection> supplier;
+    private Connection target = null;
+
+    public LazyConnectionProxy(Supplier<Connection> supplier) {
+        this.supplier = supplier;
+    }
+
+    // 覆写close方法：只有target不为null时才需要关闭:
+    public void close() throws SQLException {
+        if (target != null) {
+            System.out.println("Close connection: " + target);
+            super.close();
+        }
+    }
+
+    @Override
+    protected Connection getRealConnection() {
+        if (target == null) {
+            target = supplier.get();
+        }
+        return target;
+    }
+}
+```
+
+如果调用者没有执行任何SQL语句，那么`target`字段始终为`null`。只有第一次执行SQL语句时（即调用任何类似`prepareStatement()`方法时，触发`getRealConnection()`调用），才会真正打开实际的JDBC Connection。
+
+最后，我们还需要编写一个`LazyDataSource`来支持这个`LazyConnecitonProxy`：
+
+```
+public class LazyDataSource implements DataSource {
+    private String url;
+    private String username;
+    private String password;
+
+    public LazyDataSource(String url, String username, String password) {
+        this.url = url;
+        this.username = username;
+        this.password = password;
+    }
+
+    public Connection getConnection(String username, String password) throws SQLException {
+        return new LazyConnectionProxy(() -> {
+            try {
+                Connection conn = DriverManager.getConnection(url, username, password);
+                System.out.println("Open connection: " + conn);
+                return conn;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+    ...
+}
+```
+
+输出如下：
+
+```
+get lazy connection...
+get lazy connection...
+Open connection: com.mysql.jdbc.JDBC4Connection@7a36aefa
+小明
+小红
+小军
+小白
+...
+Close connection: com.mysql.jdbc.JDBC4Connection@7a36aefa
+```
+
+可见第一个`getConnection()`调用获取到的`LazyConnectionProxy`并没有实际打开真正的JDBC Connection。
+
+使用连接池的时候，我们更希望能重复使用连接。如果调用方编写这样的代码：
+
+```
+DataSource pooledDataSource = new PooledDataSource(jdbcUrl, jdbcUsername, jdbcPassword);
+try (Connection conn = pooledDataSource.getConnection()) {
+}
+try (Connection conn = pooledDataSource.getConnection()) {
+    // 获取到的是同一个Connection
+}
+try (Connection conn = pooledDataSource.getConnection()) {
+    // 获取到的是同一个Connection
+}
+```
+
+调用方并不关心是否复用了`Connection`，但从`PooledDataSource`获取的`Connection`确实自带这个优化功能。如何实现可复用`Connection`的连接池？答案仍然是使用代理模式。
+
+```
+public class PooledConnectionProxy extends AbstractConnectionProxy {
+    // 实际的Connection:
+    Connection target;
+    // 空闲队列:
+    Queue<PooledConnectionProxy> idleQueue;
+
+    public PooledConnectionProxy(Queue<PooledConnectionProxy> idleQueue, Connection target) {
+        this.idleQueue = idleQueue;
+        this.target = target;
+    }
+
+    public void close() throws SQLException {
+        System.out.println("Fake close and released to idle queue for future reuse: " + target);
+        // 并没有调用实际Connection的close()方法,
+        // 而是把自己放入空闲队列:
+        idleQueue.offer(this);
+    }
+
+    protected Connection getRealConnection() {
+        return target;
+    }
+}
+```
+
+复用连接的关键在于覆写`close()`方法，它并没有真正关闭底层JDBC连接，而是把自己放回一个空闲队列，以便下次使用。
+
+空闲队列由`PooledDataSource`负责维护：
+
+```
+public class PooledDataSource implements DataSource {
+    private String url;
+    private String username;
+    private String password;
+
+    // 维护一个空闲队列:
+    private Queue<PooledConnectionProxy> idleQueue = new ArrayBlockingQueue<>(100);
+
+    public PooledDataSource(String url, String username, String password) {
+        this.url = url;
+        this.username = username;
+        this.password = password;
+    }
+
+    public Connection getConnection(String username, String password) throws SQLException {
+        // 首先试图获取一个空闲连接:
+        PooledConnectionProxy conn = idleQueue.poll();
+        if (conn == null) {
+            // 没有空闲连接时，打开一个新连接:
+            conn = openNewConnection();
+        } else {
+            System.out.println("Return pooled connection: " + conn.target);
+        }
+        return conn;
+    }
+
+    private PooledConnectionProxy openNewConnection() throws SQLException {
+        Connection conn = DriverManager.getConnection(url, username, password);
+        System.out.println("Open new connection: " + conn);
+        return new PooledConnectionProxy(idleQueue, conn);
+    }
+    ...
+}
+```
+
+我们执行调用方代码，输出如下：
+
+```
+Open new connection: com.mysql.jdbc.JDBC4Connection@61ca2dfa
+Fake close and released to idle queue for future reuse: com.mysql.jdbc.JDBC4Connection@61ca2dfa
+Return pooled connection: com.mysql.jdbc.JDBC4Connection@61ca2dfa
+Fake close and released to idle queue for future reuse: com.mysql.jdbc.JDBC4Connection@61ca2dfa
+Return pooled connection: com.mysql.jdbc.JDBC4Connection@61ca2dfa
+Fake close and released to idle queue for future reuse: com.mysql.jdbc.JDBC4Connection@61ca2dfa
+```
+
+除了第一次打开了一个真正的JDBC Connection，后续获取的`Connection`实际上是同一个JDBC Connection。但是，对于调用方来说，完全不需要知道底层做了哪些优化。
+
+我们实际使用的DataSource，例如HikariCP，都是基于代理模式实现的，原理同上，但增加了更多的如动态伸缩的功能（一个连接空闲一段时间后自动关闭）。
+
+Proxy模式和Decorator模式有些类似。确实，这两者看起来很像，但区别在于：Decorator模式让调用者自己创建核心类，然后组合各种功能，而Proxy模式决不能让调用者自己创建再组合，否则就失去了代理的功能。Proxy模式让调用者认为获取到的是核心类接口，但实际上是代理类。
+
 ### 行为型模式
+
+#### 责任链
+
+> 使多个对象都有机会处理请求，从而避免请求的发送者和接收者之间的耦合关系。将这些对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理它为止。
+
+责任链模式是一种把多个处理器组合在一起，依次处理请求的模式；
+
+责任链模式的好处是添加新的处理器或者重新排列处理器非常容易；
+
+责任链模式经常用在拦截、预处理请求等。
+
+责任链模式（Chain of Responsibility）是一种处理请求的模式，它让多个处理器都有机会处理该请求，直到其中某个处理成功为止。责任链模式把多个处理器串成链，然后让请求在链上传递：
+
+```ascii
+     ┌─────────┐
+     │ Request │
+     └─────────┘
+          │
+┌ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ┐
+          ▼
+│  ┌─────────────┐  │
+   │ ProcessorA  │
+│  └─────────────┘  │
+          │
+│         ▼         │
+   ┌─────────────┐
+│  │ ProcessorB  │  │
+   └─────────────┘
+│         │         │
+          ▼
+│  ┌─────────────┐  │
+   │ ProcessorC  │
+│  └─────────────┘  │
+          │
+└ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ┘
+          │
+          ▼
+```
+
+在实际场景中，财务审批就是一个责任链模式。假设某个员工需要报销一笔费用，审核者可以分为：
+
+- Manager：只能审核1000元以下的报销；
+- Director：只能审核10000元以下的报销；
+- CEO：可以审核任意额度。
+
+用责任链模式设计此报销流程时，每个审核者只关心自己责任范围内的请求，并且处理它。对于超出自己责任范围的，扔给下一个审核者处理，这样，将来继续添加审核者的时候，不用改动现有逻辑。
+
+我们来看看如何实现责任链模式。
+
+首先，我们要抽象出请求对象，它将在责任链上传递：
+
+```
+public class Request {
+    private String name;
+    private BigDecimal amount;
+
+    public Request(String name, BigDecimal amount) {
+        this.name = name;
+        this.amount = amount;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+}
+```
+
+其次要抽象出处理器：
+
+```
+public interface Handler {
+    // 返回Boolean.TRUE = 成功
+    // 返回Boolean.FALSE = 拒绝
+    // 返回null = 交下一个处理
+	Boolean process(Request request);
+}
+```
+
+并且做好约定：如果返回`Boolean.TRUE`，表示处理成功，如果返回`Boolean.FALSE`，表示处理失败（请求被拒绝），如果返回`null`，则交由下一个`Handler`处理。
+
+然后，依次编写ManagerHandler、DirectorHandler和CEOHandler。以ManagerHandler为例：
+
+```
+public class ManagerHandler implements Handler {
+    public Boolean process(Request request) {
+        // 如果超过1000元，处理不了，交下一个处理:
+        if (request.getAmount().compareTo(BigDecimal.valueOf(1000)) > 0) {
+            return null;
+        }
+        // 对Bob有偏见:
+        return !request.getName().equalsIgnoreCase("bob");
+    }
+}
+```
+
+有了不同的`Handler`后，我们还要把这些`Handler`组合起来，变成一个链，并通过一个统一入口处理：
+
+```
+public class HandlerChain {
+    // 持有所有Handler:
+    private List<Handler> handlers = new ArrayList<>();
+
+    public void addHandler(Handler handler) {
+        this.handlers.add(handler);
+    }
+
+    public boolean process(Request request) {
+        // 依次调用每个Handler:
+        for (Handler handler : handlers) {
+            Boolean r = handler.process(request);
+            if (r != null) {
+                // 如果返回TRUE或FALSE，处理结束:
+                System.out.println(request + " " + (r ? "Approved by " : "Denied by ") + handler.getClass().getSimpleName());
+                return r;
+            }
+        }
+        throw new RuntimeException("Could not handle request: " + request);
+    }
+}
+```
+
+现在，我们就可以在客户端组装出责任链，然后用责任链来处理请求：
+
+```
+// 构造责任链:
+HandlerChain chain = new HandlerChain();
+chain.addHandler(new ManagerHandler());
+chain.addHandler(new DirectorHandler());
+chain.addHandler(new CEOHandler());
+// 处理请求:
+chain.process(new Request("Bob", new BigDecimal("123.45")));
+chain.process(new Request("Alice", new BigDecimal("1234.56")));
+chain.process(new Request("Bill", new BigDecimal("12345.67")));
+chain.process(new Request("John", new BigDecimal("123456.78")));
+```
+
+责任链模式本身很容易理解，需要注意的是，`Handler`添加的顺序很重要，如果顺序不对，处理的结果可能就不是符合要求的。
+
+此外，责任链模式有很多变种。有些责任链的实现方式是通过某个`Handler`手动调用下一个`Handler`来传递`Request`，例如：
+
+```
+public class AHandler implements Handler {
+    private Handler next;
+    public void process(Request request) {
+        if (!canProcess(request)) {
+            // 手动交给下一个Handler处理:
+            next.process(request);
+        } else {
+            ...
+        }
+    }
+}
+```
+
+还有一些责任链模式，每个`Handler`都有机会处理`Request`，通常这种责任链被称为拦截器（Interceptor）或者过滤器（Filter），它的目的不是找到某个`Handler`处理掉`Request`，而是每个`Handler`都做一些工作，比如：
+
+- 记录日志；
+- 检查权限；
+- 准备相关资源；
+- ...
+
+例如，JavaEE的Servlet规范定义的`Filter`就是一种责任链模式，它不但允许每个`Filter`都有机会处理请求，还允许每个`Filter`决定是否将请求“放行”给下一个`Filter`：
+
+```
+public class AuditFilter implements Filter {
+    public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) throws IOException, ServletException {
+        log(req);
+        if (check(req)) {
+            // 放行:
+            chain.doFilter(req, resp);
+        } else {
+            // 拒绝:
+            sendError(resp);
+        }
+    }
+}
+```
+
+这种模式不但允许一个`Filter`自行决定处理`ServletRequest`和`ServletResponse`，还可以“伪造”`ServletRequest`和`ServletResponse`以便让下一个`Filter`处理，能实现非常复杂的功能。
+
+#### 命令
+
+> 将一个请求封装成一个对象，从而使你可用不同的请求对客户进行参数化，对请求排队或记录请求日志，以及支持可撤销的操作。
+
+命令模式的设计思想是把命令的创建和执行分离，使得调用者无需关心具体的执行过程。
+
+通过封装`Command`对象，命令模式可以保存已执行的命令，从而支持撤销、重做等操作。
+
+命令模式（Command）是指，把请求封装成一个命令，然后执行该命令。
+
+在使用命令模式前，我们先以一个编辑器为例子，看看如何实现简单的编辑操作：
+
+```
+public class TextEditor {
+    private StringBuilder buffer = new StringBuilder();
+
+    public void copy() {
+        ...
+    }
+
+    public void paste() {
+        String text = getFromClipBoard();
+        add(text);
+    }
+
+    public void add(String s) {
+        buffer.append(s);
+    }
+
+    public void delete() {
+        if (buffer.length() > 0) {
+            buffer.deleteCharAt(buffer.length() - 1);
+        }
+    }
+
+    public String getState() {
+        return buffer.toString();
+    }
+}
+```
+
+我们用一个`StringBuilder`模拟一个文本编辑器，它支持`copy()`、`paste()`、`add()`、`delete()`等方法。
+
+正常情况，我们像这样调用`TextEditor`：
+
+```
+TextEditor editor = new TextEditor();
+editor.add("Command pattern in text editor.\n");
+editor.copy();
+editor.paste();
+System.out.println(editor.getState());
+```
+
+这是直接调用方法，调用方需要了解`TextEditor`的所有接口信息。
+
+如果改用命令模式，我们就要把调用方发送命令和执行方执行命令分开。怎么分？
+
+解决方案是引入一个`Command`接口：
+
+```
+public interface Command {
+    void execute();
+}
+```
+
+调用方创建一个对应的`Command`，然后执行，并不关心内部是如何具体执行的。
+
+为了支持`CopyCommand`和`PasteCommand`这两个命令，我们从`Command`接口派生：
+
+```
+public class CopyCommand implements Command {
+    // 持有执行者对象:
+    private TextEditor receiver;
+
+    public CopyCommand(TextEditor receiver) {
+        this.receiver = receiver;
+    }
+
+    public void execute() {
+        receiver.copy();
+    }
+}
+
+public class PasteCommand implements Command {
+    private TextEditor receiver;
+
+    public PasteCommand(TextEditor receiver) {
+        this.receiver = receiver;
+    }
+
+    public void execute() {
+        receiver.paste();
+    }
+}
+```
+
+最后我们把`Command`和`TextEditor`组装一下，客户端这么写：
+
+```
+TextEditor editor = new TextEditor();
+editor.add("Command pattern in text editor.\n");
+// 执行一个CopyCommand:
+Command copy = new CopyCommand(editor);
+copy.execute();
+editor.add("----\n");
+// 执行一个PasteCommand:
+Command paste = new PasteCommand(editor);
+paste.execute();
+System.out.println(editor.getState());
+```
+
+这就是命令模式的结构：
+
+```ascii
+┌──────┐      ┌───────┐
+│Client│─ ─ ─>│Command│
+└──────┘      └───────┘
+                  │  ┌──────────────┐
+                  ├─>│ CopyCommand  │
+                  │  ├──────────────┤
+                  │  │editor.copy() │─ ┐
+                  │  └──────────────┘
+                  │                    │  ┌────────────┐
+                  │  ┌──────────────┐   ─>│ TextEditor │
+                  └─>│ PasteCommand │  │  └────────────┘
+                     ├──────────────┤
+                     │editor.paste()│─ ┘
+                     └──────────────┘
+```
+
+为什么搞了一大堆`Command`，多了好几个类，还不如直接这么写简单：
+
+```
+TextEditor editor = new TextEditor();
+editor.add("Command pattern in text editor.\n");
+editor.copy();
+editor.paste();
+```
+
+实际上，使用命令模式，确实增加了系统的复杂度。如果需求很简单，那么直接调用显然更直观而且更简单。
+
+那么我们还需要命令模式吗？
+
+答案是视需求而定。如果`TextEditor`复杂到一定程度，并且需要支持Undo、Redo的功能时，就需要使用命令模式，因为我们可以给每个命令增加`undo()`：
+
+```
+public interface Command {
+    void execute();
+    void undo();
+}
+```
+
+然后把执行的一系列命令用`List`保存起来，就既能支持Undo，又能支持Redo。这个时候，我们又需要一个`Invoker`对象，负责执行命令并保存历史命令：
+
+```ascii
+┌─────────────┐
+│   Client    │
+└─────────────┘
+       │
+
+       │
+       ▼
+┌─────────────┐
+│   Invoker   │
+├─────────────┤    ┌───────┐
+│List commands│─ ─>│Command│
+│invoke(c)    │    └───────┘
+│undo()       │        │  ┌──────────────┐
+└─────────────┘        ├─>│ CopyCommand  │
+                       │  ├──────────────┤
+                       │  │editor.copy() │─ ┐
+                       │  └──────────────┘
+                       │                    │  ┌────────────┐
+                       │  ┌──────────────┐   ─>│ TextEditor │
+                       └─>│ PasteCommand │  │  └────────────┘
+                          ├──────────────┤
+                          │editor.paste()│─ ┘
+                          └──────────────┘
+```
+
+可见，模式带来的设计复杂度的增加是随着需求而增加的，它减少的是系统各组件的耦合度。
+
+#### 解释器
+
+> 给定一个语言，定义它的文法的一种表示，并定义一个解释器，这个解释器使用该表示来解释语言中的句子。
+
+解释器模式通过抽象语法树实现对用户输入的解释执行。
+
+解释器模式的实现通常非常复杂，且一般只能解决一类特定问题。
+
+解释器模式（Interpreter）是一种针对特定问题设计的一种解决方案。例如，匹配字符串的时候，由于匹配条件非常灵活，使得通过代码来实现非常不灵活。举个例子，针对以下的匹配条件：
+
+- 以`+`开头的数字表示的区号和电话号码，如`+861012345678`；
+- 以英文开头，后接英文和数字，并以.分隔的域名，如`www.liaoxuefeng.com`；
+- 以`/`开头的文件路径，如`/path/to/file.txt`；
+- ...
+
+因此，需要一种通用的表示方法——正则表达式来进行匹配。正则表达式就是一个字符串，但要把正则表达式解析为语法树，然后再匹配指定的字符串，就需要一个解释器。
+
+实现一个完整的正则表达式的解释器非常复杂，但是使用解释器模式却很简单：
+
+```
+String s = "+861012345678";
+System.out.println(s.matches("^\\+\\d+$"));
+```
+
+类似的，当我们使用JDBC时，执行的SQL语句虽然是字符串，但最终需要数据库服务器的SQL解释器来把SQL“翻译”成数据库服务器能执行的代码，这个执行引擎也非常复杂，但对于使用者来说，仅仅需要写出SQL字符串即可。
+
+#### 迭代器
+
+> 提供一种方法顺序访问一个聚合对象中的各个元素，而又不需要暴露该对象的内部表示。
+
+Iterator模式常用于遍历集合，它允许集合提供一个统一的`Iterator`接口来遍历元素，同时保证调用者对集合内部的数据结构一无所知，从而使得调用者总是以相同的接口遍历各种不同类型的集合。
+
+迭代器模式（Iterator）实际上在Java的集合类中已经广泛使用了。我们以`List`为例，要遍历`ArrayList`，即使我们知道它的内部存储了一个`Object[]`数组，也不应该直接使用数组索引去遍历，因为这样需要了解集合内部的存储结构。如果使用`Iterator`遍历，那么，`ArrayList`和`LinkedList`都可以以一种统一的接口来遍历：
+
+```
+List<String> list = ...
+for (Iterator<String> it = list.iterator(); it.hasNext(); ) {
+    String s = it.next();
+}
+```
+
+实际上，因为Iterator模式十分有用，因此，Java允许我们直接把任何支持`Iterator`的集合对象用`foreach`循环写出来：
+
+```
+List<String> list = ...
+for (String s : list) {
+
+}
+```
+
+然后由Java编译器完成Iterator模式的所有循环代码。
+
+虽然我们对如何使用Iterator有了一定了解，但如何实现一个Iterator模式呢？我们以一个自定义的集合为例，通过Iterator模式实现倒序遍历：
+
+```
+public class ReverseArrayCollection<T> implements Iterable<T> {
+    // 以数组形式持有集合:
+    private T[] array;
+
+    public ReverseArrayCollection(T... objs) {
+        this.array = Arrays.copyOfRange(objs, 0, objs.length);
+    }
+
+    public Iterator<T> iterator() {
+        return ???;
+    }
+}
+```
+
+实现Iterator模式的关键是返回一个`Iterator`对象，该对象知道集合的内部结构，因为它可以实现倒序遍历。我们使用Java的内部类实现这个`Iterator`：
+
+```
+public class ReverseArrayCollection<T> implements Iterable<T> {
+    private T[] array;
+
+    public ReverseArrayCollection(T... objs) {
+        this.array = Arrays.copyOfRange(objs, 0, objs.length);
+    }
+
+    public Iterator<T> iterator() {
+        return new ReverseIterator();
+    }
+
+    class ReverseIterator implements Iterator<T> {
+        // 索引位置:
+        int index;
+
+        public ReverseIterator() {
+            // 创建Iterator时,索引在数组末尾:
+            this.index = ReverseArrayCollection.this.array.length;
+        }
+
+        public boolean hasNext() {
+            // 如果索引大于0,那么可以移动到下一个元素(倒序往前移动):
+            return index > 0;
+        }
+
+        public T next() {
+            // 将索引移动到下一个元素并返回(倒序往前移动):
+            index--;
+            return array[index];
+        }
+    }
+}
+```
+
+使用内部类的好处是内部类隐含地持有一个它所在对象的`this`引用，可以通过`ReverseArrayCollection.this`引用到它所在的集合。上述代码实现的逻辑非常简单，但是实际应用时，如果考虑到多线程访问，当一个线程正在迭代某个集合，而另一个线程修改了集合的内容时，是否能继续安全地迭代，还是抛出`ConcurrentModificationException`，就需要更仔细地设计。
+
+#### 中介
+
+> 用一个中介对象来封装一系列的对象交互。中介者使各个对象不需要显式地相互引用，从而使其耦合松散，而且可以独立地改变它们之间的交互。
+
+中介模式是通过引入一个中介对象，把多边关系变成多个双边关系，从而简化系统组件的交互耦合度。
+
+中介模式（Mediator）又称调停者模式，它的目的是把多方会谈变成双方会谈，从而实现多方的松耦合。
+
+有些童鞋听到中介立刻想到房产中介，立刻气不打一处来。这个中介模式与房产中介还真有点像，所以消消气，先看例子。
+
+考虑一个简单的点餐输入：
+
+ 汉堡
+
+ 鸡块
+
+ 薯条
+
+ 咖啡
+
+选择全部 取消所有 反选
+
+这个小系统有4个参与对象：
+
+- 多选框；
+- “选择全部”按钮；
+- “取消所有”按钮；
+- “反选”按钮。
+
+它的复杂性在于，当多选框变化时，它会影响“选择全部”和“取消所有”按钮的状态（是否可点击），当用户点击某个按钮时，例如“反选”，除了会影响多选框的状态，它又可能影响“选择全部”和“取消所有”按钮的状态。
+
+所以这是一个多方会谈，逻辑写起来很复杂：
+
+```ascii
+┌─────────────────┐     ┌─────────────────┐
+│  CheckBox List  │<───>│SelectAll Button │
+└─────────────────┘     └─────────────────┘
+         ▲ ▲                     ▲
+         │ └─────────────────────┤
+         ▼                       │
+┌─────────────────┐     ┌────────┴────────┐
+│SelectNone Button│<────│ Inverse Button  │
+└─────────────────┘     └─────────────────┘
+```
+
+如果我们引入一个中介，把多方会谈变成多个双方会谈，虽然多了一个对象，但对象之间的关系就变简单了：
+
+```ascii
+            ┌─────────────────┐
+     ┌─────>│  CheckBox List  │
+     │      └─────────────────┘
+     │      ┌─────────────────┐
+     │ ┌───>│SelectAll Button │
+     ▼ ▼    └─────────────────┘
+┌─────────┐
+│Mediator │
+└─────────┘
+     ▲ ▲    ┌─────────────────┐
+     │ └───>│SelectNone Button│
+     │      └─────────────────┘
+     │      ┌─────────────────┐
+     └─────>│ Inverse Button  │
+            └─────────────────┘
+```
+
+下面我们用中介模式来实现各个UI组件的交互。首先把UI组件给画出来：
+
+```
+public class Main {
+    public static void main(String[] args) {
+        new OrderFrame("Hanburger", "Nugget", "Chip", "Coffee");
+    }
+}
+
+class OrderFrame extends JFrame {
+    public OrderFrame(String... names) {
+        setTitle("Order");
+        setSize(460, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        Container c = getContentPane();
+        c.setLayout(new FlowLayout(FlowLayout.LEADING, 20, 20));
+        c.add(new JLabel("Use Mediator Pattern"));
+        List<JCheckBox> checkboxList = addCheckBox(names);
+        JButton selectAll = addButton("Select All");
+        JButton selectNone = addButton("Select None");
+        selectNone.setEnabled(false);
+        JButton selectInverse = addButton("Inverse Select");
+        new Mediator(checkBoxList, selectAll, selectNone, selectInverse);
+        setVisible(true);
+    }
+
+    private List<JCheckBox> addCheckBox(String... names) {
+        JPanel panel = new JPanel();
+        panel.add(new JLabel("Menu:"));
+        List<JCheckBox> list = new ArrayList<>();
+        for (String name : names) {
+            JCheckBox checkbox = new JCheckBox(name);
+            list.add(checkbox);
+            panel.add(checkbox);
+        }
+        getContentPane().add(panel);
+        return list;
+    }
+
+    private JButton addButton(String label) {
+        JButton button = new JButton(label);
+        getContentPane().add(button);
+        return button;
+    }
+}
+```
+
+然后，我们设计一个Mediator类，它引用4个UI组件，并负责跟它们交互：
+
+```
+public class Mediator {
+    // 引用UI组件:
+    private List<JCheckBox> checkBoxList;
+    private JButton selectAll;
+    private JButton selectNone;
+    private JButton selectInverse;
+
+    public Mediator(List<JCheckBox> checkBoxList, JButton selectAll, JButton selectNone, JButton selectInverse) {
+        this.checkBoxList = checkBoxList;
+        this.selectAll = selectAll;
+        this.selectNone = selectNone;
+        this.selectInverse = selectInverse;
+        // 绑定事件:
+        this.checkBoxList.forEach(checkBox -> {
+            checkBox.addChangeListener(this::onCheckBoxChanged);
+        });
+        this.selectAll.addActionListener(this::onSelectAllClicked);
+        this.selectNone.addActionListener(this::onSelectNoneClicked);
+        this.selectInverse.addActionListener(this::onSelectInverseClicked);
+    }
+
+    // 当checkbox有变化时:
+    public void onCheckBoxChanged(ChangeEvent event) {
+        boolean allChecked = true;
+        boolean allUnchecked = true;
+        for (var checkBox : checkBoxList) {
+            if (checkBox.isSelected()) {
+                allUnchecked = false;
+            } else {
+                allChecked = false;
+            }
+        }
+        selectAll.setEnabled(!allChecked);
+        selectNone.setEnabled(!allUnchecked);
+    }
+
+    // 当点击select all:
+    public void onSelectAllClicked(ActionEvent event) {
+        checkBoxList.forEach(checkBox -> checkBox.setSelected(true));
+        selectAll.setEnabled(false);
+        selectNone.setEnabled(true);
+    }
+
+    // 当点击select none:
+    public void onSelectNoneClicked(ActionEvent event) {
+        checkBoxList.forEach(checkBox -> checkBox.setSelected(false));
+        selectAll.setEnabled(true);
+        selectNone.setEnabled(false);
+    }
+
+    // 当点击select inverse:
+    public void onSelectInverseClicked(ActionEvent event) {
+        checkBoxList.forEach(checkBox -> checkBox.setSelected(!checkBox.isSelected()));
+        onCheckBoxChanged(null);
+    }
+}
+```
+
+运行一下看看效果：
+
+![mediator](https://www.liaoxuefeng.com/files/attachments/1326792507916322/l)
+
+使用Mediator模式后，我们得到了以下好处：
+
+- 各个UI组件互不引用，这样就减少了组件之间的耦合关系；
+- Mediator用于当一个组件发生状态变化时，根据当前所有组件的状态决定更新某些组件；
+- 如果新增一个UI组件，我们只需要修改Mediator更新状态的逻辑，现有的其他UI组件代码不变。
+
+Mediator模式经常用在有众多交互组件的UI上。为了简化UI程序，MVC模式以及MVVM模式都可以看作是Mediator模式的扩展。
+
+#### 备忘录
+
+
+
+#### 观察者
+
+#### 状态
+
+#### 策略
+
+#### 模板方法
+
+#### 访问者
 
 ## Web开发
 
