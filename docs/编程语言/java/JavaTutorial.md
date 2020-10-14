@@ -10428,7 +10428,317 @@ System.out.println(pay3);
 
 #### 模板方法
 
+> 定义一个操作中的算法的骨架，而将一些步骤延迟到子类中，使得子类可以不改变一个算法的结构即可重定义该算法的某些特定步骤。
+
+模板方法Template Method是一种高层定义骨架，底层实现细节的设计模式，适用于流程固定，但某些步骤不确定或可替换的情况。
+
+它的主要思想是，定义一个操作的一系列步骤，对于某些暂时确定不下来的步骤，就留给子类去实现好了，这样不同的子类就可以定义出不同的步骤。
+
+因此，模板方法的核心在于定义一个“骨架”。我们还是举例说明。
+
+假设我们开发了一个从数据库读取设置的类：
+
+```
+public class Setting {
+    public final String getSetting(String key) {
+        String value = readFromDatabase(key);
+        return value;
+    }
+
+	private String readFromDatabase(String key) {
+        // TODO: 从数据库读取
+    }
+}
+```
+
+由于从数据库读取数据较慢，我们可以考虑把读取的设置缓存起来，这样下一次读取同样的key就不必再访问数据库了。但是怎么实现缓存，暂时没想好，但不妨碍我们先写出使用缓存的代码：
+
+```
+public class Setting {
+    public final String getSetting(String key) {
+        // 先从缓存读取:
+        String value = lookupCache(key);
+        if (value == null) {
+            // 在缓存中未找到,从数据库读取:
+            value = readFromDatabase(key);
+            System.out.println("[DEBUG] load from db: " + key + " = " + value);
+            // 放入缓存:
+            putIntoCache(key, value);
+        } else {
+            System.out.println("[DEBUG] load from cache: " + key + " = " + value);
+        }
+        return value;
+    }
+}
+```
+
+整个流程没有问题，但是，`lookupCache(key)`和`putIntoCache(key, value)`这两个方法还根本没实现，怎么编译通过？这个不要紧，我们声明抽象方法就可以：
+
+```
+public abstract class AbstractSetting {
+    public final String getSetting(String key) {
+        String value = lookupCache(key);
+        if (value == null) {
+            value = readFromDatabase(key);
+            putIntoCache(key, value);
+        }
+        return value;
+    }
+
+    protected abstract String lookupCache(String key);
+
+    protected abstract void putIntoCache(String key, String value);
+}
+```
+
+因为声明了抽象方法，自然整个类也必须是抽象类。如何实现`lookupCache(key)`和`putIntoCache(key, value)`这两个方法就交给子类了。子类其实并不关心核心代码`getSetting(key)`的逻辑，它只需要关心如何完成两个小小的子任务就可以了。
+
+假设我们希望用一个`Map`做缓存，那么可以写一个`LocalSetting`：
+
+```
+public class LocalSetting extends AbstractSetting {
+    private Map<String, String> cache = new HashMap<>();
+
+    protected String lookupCache(String key) {
+        return cache.get(key);
+    }
+
+    protected void putIntoCache(String key, String value) {
+        cache.put(key, value);
+    }
+}
+```
+
+如果我们要使用Redis做缓存，那么可以再写一个`RedisSetting`：
+
+```
+public class RedisSetting extends AbstractSetting {
+    private RedisClient client = RedisClient.create("redis://localhost:6379");
+
+    protected String lookupCache(String key) {
+        try (StatefulRedisConnection<String, String> connection = client.connect()) {
+            RedisCommands<String, String> commands = connection.sync();
+            return commands.get(key);
+        }
+    }
+
+    protected void putIntoCache(String key, String value) {
+        try (StatefulRedisConnection<String, String> connection = client.connect()) {
+            RedisCommands<String, String> commands = connection.sync();
+            commands.set(key, value);
+        }
+    }
+}
+```
+
+客户端代码使用本地缓存的代码这么写：
+
+```
+AbstractSetting setting1 = new LocalSetting();
+System.out.println("test = " + setting1.getSetting("test"));
+System.out.println("test = " + setting1.getSetting("test"));
+```
+
+要改成Redis缓存，只需要把`LocalSetting`替换为`RedisSetting`：
+
+```
+AbstractSetting setting2 = new RedisSetting();
+System.out.println("autosave = " + setting2.getSetting("autosave"));
+System.out.println("autosave = " + setting2.getSetting("autosave"));
+```
+
+可见，模板方法的核心思想是：父类定义骨架，子类实现某些细节。
+
+为了防止子类重写父类的骨架方法，可以在父类中对骨架方法使用`final`。对于需要子类实现的抽象方法，一般声明为`protected`，使得这些方法对外部客户端不可见。
+
+Java标准库也有很多模板方法的应用。在集合类中，`AbstractList`和`AbstractQueuedSynchronizer`都定义了很多通用操作，子类只需要实现某些必要方法。
+
 #### 访问者
+
+> 表示一个作用于某对象结构中的各元素的操作。它使你可以在不改变各元素的类的前提下定义作用于这些元素的新操作。
+
+访问者模式是为了抽象出作用于一组复杂对象的操作，并且后续可以新增操作而不必对现有的对象结构做任何改动。
+
+访问者模式（Visitor）是一种操作一组对象的操作，它的目的是不改变对象的定义，但允许新增不同的访问者，来定义新的操作。
+
+访问者模式的设计比较复杂，如果我们查看GoF原始的访问者模式，它是这么设计的：
+
+```ascii
+   ┌─────────┐       ┌───────────────────────┐
+   │ Client  │─ ─ ─ >│        Visitor        │
+   └─────────┘       ├───────────────────────┤
+        │            │visitElementA(ElementA)│
+                     │visitElementB(ElementB)│
+        │            └───────────────────────┘
+                                 ▲
+        │                ┌───────┴───────┐
+                         │               │
+        │         ┌─────────────┐ ┌─────────────┐
+                  │  VisitorA   │ │  VisitorB   │
+        │         └─────────────┘ └─────────────┘
+        ▼
+┌───────────────┐        ┌───────────────┐
+│ObjectStructure│─ ─ ─ ─>│    Element    │
+├───────────────┤        ├───────────────┤
+│handle(Visitor)│        │accept(Visitor)│
+└───────────────┘        └───────────────┘
+                                 ▲
+                        ┌────────┴────────┐
+                        │                 │
+                ┌───────────────┐ ┌───────────────┐
+                │   ElementA    │ │   ElementB    │
+                ├───────────────┤ ├───────────────┤
+                │accept(Visitor)│ │accept(Visitor)│
+                │doA()          │ │doB()          │
+                └───────────────┘ └───────────────┘
+```
+
+上述模式的复杂之处在于上述访问者模式为了实现所谓的“双重分派”，设计了一个回调再回调的机制。因为Java只支持基于多态的单分派模式，这里强行模拟出“双重分派”反而加大了代码的复杂性。
+
+这里我们只介绍简化的访问者模式。假设我们要递归遍历某个文件夹的所有子文件夹和文件，然后找出`.java`文件，正常的做法是写个递归：
+
+```
+void scan(File dir, List<File> collector) {
+    for (File file : dir.listFiles()) {
+        if (file.isFile() && file.getName().endsWith(".java")) {
+            collector.add(file);
+        } else if (file.isDir()) {
+            // 递归调用:
+            scan(file, collector);
+        }
+    }
+}
+```
+
+上述代码的问题在于，扫描目录的逻辑和处理.java文件的逻辑混在了一起。如果下次需要增加一个清理`.class`文件的功能，就必须再重复写扫描逻辑。
+
+因此，访问者模式先把数据结构（这里是文件夹和文件构成的树型结构）和对其的操作（查找文件）分离开，以后如果要新增操作（例如清理`.class`文件），只需要新增访问者，不需要改变现有逻辑。
+
+用访问者模式改写上述代码步骤如下：
+
+首先，我们需要定义访问者接口，即该访问者能够干的事情：
+
+```
+public interface Visitor {
+    // 访问文件夹:
+    void visitDir(File dir);
+    // 访问文件:
+    void visitFile(File file);
+}
+```
+
+紧接着，我们要定义能持有文件夹和文件的数据结构`FileStructure`：
+
+```
+public class FileStructure {
+    // 根目录:
+    private File path;
+    public FileStructure(File path) {
+        this.path = path;
+    }
+}
+```
+
+然后，我们给`FileStructure`增加一个`handle()`方法，传入一个访问者：
+
+```
+public class FileStructure {
+    ...
+
+    public void handle(Visitor visitor) {
+		scan(this.path, visitor);
+	}
+
+	private void scan(File file, Visitor visitor) {
+		if (file.isDirectory()) {
+            // 让访问者处理文件夹:
+			visitor.visitDir(file);
+			for (File sub : file.listFiles()) {
+                // 递归处理子文件夹:
+				scan(sub, visitor);
+			}
+		} else if (file.isFile()) {
+            // 让访问者处理文件:
+			visitor.visitFile(file);
+		}
+	}
+}
+```
+
+这样，我们就把访问者的行为抽象出来了。如果我们要实现一种操作，例如，查找`.java`文件，就传入`JavaFileVisitor`：
+
+```
+FileStructure fs = new FileStructure(new File("."));
+fs.handle(new JavaFileVisitor());
+```
+
+这个`JavaFileVisitor`实现如下：
+
+```
+public class JavaFileVisitor implements Visitor {
+    public void visitDir(File dir) {
+        System.out.println("Visit dir: " + dir);
+    }
+
+    public void visitFile(File file) {
+        if (file.getName().endsWith(".java")) {
+            System.out.println("Found java file: " + file);
+        }
+    }
+}
+```
+
+类似的，如果要清理`.class`文件，可以再写一个`ClassFileClearnerVisitor`：
+
+```
+public class ClassFileCleanerVisitor implements Visitor {
+	public void visitDir(File dir) {
+	}
+
+	public void visitFile(File file) {
+		if (file.getName().endsWith(".class")) {
+			System.out.println("Will clean class file: " + file);
+		}
+	}
+}
+```
+
+可见，访问者模式的核心思想是为了访问比较复杂的数据结构，不去改变数据结构，而是把对数据的操作抽象出来，在“访问”的过程中以回调形式在访问者中处理操作逻辑。如果要新增一组操作，那么只需要增加一个新的访问者。
+
+实际上，Java标准库提供的`Files.walkFileTree()`已经实现了一个访问者模式：
+
+```
+import java.io.*;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
+public class Main {
+    public static void main(String[] args) throws IOException {
+        Files.walkFileTree(Paths.get("."), new MyFileVisitor());
+    }
+}
+
+// 实现一个FileVisitor:
+class MyFileVisitor extends SimpleFileVisitor<Path> {
+    // 处理Directory:
+    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+        System.out.println("pre visit dir: " + dir);
+        // 返回CONTINUE表示继续访问:
+        return FileVisitResult.CONTINUE;
+    }
+
+    // 处理File:
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        System.out.println("visit file: " + file);
+        // 返回CONTINUE表示继续访问:
+        return FileVisitResult.CONTINUE;
+    }
+}
+
+```
+
+`Files.walkFileTree()`允许访问者返回`FileVisitResult.CONTINUE`以便继续访问，或者返回`FileVisitResult.TERMINATE`停止访问。
+
+类似的，对XML的SAX处理也是一个访问者模式，我们需要提供一个SAX Handler作为访问者处理XML的各个节点。
 
 ## Web开发
 
