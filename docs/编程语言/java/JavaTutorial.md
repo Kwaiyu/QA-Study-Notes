@@ -10742,6 +10742,380 @@ class MyFileVisitor extends SimpleFileVisitor<Path> {
 
 ## Web开发
 
+JavaEE是Java Platform Enterprise Edition的缩写，即Java企业平台。JavaEE并不是一个软件产品，它更多的是一种软件架构和设计思想。我们可以把JavaEE看作是在JavaSE的基础上，开发的一系列基于服务器的组件、API标准和通用架构。最核心的组件就是基于Servlet标准的Web服务器，开发者编写的应用程序是基于Servlet API并运行在Web服务器内部的：
+
+```ascii
+┌─────────────┐
+│┌───────────┐│
+││ User App  ││
+│├───────────┤│
+││Servlet API││
+│└───────────┘│
+│ Web Server  │
+├─────────────┤
+│   JavaSE    │
+└─────────────┘
+```
+
+此外，JavaEE还有一系列技术标准：
+
+- EJB：Enterprise JavaBean，企业级JavaBean，早期经常用于实现应用程序的业务逻辑，现在基本被轻量级框架如Spring所取代；
+- JAAS：Java Authentication and Authorization Service，一个标准的认证和授权服务，常用于企业内部，Web程序通常使用更轻量级的自定义认证；
+- JCA：JavaEE Connector Architecture，用于连接企业内部的EIS系统等；
+- JMS：Java Message Service，用于消息服务；
+- JTA：Java Transaction API，用于分布式事务；
+- JAX-WS：Java API for XML Web Services，用于构建基于XML的Web服务；
+- ...
+
+### Web基础
+
+使用B/S架构时，总是通过HTTP协议实现通信；
+
+Web开发通常是指开发服务器端的Web应用程序。
+
+**HTTP协议**
+
+在Web应用中，浏览器请求一个URL，服务器就把生成的HTML网页发送给浏览器，浏览器和服务器之间的传输协议就是HTTP，HTTP协议是一个基于TCP协议之上的请求-响应协议。
+
+对于Browser来说，请求页面的流程：
+
+1. 与服务器建立TCP连接；
+2. 发送HTTP请求；
+3. 收取HTTP响应，然后把网页在浏览器中显示出来。
+
+浏览器发送的HTTP请求如下：
+
+```
+GET / HTTP/1.1
+Host: www.sina.com.cn
+User-Agent: Mozilla/5.0 xxx
+Accept: */*
+Accept-Language: zh-CN,zh;q=0.9,en-US;q=0.8
+```
+
+第一行表示使用`GET`请求方法获取路径为`/`的资源，并使用HTTP1.1协议。从第二行开始每行都是以`Header: Value`形式表示的HTTP头，比较常用的HTTP Header包括：
+
+- Host：表示请求的主机名，因为一个服务器上可能运行着多个网站，因此，Host表示浏览器正在请求的域名；
+- User-Agent：标识客户端本身，例如Chrome浏览器的标识类似`Mozilla/5.0 ... Chrome/79`，IE浏览器的标识类似`Mozilla/5.0 (Windows NT ...) like Gecko`；
+- Accept：表示浏览器能接收的资源类型，如`text/*`，`image/*`或者`*/*`表示所有；
+- Accept-Language：表示浏览器偏好的语言，服务器可以据此返回不同语言的网页；
+- Accept-Encoding：表示浏览器可以支持的压缩类型，例如`gzip, deflate, br`。
+
+服务器的响应如下：
+
+```
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 21932
+Content-Encoding: gzip
+Cache-Control: max-age=300
+
+<html>...网页数据...
+```
+
+服务器响应的第一行总是协议版本号+空格+响应状态码+文本。其中`2xx`表示成功，`3xx`表示重定向，`4xx`表示客户端引发的错误，`5xx`表示服务器端引发的错误。数字是给程序识别，文本则是给开发者调试使用的。常见的响应代码有：
+
+- 200 OK：表示成功；
+- 301 Moved Permanently：表示该URL已经永久重定向；
+- 302 Found：表示该URL需要临时重定向；
+- 304 Not Modified：表示该资源没有修改，客户端可以使用本地缓存的版本；
+- 400 Bad Request：表示客户端发送了一个错误的请求，例如参数无效；
+- 401 Unauthorized：表示客户端因为身份未验证而不允许访问该URL；
+- 403 Forbidden：表示服务器因为权限问题拒绝了客户端的请求；
+- 404 Not Found：表示客户端请求了一个不存在的资源；
+- 500 Internal Server Error：表示服务器处理时内部出错，例如因为无法连接数据库；
+- 503 Service Unavailable：表示服务器此刻暂时无法处理请求。
+
+从第二行开始，服务器每一行均返回一个HTTP头。服务器经常返回的HTTP Header包括：
+
+- Content-Type：表示该响应内容的类型，例如`text/html`，`image/jpeg`；
+- Content-Length：表示该响应内容的长度（字节数）；
+- Content-Encoding：表示该响应压缩算法，例如`gzip`；
+- Cache-Control：指示客户端应如何缓存，例如`max-age=300`表示可以最多缓存300秒。
+
+HTTP请求和响应都由HTTP Header和HTTP Body构成，浏览器读取HTTP Body，并根据Header信息中指示的`Content-Type`、`Content-Encoding`等解压后显示网页、图像或其他内容。前面的网络编程>HTTP编程是以客户端的身份去请求服务器资源，现在需要以服务器的身份响应客户端的请求，通常称为Web开发。
+
+**编写HTTP Server**
+
+一个HTTP Server本质上是一个TCP服务器，我们先用TCP编程的多线程实现服务器端框架：
+
+```
+public class Server {
+    public static void main(String[] args) throws IOException {
+        ServerSocket ss = new ServerSocket(8080); // 监听指定端口
+        System.out.println("server is running...");
+        for (;;) {
+            Socket sock = ss.accept();
+            System.out.println("connected from " + sock.getRemoteSocketAddress());
+            Thread t = new Handler(sock);
+            t.start();
+        }
+    }
+}
+
+class Handler extends Thread {
+    Socket sock;
+
+    public Handler(Socket sock) {
+        this.sock = sock;
+    }
+
+    public void run() {
+        try (InputStream input = this.sock.getInputStream()) {
+            try (OutputStream output = this.sock.getOutputStream()) {
+                handle(input, output);
+            }
+        } catch (Exception e) {
+            try {
+                this.sock.close();
+            } catch (IOException ioe) {
+            }
+            System.out.println("client disconnected.");
+        }
+    }
+
+    private void handle(InputStream input, OutputStream output) throws IOException {
+        var reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+        var writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
+        // TODO: 处理HTTP请求
+    }
+}
+```
+
+只需要在`handle()`方法中用Reader读取HTTP请求，用Write发送HTTP响应，即可实现一个最简单的HTTP服务器，如下：
+
+```
+private void handle(InputStream input, OutputStream output) throws IOException {
+    System.out.println("Process new http request...");
+    var reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+    var writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
+    // 读取HTTP请求:
+    boolean requestOk = false;
+    String first = reader.readLine();
+    if (first.startsWith("GET / HTTP/1.")) {
+        requestOk = true;
+    }
+    for (;;) {
+        String header = reader.readLine();
+        if (header.isEmpty()) { // 读取到空行时, HTTP Header读取完毕
+            break;
+        }
+        System.out.println(header);
+    }
+    System.out.println(requestOk ? "Response OK" : "Response Error");
+    if (!requestOk) {
+        // 发送错误响应:
+        writer.write("HTTP/1.0 404 Not Found\r\n");
+        writer.write("Content-Length: 0\r\n");
+        writer.write("\r\n");
+        writer.flush();
+    } else {
+        // 发送成功响应:
+        String data = "<html><body><h1>Hello, world!</h1></body></html>";
+        int length = data.getBytes(StandardCharsets.UTF_8).length;
+        writer.write("HTTP/1.0 200 OK\r\n");
+        writer.write("Connection: close\r\n");
+        writer.write("Content-Type: text/html\r\n");
+        writer.write("Content-Length: " + length + "\r\n");
+        writer.write("\r\n"); // 空行标识Header和Body的分隔
+        writer.write(data);
+        writer.flush();
+    }
+}
+```
+
+核心代码是先读取HTTP请求，这里我们只处理`GET /`的请求，当读取到空行时，表示已读到连续两个`\r\n`，说明请求结束，可以发送响应。发送响应的时候，首先发送响应代码`HTTP/1.0 200 OK`表示一个成功的200响应，使用`HTTP/1.0`协议，然后，依次发送Header，发送完Header后，再发送一个空行标识Header结束，紧接着发送HTTP Body，在浏览器输入`http://local.liaoxuefeng.com:8080/`就可以看到响应页面。1.0是早期版本，浏览器每次建立TCP连接后，只发送一个HTTP请求并接收一个HTTP响应，然后就关闭TCP连接。由于创建TCP连接本身就需要消耗一定的时间，因此，HTTP 1.1允许浏览器和服务器在同一个TCP连接上反复发送、接收多个HTTP请求和响应，这样就大大提高了传输效率。HTTP 2.0可以支持浏览器同时发出多个请求，但每个请求需要唯一标识，服务器可以不按请求的顺序返回多个响应，由浏览器自己把收到的响应和请求对应起来。可见，HTTP 2.0进一步提高了传输效率，因为浏览器发出一个请求后，不必等待响应，就可以继续发下一个请求。HTTP 3.0为了进一步提高速度，将抛弃TCP协议，改为使用无需创建连接的UDP协议。
+
+### Servlet入门
+
+编写Web应用程序就是编写Servlet处理HTTP请求；
+
+Servlet API提供了`HttpServletRequest`和`HttpServletResponse`两个高级接口来封装HTTP请求和响应；
+
+Web应用程序必须按固定结构组织并打包为`.war`文件；
+
+需要启动Web服务器来加载我们的war包来运行Servlet。
+
+要编写一个完善的HTTP服务器，以HTTP/1.1为例，需要考虑的包括：
+
+- 识别正确和错误的HTTP请求；
+- 识别正确和错误的HTTP头；
+- 复用TCP连接；
+- 复用线程；
+- IO异常处理；
+- ...
+
+这些基础工作需要耗费大量的时间无法做到高效而可靠地开发，因此处理TCP连接，解析HTTP协议这些底层工作统统扔给现成的Web服务器去做，只需要把自己的应用程序跑在Web服务器上。为了实现这个目的，JavaEE提供了Servlet API，我们使用Servlet API编写自己的Servlet来处理HTTP请求，Web服务器实现Servlet API接口，实现底层功能：
+
+```
+// WebServlet注解表示这是一个Servlet，并映射到地址/:
+@WebServlet(urlPatterns = "/")
+public class HelloServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        // 设置响应类型:
+        resp.setContentType("text/html");
+        // 获取输出流:
+        PrintWriter pw = resp.getWriter();
+        // 写入响应:
+        pw.write("<h1>Hello, world!</h1>");
+        // 最后不要忘记flush强制输出:
+        pw.flush();
+    }
+}
+```
+
+一个Servlet总是继承自`HttpServlet`，然后覆写`doGet()`或`doPost()`方法。注意到`doGet()`方法传入了`HttpServletRequest`和`HttpServletResponse`两个对象，分别代表HTTP请求和响应。我们使用Servlet API时，并不直接与底层TCP交互，也不需要解析HTTP协议，因为`HttpServletRequest`和`HttpServletResponse`就已经封装好了请求和响应。以发送响应为例，我们只需要设置正确的响应类型，然后获取`PrintWriter`，写入响应即可。
+
+而Servlet API是一个jar包，需要通过Maven来引入它，才能正常编译。编写`pom.xml`文件如下：
+
+```
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.itranswarp.learnjava</groupId>
+    <artifactId>web-servlet-hello</artifactId>
+    <packaging>war</packaging>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <java.version>11</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>hello</finalName>
+    </build>
+</project>
+```
+
+注意到打包类型`war`，表示Java Web Application Archive。
+
+`<scope>`指定为`provided`，表示编译时使用，但不会打包到`.war`文件中，因为运行期Web服务器本身已经提供了Servlet API相关的jar包。
+
+我们还需要在工程目录下创建一个`web.xml`描述文件，放到`src/main/webapp/WEB-INF`目录下（固定目录结构，不要修改路径，注意大小写）。文件内容可以固定如下：
+
+```
+<!DOCTYPE web-app PUBLIC
+ "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+ "http://java.sun.com/dtd/web-app_2_3.dtd">
+<web-app>
+  <display-name>Archetype Created Web Application</display-name>
+</web-app>
+```
+
+整个工程结构如下：
+
+```ascii
+web-servlet-hello
+├── pom.xml
+└── src
+    └── main
+        ├── java
+        │   └── com
+        │       └── itranswarp
+        │           └── learnjava
+        │               └── servlet
+        │                   └── HelloServlet.java
+        ├── resources
+        └── webapp
+            └── WEB-INF
+                └── web.xml
+```
+
+运行Maven命令`mvn clean package`，在`target`目录下得到一个`hello.war`文件，这个文件就是我们编译打包后的Web应用程序。
+
+现在问题又来了：我们应该如何运行这个`war`文件？
+
+普通的Java程序是通过启动JVM，然后执行`main()`方法开始运行。但是Web应用程序有所不同，我们无法直接运行`war`文件，必须先启动Web服务器，再由Web服务器加载我们编写的`HelloServlet`，这样就可以让`HelloServlet`处理浏览器发送的请求。
+
+因此，我们首先要找一个支持Servlet API的Web服务器。常用的服务器有：
+
+- [Tomcat](https://tomcat.apache.org/)：由Apache开发的开源免费服务器；
+- [Jetty](https://www.eclipse.org/jetty/)：由Eclipse开发的开源免费服务器；
+- [GlassFish](https://javaee.github.io/glassfish/)：一个开源的全功能JavaEE服务器。
+
+还有一些收费的商用服务器，如Oracle的[WebLogic](https://www.oracle.com/middleware/weblogic/)，IBM的[WebSphere](https://www.ibm.com/cloud/websphere-application-platform/)。
+
+无论使用哪个服务器，只要它支持Servlet API 4.0（因为我们引入的Servlet版本是4.0），我们的war包都可以在上面运行。这里我们选择使用最广泛的开源免费的Tomcat服务器。
+
+要运行我们的`hello.war`，首先要[下载Tomcat服务器](https://tomcat.apache.org/download-90.cgi)，解压后，把`hello.war`复制到Tomcat的`webapps`目录下，然后切换到`bin`目录，执行`startup.sh`或`startup.bat`启动Tomcat服务器：
+
+```
+$ ./startup.sh 
+Using CATALINA_BASE:   .../apache-tomcat-9.0.30
+Using CATALINA_HOME:   .../apache-tomcat-9.0.30
+Using CATALINA_TMPDIR: .../apache-tomcat-9.0.30/temp
+Using JRE_HOME:        .../jdk-11.jdk/Contents/Home
+Using CLASSPATH:       .../apache-tomcat-9.0.30/bin/bootstrap.jar:...
+Tomcat started.
+```
+
+在浏览器输入`http://localhost:8080/hello/`即可看到`HelloServlet`的输出。啥路径是`/hello/`而不是`/`？因为一个Web服务器允许同时运行多个Web App，而我们的Web App叫`hello`，因此，第一级目录`/hello`表示Web App的名字，后面的`/`才是我们在`HelloServlet`中映射的路径。
+
+那能不能直接使用`/`而不是`/hello/`？毕竟`/`比较简洁。
+
+答案是肯定的。先关闭Tomcat（执行`shutdown.sh`或`shutdown.bat`），然后删除Tomcat的webapps目录下的所有文件夹和文件，最后把我们的`hello.war`复制过来，改名为`ROOT.war`，文件名为`ROOT`的应用程序将作为默认应用，启动后直接访问`http://localhost:8080/`即可。
+
+实际上，类似Tomcat这样的服务器也是Java编写的，启动Tomcat服务器实际上是启动Java虚拟机，执行Tomcat的`main()`方法，然后由Tomcat负责加载我们的`.war`文件，并创建一个`HelloServlet`实例，最后以多线程的模式来处理HTTP请求。如果Tomcat服务器收到的请求路径是`/`（假定部署文件为ROOT.war），就转发到`HelloServlet`并传入`HttpServletRequest`和`HttpServletResponse`两个对象。
+
+因为我们编写的Servlet并不是直接运行，而是由Web服务器加载后创建实例运行，所以，类似Tomcat这样的Web服务器也称为Servlet容器。
+
+在Servlet容器中运行的Servlet具有如下特点：
+
+- 无法在代码中直接通过new创建Servlet实例，必须由Servlet容器自动创建Servlet实例；
+- Servlet容器只会给每个Servlet类创建唯一实例；
+- Servlet容器会使用多线程执行`doGet()`或`doPost()`方法。
+
+复习一下Java多线程的内容可以得出结论：
+
+- 在Servlet中定义的实例变量会被多个线程同时访问，要注意线程安全；
+- `HttpServletRequest`和`HttpServletResponse`实例是由Servlet容器传入的局部变量，它们只能被当前线程访问，不存在多个线程访问的问题；
+- 在`doGet()`或`doPost()`方法中，如果使用了`ThreadLocal`，但没有清理，那么它的状态很可能会影响到下次的某个请求，因为Servlet容器很可能用线程池实现线程复用。
+
+因此，正确编写Servlet，要清晰理解Java的多线程模型，需要同步访问的必须同步。
+
+### Servlet开发
+
+开发Servlet时，推荐使用`main()`方法启动嵌入式Tomcat服务器并加载当前工程的webapp，便于开发调试，且不影响打包部署，能极大地提升开发效率。
+
+
+
+### Servlet进阶
+
+#### 重定向与转发
+
+#### 使用Session和Cookie
+
+### JSP开发
+
+### MVC开发
+
+### MVC高级开发
+
+### 使用Filter
+
+#### 修改请求
+
+#### 修改响应
+
+### 使用Listener
+
+### 部署
+
 ## Spring
 
 ## Spring Boot
