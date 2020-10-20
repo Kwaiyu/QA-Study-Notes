@@ -11313,11 +11313,396 @@ public class HelloServlet extends HttpServlet {
 
 #### 重定向与转发
 
+使用重定向时，浏览器知道重定向规则，并且会自动发起新的HTTP请求；
+
+使用转发时，浏览器并不知道服务器内部的转发逻辑。
+
+**Redirect**
+
+重定向是指当浏览器请求一个URL时，服务器返回一个重定向指令，告诉浏览器地址已经变了，麻烦使用新的URL再重新发送新请求。
+
+例如，我们已经编写了一个能处理`/hello`的`HelloServlet`，如果收到的路径为`/hi`，希望能重定向到`/hello`，可以再编写一个`RedirectServlet`：
+
+```
+@WebServlet(urlPatterns = "/hi")
+public class RedirectServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // 构造重定向的路径:
+        String name = req.getParameter("name");
+        String redirectToUrl = "/hello" + (name == null ? "" : "?name=" + name);
+        // 发送重定向响应:
+        resp.sendRedirect(redirectToUrl);
+    }
+}
+```
+
+如果浏览器发送`GET /hi`请求，`RedirectServlet`将处理此请求。由于`RedirectServlet`在内部又发送了重定向响应，因此，浏览器会收到如下响应：
+
+```
+HTTP/1.1 302 Found
+Location: /hello
+```
+
+当浏览器收到302响应后，它会立刻根据`Location`的指示发送一个新的`GET /hello`请求，这个过程就是重定向：
+
+```ascii
+┌───────┐   GET /hi     ┌───────────────┐
+│Browser│ ────────────> │RedirectServlet│
+│       │ <──────────── │               │
+└───────┘   302         └───────────────┘
+
+
+┌───────┐  GET /hello   ┌───────────────┐
+│Browser│ ────────────> │ HelloServlet  │
+│       │ <──────────── │               │
+└───────┘   200 <html>  └───────────────┘
+```
+
+观察Chrome浏览器的网络请求，可以看到两次HTTP请求并且浏览器的地址栏路径自动更新为`/hello`。
+
+重定向有两种：一种是302响应，称为临时重定向，一种是301响应，称为永久重定向。两者的区别是，如果服务器发送301永久重定向响应，浏览器会缓存`/hi`到`/hello`这个重定向的关联，下次请求`/hi`的时候，浏览器就直接发送`/hello`请求了。
+
+重定向的目的是当Web应用升级后，如果请求路径发生了变化，可以将原来的路径重定向到新路径，从而避免浏览器请求原路径找不到资源。
+
+`HttpServletResponse`提供了快捷的`redirect()`方法实现302重定向。如果要实现301永久重定向，可以这么写：
+
+```
+resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY); // 301
+resp.setHeader("Location", "/hello");
+```
+
+**Forward**
+
+Forward是指内部转发。当一个Servlet处理请求的时候，它可以决定自己不继续处理，而是转发给另一个Servlet处理。
+
+例如，我们已经编写了一个能处理`/hello`的`HelloServlet`，继续编写一个能处理`/morning`的`ForwardServlet`：
+
+```
+@WebServlet(urlPatterns = "/morning")
+public class ForwardServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.getRequestDispatcher("/hello").forward(req, resp);
+    }
+}
+```
+
+`ForwardServlet`在收到请求后，它并不自己发送响应，而是把请求和响应都转发给路径为`/hello`的Servlet。后续请求的处理实际上是由`HelloServlet`完成的。这种处理方式称为转发（Forward），我们用流程图画出来如下：
+
+```ascii
+                          ┌────────────────────────┐
+                          │      ┌───────────────┐ │
+                          │ ────>│ForwardServlet │ │
+┌───────┐  GET /morning   │      └───────────────┘ │
+│Browser│ ──────────────> │              │         │
+│       │ <────────────── │              ▼         │
+└───────┘    200 <html>   │      ┌───────────────┐ │
+                          │ <────│ HelloServlet  │ │
+                          │      └───────────────┘ │
+                          │       Web Server       │
+                          └────────────────────────┘
+```
+
+转发和重定向的区别在于，转发是在Web服务器内部完成的，对浏览器来说它只发出了一个HTTP请求。注意到使用转发的时候，浏览器的地址栏路径仍然是`/morning`，浏览器并不知道该请求在Web服务器内部实际上做了一次转发。
+
 #### 使用Session和Cookie
+
+- Servlet容器提供了Session机制以跟踪用户；
+- 默认的Session机制是以Cookie形式实现的，Cookie名称为`JSESSIONID`；
+- 通过读写Cookie可以在客户端设置用户偏好等。
+
+在Web应用中，因为HTTP协议是无状态的无法区分两个请求是否同一个浏览器发出，服务器向浏览器发送Cookie记录用户状态。
+
+**Session**
+
+JavaEE的Servlet机制内建了对Session的支持。我们以登录为例，当一个用户登录成功后，我们就可以把这个用户的名字放入一个`HttpSession`对象，以便后续访问其他页面的时候，能直接从`HttpSession`取出用户名：
+
+```
+@WebServlet(urlPatterns = "/signin")
+public class SignInServlet extends HttpServlet {
+    // 模拟一个数据库:
+    private Map<String, String> users = Map.of("bob", "bob123", "alice", "alice123", "tom", "tomcat");
+
+    // GET请求时显示登录页:
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("text/html");
+        PrintWriter pw = resp.getWriter();
+        pw.write("<h1>Sign In</h1>");
+        pw.write("<form action=\"/signin\" method=\"post\">");
+        pw.write("<p>Username: <input name=\"username\"></p>");
+        pw.write("<p>Password: <input name=\"password\" type=\"password\"></p>");
+        pw.write("<p><button type=\"submit\">Sign In</button> <a href=\"/\">Cancel</a></p>");
+        pw.write("</form>");
+        pw.flush();
+    }
+
+    // POST请求时处理用户登录:
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String name = req.getParameter("username");
+        String password = req.getParameter("password");
+        String expectedPassword = users.get(name.toLowerCase());
+        if (expectedPassword != null && expectedPassword.equals(password)) {
+            // 登录成功:
+            req.getSession().setAttribute("user", name);
+            resp.sendRedirect("/");
+        } else {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+        }
+    }
+}
+```
+
+上述`SignInServlet`在判断用户登录成功后，立刻将用户名放入当前`HttpSession`中：
+
+```
+HttpSession session = req.getSession();
+session.setAttribute("user", name);
+```
+
+在`IndexServlet`中，可以从`HttpSession`取出用户名：
+
+```
+@WebServlet(urlPatterns = "/")
+public class IndexServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // 从HttpSession获取当前用户名:
+        String user = (String) req.getSession().getAttribute("user");
+        resp.setContentType("text/html");
+        resp.setCharacterEncoding("UTF-8");
+        resp.setHeader("X-Powered-By", "JavaEE Servlet");
+        PrintWriter pw = resp.getWriter();
+        pw.write("<h1>Welcome, " + (user != null ? user : "Guest") + "</h1>");
+        if (user == null) {
+            // 未登录，显示登录链接:
+            pw.write("<p><a href=\"/signin\">Sign In</a></p>");
+        } else {
+            // 已登录，显示登出链接:
+            pw.write("<p><a href=\"/signout\">Sign Out</a></p>");
+        }
+        pw.flush();
+    }
+}
+```
+
+如果用户已登录，可以通过访问`/signout`登出。登出逻辑就是从`HttpSession`中移除用户相关信息：
+
+```
+@WebServlet(urlPatterns = "/signout")
+public class SignOutServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // 从HttpSession移除用户名:
+        req.getSession().removeAttribute("user");
+        resp.sendRedirect("/");
+    }
+}
+```
+
+在Servlet中第一次调用`req.getSession()`时，Servlet容器自动创建一个Session ID，然后通过一个名为`JSESSIONID`的Cookie发送给浏览器用来识别Session。
+
+- `JSESSIONID`是由Servlet容器自动创建的，目的是维护一个浏览器会话，它和我们的登录逻辑没有关系；
+- 登录和登出的业务逻辑是我们自己根据`HttpSession`是否存在一个`"user"`的Key判断的，登出后，Session ID并不会改变；
+- 即使没有登录功能，仍然可以使用`HttpSession`追踪用户，例如放入一些用户配置信息等。
+
+除了使用Cookie机制实现Session，还可通过隐藏表单、URL末尾附加ID来追踪Session但很少用。
+
+由于服务器把所有用户的Session都存储在内存中，如果遇到内存不足的情况，就需要把部分不活动的Session序列化到磁盘上，这会大大降低服务器的运行效率，因此，放入Session的对象要小，通常我们放入一个简单的`User`对象就足够了：
+
+```
+public class User {
+    public long id; // 唯一标识
+    public String email;
+    public String name;
+}
+```
+
+如果多台Web Server采用无状态集群，那么反向代理总是以轮询方式将请求依次转发给每台Web Server，这会造成一个用户在Web Server 1存储的Session信息，在Web Server 2和3上并不存在，即从Web Server 1登录后，如果后续请求被转发到Web Server 2或3，那么用户看到的仍然是未登录状态。
+
+要解决这个问题，方案一是在所有Web Server之间进行Session复制，但这样会严重消耗网络带宽，并且，每个Web Server的内存均存储所有用户的Session，内存使用率很低。
+
+另一个方案是采用粘滞会话（Sticky Session）机制，即反向代理在转发请求的时候，总是根据JSESSIONID的值判断，相同的JSESSIONID总是转发到固定的Web Server，但这需要反向代理的支持。
+
+无论采用何种方案，使用Session机制，会使得Web Server的集群很难扩展，因此，Session适用于中小型Web应用程序。对于大型Web应用程序来说，通常需要避免使用Session机制。
+
+**Cookie**
+
+实际上，Servlet提供的`HttpSession`本质上就是通过一个名为`JSESSIONID`的Cookie来跟踪用户会话的。除了这个名称外，其他名称的Cookie我们可以任意使用。
+
+如果我们想要设置一个Cookie，例如，记录用户选择的语言，可以编写一个`LanguageServlet`：
+
+```
+@WebServlet(urlPatterns = "/pref")
+public class LanguageServlet extends HttpServlet {
+
+    private static final Set<String> LANGUAGES = Set.of("en", "zh");
+
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String lang = req.getParameter("lang");
+        if (LANGUAGES.contains(lang)) {
+            // 创建一个新的Cookie:
+            Cookie cookie = new Cookie("lang", lang);
+            // 该Cookie生效的路径范围:
+            cookie.setPath("/");
+            // 该Cookie有效期:
+            cookie.setMaxAge(8640000); // 8640000秒=100天
+            // 将该Cookie添加到响应:
+            resp.addCookie(cookie);
+        }
+        resp.sendRedirect("/");
+    }
+}
+```
+
+创建一个新Cookie时，除了指定名称和值以外，通常需要设置`setPath("/")`，浏览器根据此前缀决定是否发送Cookie。如果一个Cookie调用了`setPath("/user/")`，那么浏览器只有在请求以`/user/`开头的路径时才会附加此Cookie。通过`setMaxAge()`设置Cookie的有效期，单位为秒，最后通过`resp.addCookie()`把它添加到响应。如果访问的是https网页，还需要调用`setSecure(true)`，否则浏览器不会发送该Cookie。
+
+可在浏览器看到服务器发送的Cookie，如果要读取Cookie在`IndexServlet`中，读取名为`lang`的Cookie以获取用户设置的语言，可以写一个依靠遍历`HttpServletRequest`附带的所有Cookie的方法：
+
+```
+private String parseLanguageFromCookie(HttpServletRequest req) {
+    // 获取请求附带的所有Cookie:
+    Cookie[] cookies = req.getCookies();
+    // 如果获取到Cookie:
+    if (cookies != null) {
+        // 循环每个Cookie:
+        for (Cookie cookie : cookies) {
+            // 如果Cookie名称为lang:
+            if (cookie.getName().equals("lang")) {
+                // 返回Cookie的值:
+                return cookie.getValue();
+            }
+        }
+    }
+    // 返回默认值:
+    return "en";
+}
+```
+
+
 
 ### JSP开发
 
+JSP是一种在HTML中嵌入动态输出的文件，它和Servlet正好相反，Servlet是在Java代码中嵌入输出HTML；
+
+JSP可以引入并使用JSP Tag，但由于其语法复杂，不推荐使用；
+
+JSP本身目前已经很少使用，我们只需要了解其基本用法即可。
+
+Servlet就是一个能处理HTTP请求，发送HTTP响应的小程序，而发送响应无非就是获取`PrintWriter`，然后输出HTML：
+
+```
+PrintWriter pw = resp.getWriter();
+pw.write("<html>");
+pw.write("<body>");
+pw.write("<h1>Welcome, " + name + "!</h1>");
+pw.write("</body>");
+pw.write("</html>");
+pw.flush();
+```
+
+但很复杂，可以通过JSP简单的输出HTML。JSP是Java Server Pages的缩写，它的文件必须放到`/src/main/webapp`下，文件名必须以`.jsp`结尾，整个文件与HTML并无太大区别，但需要插入变量，或者动态输出的地方，使用特殊指令`<% ... %>`。
+
+编写一个`hello.jsp`，内容如下：
+
+```
+<html>
+<head>
+    <title>Hello World - JSP</title>
+</head>
+<body>
+    <%-- JSP Comment --%>
+    <h1>Hello World!</h1>
+    <p>
+    <%
+         out.println("Your IP address is ");
+    %>
+    <span style="color:red">
+        <%= request.getRemoteAddr() %>
+    </span>
+    </p>
+</body>
+</html>
+```
+
+整个JSP的内容实际上是一个HTML，但是稍有不同：
+
+- 包含在`<%--`和`--%>`之间的是JSP的注释，它们会被完全忽略；
+- 包含在`<%`和`%>`之间的是Java代码，可以编写任意Java代码；
+- 如果使用`<%= xxx %>`则可以快捷输出一个变量的值。
+
+JSP页面内置了几个变量：
+
+- out：表示HttpServletResponse的PrintWriter；
+- session：表示当前HttpSession对象；
+- request：表示HttpServletRequest对象。
+
+这几个变量可以直接使用。
+
+访问JSP页面时，直接指定完整路径。例如`http://localhost:8080/hello.jsp`
+
+JSP和Servlet有什么区别？其实它们没有任何区别，因为JSP在执行前首先被编译成一个Servlet。在Tomcat的临时目录下，可以找到一个`hello_jsp.java`的源文件，这个文件就是Tomcat把JSP自动转换成的Servlet源码：
+
+```
+package org.apache.jsp;
+import ...
+
+public final class hello_jsp extends org.apache.jasper.runtime.HttpJspBase
+    implements org.apache.jasper.runtime.JspSourceDependent,
+               org.apache.jasper.runtime.JspSourceImports {
+
+    ...
+
+    public void _jspService(final javax.servlet.http.HttpServletRequest request, final javax.servlet.http.HttpServletResponse response)
+        throws java.io.IOException, javax.servlet.ServletException {
+        ...
+        out.write("<html>\n");
+        out.write("<head>\n");
+        out.write("    <title>Hello World - JSP</title>\n");
+        out.write("</head>\n");
+        out.write("<body>\n");
+        ...
+    }
+    ...
+}
+```
+
+可见JSP本质上就是一个Servlet，只不过无需配置映射路径，Web Server会根据路径查找对应的`.jsp`文件，如果找到了，就自动编译成Servlet再执行。在服务器运行过程中，如果修改了JSP的内容，那么服务器会自动重新编译。
+
+**JSP高级功能**
+
+JSP的指令非常复杂，除了`<% ... %>`外，JSP页面本身可以通过`page`指令引入Java类：
+
+```
+<%@ page import="java.io.*" %>
+<%@ page import="java.util.*" %>
+```
+
+这样后续的Java代码才能引用简单类名而不是完整类名。
+
+使用`include`指令可以引入另一个JSP文件：
+
+```
+<html>
+<body>
+    <%@ include file="header.jsp"%>
+    <h1>Index Page</h1>
+    <%@ include file="footer.jsp"%>
+</body>
+```
+
+**JSP Tag**
+
+JSP还允许自定义输出的tag，例如：
+
+```
+<c:out value = "${sessionScope.user.name}"/>
+```
+
+JSP Tag需要正确引入taglib的jar包，并且还需要正确声明，使用起来非常复杂，对于页面开发来说，不推荐使用JSP Tag，因为我们后续会介绍更简单的模板引擎，这里我们不再介绍如何使用taglib。
+
 ### MVC开发
+
+- Servlet适合编写Java代码，实现各种复杂的业务逻辑，但不适合输出复杂的HTML；
+- JSP适合编写HTML，并在其中插入动态内容，但不适合编写复杂的Java代码。
+
+取长补短，使用MVC模式是一种分离业务逻辑和显示逻辑的设计模式，广泛应用在Web和桌面应用程序。
 
 ### MVC高级开发
 
