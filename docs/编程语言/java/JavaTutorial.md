@@ -56,9 +56,8 @@ public class Myclass {
 - 基本类型参数的传递，是调用方值的复制。双方各自的后续修改，互不影响。
 - 引用类型参数的传递，调用方的变量，和接收方的参数变量，指向的是同一个对象。双方任意一方对这个对象的修改，都会影响对方，因为指向同一个对象。
 
-```
+```java
 package com.lsaiah.java;
-
 public class MethodDemo {
     public static void main(String[] args) {
         Person p = new Person();
@@ -101,7 +100,7 @@ class Person {
 - 可以定义多个构造方法，编译器根据参数自动判断；
 - 可以在一个构造方法内部调用另一个构造方法，便于代码复用。
 
-```
+```java
 package com.lsaiah.java;
 
 public class MethodDemo02 {
@@ -137,7 +136,7 @@ class Person02 {
 - 重载方法应该完成类似的功能，参考`String`的`indexOf()`；
 - 重载方法返回值类型应该相同。
 
-```
+```java
 public class MethodDemo03 {
     public static void main(String[] args) {
         // TODO: 给Person增加重载方法setName(String, String):
@@ -175,7 +174,7 @@ class Person03 {
 - 可以强制向下转型，最好借助`instanceof`判断；
 - 子类和父类的关系是is，has关系不能用继承。
 
-```
+```java
 //instanceof variable: 从Java 14开始支持
 //在不支持的版本中编译：javac --enable-preview -source 14 Main.java 
 public class Main {
@@ -248,7 +247,7 @@ class PrimaryStudent extends Student{
   - `final`修饰的class可以阻止被继承；
   - `final`修饰的field必须在创建对象时初始化，随后不可修改。
 
-```
+```java
 package com.lsaiah.java;
 
 //TODO:给一个有工资收入和稿费收入的小伙伴算税。
@@ -312,7 +311,7 @@ class Royalty extends Income{
 - 如果不实现抽象方法，则该子类仍是一个抽象类；
 - 面向抽象编程使得调用者只关心抽象方法的定义，不关心子类的具体实现。
 
-```
+```java
 package com.lsaiah.java;
 
 //TODO:用抽象类给一个有工资收入和稿费收入的小伙伴算税。
@@ -386,7 +385,7 @@ Java的接口（interface）定义了纯抽象规范，一个类可以实现多�
 | 抽象方法   | 可以定义抽象方法     | 可以定义抽象方法            |
 | 非抽象方法 | 可以定义非抽象方法   | 可以定义default方法         |
 
-```
+```java
 package com.lsaiah.java;
 
 //TODO:用接口给一个有工资收入和稿费收入的小伙伴算税。
@@ -439,7 +438,7 @@ class Royalty02 implements Income02{
 - 调用静态方法不需要实例，无法访问`this`，但可以访问静态字段和其他静态方法；
 - 静态方法常用于工具类和辅助方法，如Arrays.sort();。
 
-```
+```java
 package com.lsaiah.java;
 
 //TODO:给Person04类增加一个静态字段count和静态方法getCount，统计实例创建的个数
@@ -818,7 +817,7 @@ public class Main {
 嵌套类（类中的一个类），要访问内部类需要先创建外部类的对象，然后创建内部类的对象。
 **示例：**
 
-```
+```java
 class OuterClass {
     int x = 10;
     class InnerClass {
@@ -1214,7 +1213,7 @@ Log4j参考配置文件：
 </Configuration>
 ```
 
-```
+```java
 public class Log4JTest {
     private static  final Logger LOGGER = Logger.getLogger(Log4JTest.class);
     public static void  main(String[] agrs){
@@ -3340,7 +3339,7 @@ public class Main {
 - URL编码和Base64编码都是编码算法，它们不是加密算法；
 - URL编码的目的是把任意文本数据编码为%前缀表示的文本，便于浏览器和服务器处理；
 
-```
+```java
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 public class Main {
@@ -3353,7 +3352,7 @@ public class Main {
 
 ```
 
-```
+```java
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 public class Main {
@@ -3389,7 +3388,7 @@ Base64编码的目的是把任意二进制数据编码为文本，但编码后�
 | SHA-256    | 256 bits       | 32 bytes         |
 | SHA-512    | 512 bits       | 64 bytes         |
 
-```
+```java
 import java.math.BigInteger;
 import java.security.MessageDigest;
 public class Main {
@@ -3419,7 +3418,7 @@ digest = md5(salt+inputPassword)
 
 输出16bits即20字节的哈希算法，还包括SHA-256，SHA-512等算法，在JAVA标准库中支持所有哈希算法。
 
-```
+```java
 import java.math.BigInteger;
 import java.security.MessageDigest;
 public class Main {
@@ -3445,7 +3444,7 @@ public class Main {
 
 Java标准库的`java.security`包提供了一种标准机制，允许第三方提供商无缝接入，使用BouncyCastle提供的RipeMD160算法需要先注册：
 
-```
+```java
 public class Main {
     public static void main(String[] args) throws Exception {
         // 注册BouncyCastle:
@@ -3477,7 +3476,7 @@ HmacMD5 ≈ md5(secure_random_key, input)
 
 为了保证安全，我们不会自己指定key，而是通过Java标准库的KeyGenerator生成一个安全的随机的key。下面是使用HmacMD5的代码：
 
-```
+```java
 import java.math.BigInteger;
 import javax.crypto.*;
 public class Main {
@@ -3508,7 +3507,7 @@ public class Main {
 
 通过以下代码通过从byte[] 数组恢复验证计算哈希值和SecretKey：
 
-```
+```java
 import java.util.Arrays;
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -3554,7 +3553,7 @@ DES由于秘钥过短，可在短时间暴力破解，不推荐。
 
 目前应用最广泛的加密算法，先用ECB模式加密解密，这种模式只需要一个固定长度的密钥，固定的明文会生成固定的密文：
 
-```
+```java
 import java.security.*;
 import java.util.Base64;
 
@@ -3602,7 +3601,7 @@ public class Main {
 
 像ECB这种一对一的加密方式会导致安全性降低，更好的方式是通过CBC模式，它需要一个随机数作为IV参数，这样对于同一份明文，每次生成的密文都不同：
 
-```
+```java
 import java.security.*;
 import java.util.Base64;
 import javax.crypto.*;
@@ -3673,7 +3672,7 @@ key = generate(userPassword, secureRandomPassword);
 
 PBE的作用就是把用户输入的口令和一个安全随机的口令采用杂凑后计算出真正的密钥：
 
-```
+```java
 public class Main {
     public static void main(String[] args) throws Exception {
         // 把BouncyCastle作为Provider添加到java.security:
@@ -3723,7 +3722,7 @@ public class Main {
 - DH算法是一种密钥交换协议，通信双方通过不安全的信道协商密钥，然后进行对称加密传输。
 - DH算法没有解决中间人攻击，不能确保与自己通信的是否真的是对方。
 
-```
+```java
 import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
@@ -3807,7 +3806,7 @@ class Person {
 - 非对称加密就是加密和解密使用的不是相同的密钥，只有同一个公钥-私钥对才能正常加解密；
 - 只使用非对称加密算法不能防止中间人攻击。
 
-```
+```java
 import java.math.BigInteger;
 import java.security.*;
 import javax.crypto.Cipher;
@@ -3876,7 +3875,7 @@ class Person {
 
 RSA的公钥和私钥都可以通过`getEncoded()`方法获得以`byte[]`表示的二进制数据，并根据需要保存到文件中。要从`byte[]`数组恢复公钥或私钥。
 
-```
+```java
 byte[] pkData = ...
 byte[] skData = ...
 KeyFactory kf = KeyFactory.getInstance("RSA");
@@ -3902,7 +3901,7 @@ PrivateKey sk = kf.generatePrivate(skSpec);
 
 哈希算法+RSA签名
 
-```
+```java
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -4082,7 +4081,7 @@ JAVA内置多线程支持，在JVM进程中用一个主线程执行`main()`方�
 
 创建一个新线程需要实例化`Thread`实例然后调用`start()`方法：
 
-```
+```java
 public class Main {
 	public static void main(String[] args){
 		Thread t = new Thread();
@@ -4095,7 +4094,7 @@ public class Main {
 
 - 方法一：从`Thread`派生一个自定义类，然后覆写`run()`方法：
 
-```
+```java
 public class Main {
 	public static void main(String[] args){
 		Thread t = new MyThread();
@@ -4113,7 +4112,7 @@ class MyThread extends Thread {
 
 - 方法二：创建`Thread`实例时传入一个`Runnable`实例：
 
-```
+```java
 public class Main {
 	public static void main(String[] args){
 		Thread t = new Thread(new MyRunnable());
@@ -4131,7 +4130,7 @@ class MyRunnable implements Runnable {
 
 用JAVA8引入lambda语法进一步简写启动主线程：
 
-```
+```java
 public class Main {
 	public static void main(String[] args) {
 		Thread t = new Thread(() -> {
@@ -4144,7 +4143,7 @@ public class Main {
 
 主线程和新线程执行顺序：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         System.out.println("main start...");
@@ -4164,7 +4163,7 @@ public class Main {
 
 在线程中调用`Thread.sleep()`可强制当前线程暂停一段时间改变线程顺序：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         System.out.println("main start...");
@@ -4213,7 +4212,7 @@ Thread.setPriority(int n); // 1-10 默认是5
 
 `main`主线程在启动t线程后可以通过`t.join()`等待t线程结束再继续运行：主线程先打印Start，开始新线程打印Hello等待新线程结束打印end。
 
-```
+```java
 public class Main {
 	public static void main(String[] args) throws InterruptedException {
 		Thread t = new Thread(() -> {
@@ -4236,7 +4235,7 @@ public class Main {
 
 主线程运行run方法执行while循环，开始新线程等待1毫秒后中断新线程，新线程检测是否中断，中断结束新线程打印end，主线程结束。
 
-```
+```java
 public class Main {
 	public static void main(String[] args) throws InterruptedException {
 		Thread t = new MyThread();
@@ -4261,7 +4260,7 @@ class MyThread extend Thread {
 
 主线程中断`t`线程，此时`t`线程处于`hello`等待中，此等待立刻结束抛出`InterruptedException`，由于在`t`线程捕获了异常，因此可以准备结束该线程，在`t`线程结束前`hello`线程进行中断。
 
-```
+```java
 public class Main {
 	public static void main(String[] args) Throws InterruptedException{
 		Thread t = new MyThread();
@@ -4307,7 +4306,7 @@ class HelloThread extends Thread {
 - 每次访问变量时，总是获取主内存的最新值；
 - 每次修改变量后，立刻回写到主内存。
 
-```
+```java
 public class Main {
 	public static void main(String[] args) {
 		HelloThread t = new HelloThread();
@@ -4337,7 +4336,7 @@ class  HelloThread extends Thread {
 
 所有线程运行结束后，JVM退出，进程结束。当有一种线程的目的是无限循环，如定时触发任务线程：
 
-```
+```java
 class TimerThread extend Thread {
 	@Override
 	public void run() {
@@ -4355,7 +4354,7 @@ class TimerThread extend Thread {
 
 这类线程需要由守护线程执行，创建守护线程：
 
-```
+```java
 Thread t = new MyThread();
 t.setDaemon(true);
 t.start;
@@ -4374,7 +4373,7 @@ t.start;
 
 对共享变量读写时要保证逻辑正确必须保证一组指令以原子方式执行：即某一个线程执行时，其他线程必须等待。通过加锁和解锁的操作保证在一个线程执行期间被中断后也不会执行其他线程的指令，只有执行的线程将锁释放后，其他线程才有机会获得锁并执行。加锁解锁之间的代码称为临界区，任何时候临界区最多只有一个线程能执行。
 
-```
+```java
 public class Main {
     public static void main(String[] args) throws Exception {
         var add = new AddThread();
@@ -4413,7 +4412,7 @@ class DecThread extends Thread {
 }
 ```
 
-```
+```java
 public static final Object lock1 = new Object();
 public static final Object lock2 = new Object();
 synchronized(Counter.lock1) {
@@ -4433,7 +4432,7 @@ JVM规范定义了几种原子操作不需同步：
 - 引用类型赋值，例如：`List<String> list = anotherList`。
 - this.单条原子操作引用不需同步
 
-  ```
+  ```java
   public void set(String s) {
   	this.value = s;
   }
@@ -4442,7 +4441,7 @@ JVM规范定义了几种原子操作不需同步：
 
   多行赋值语句，this引用必须同步
 
-  ```
+  ```java
   class Pair {
   	int first;
   	int last;
@@ -4458,7 +4457,7 @@ JVM规范定义了几种原子操作不需同步：
 
   上面的代码通过转换把非原子变为原子操作不需同步：
 
-  ```
+  ```java
   class Pair {
   	int[] pair;
   	public void set(int first, int last){
@@ -4475,7 +4474,7 @@ JVM规范定义了几种原子操作不需同步：
 - 一个类没有特殊说明，默认不是thread-safe；
 - 多线程能否安全访问某个非线程安全的实例，需要具体问题具体分析。
 
-```
+```java
 public class Counter {
 	private int count = 0;
 	public void add(int n) {
@@ -4496,7 +4495,7 @@ public class Counter {
 
 `synchronized`锁住的对象是`this`，当创建多个Counter实例的时候，它们之间互不影响，线程可以并发执行。
 
-```
+```java
 var c1 = Counter();
 var c2 = Counter();
 // 对c1进行操作的线程：
@@ -4526,7 +4525,7 @@ new Thread(() -> {
 
 同步方法锁住`this`实例等效于`synchronized`修饰方法：
 
-```
+```java
 public void add(int n) {
 	synchronized(this) {
 		count += n;
@@ -4539,7 +4538,7 @@ public synchronized void add(int n) {
 
 对于`static`方法没有`This`实例，针对类而不是实例，因此锁住的是该类的`Class`实例。
 
-```
+```java
 public class Counter {
 	public static void test(int n) {
 		synchronized(Counter.class){
@@ -4561,7 +4560,7 @@ public class Counter {
 
 JVM允许对同一个线程获取同一个锁，反复获取的锁称为重入锁。由于可以重入锁，所以在获取锁的时候要判断是否第一次，第几次获取，每获取一次+1，每释放一次-1，直到0才会完全释放锁。
 
-```
+```java
 public class Counter {
 	private int count = 0;
 	public synchronized void add(int n) {	//获取this锁
@@ -4579,7 +4578,7 @@ public class Counter {
 
 获取一个锁后再获取另一个锁可能导致死锁，如不同线程获取不同对象的锁：
 
-```
+```java
 public void add(int m) {
 	synchronized(lockA){	//获取lockA锁
 		this.value += m;
@@ -4626,7 +4625,7 @@ JVM没有任何机制解除死锁，只能强制结束进程。为了避免死�
 
 `synchronized`解决了多线程竞争的问题，当同时向队列添加任务需要解决多线程协调问题。原则是：当条件不满足时，线程进入等待状态；当条件满足时，线程被唤醒继续执行任务。`getTask`线程`while`循环条件不满足进入等待状态，`addTask`线程添加了任务后对`this`锁调用`notify()`随机唤醒一个正在等待的线程。
 
-```
+```java
 class TaskQueue {
 	Queue<String> queue = new LinkList<>();
 	public synchronized void addTask(String s) {
@@ -4651,7 +4650,7 @@ class TaskQueue {
 - 必须先获取到锁，再进入`try {...}`代码块，最后使用`finally`保证释放锁；
 - 可以使用`tryLock()`尝试获取锁。
 
-```
+```java
 // 传统synchronized加锁
 public class Counter {
 	private int count;
@@ -4678,7 +4677,7 @@ public class Counter {
 
 `RentrantLock`可重入锁，与`synchronized`不同的是`RentrantLock`可尝试获取锁，等待1秒返回结果，而不是死锁无限等待。
 
-```
+```java
 if (lock.tryLock(1, TimeUnit.SECONDS)) {
 	try {
 		...
@@ -4695,7 +4694,7 @@ if (lock.tryLock(1, TimeUnit.SECONDS)) {
 
 `synchronized`可以配合`wait`和`notify`实现在线程不满足时等待，条件满足唤醒，用`RentrantLock`时使用`Condition`对象来实现。
 
-```
+```java
 class TaskQueue {
 	private final Lock lock = new RentrantLock();
 	// 引入的Condition对象要从lock实例的newCondition()返回，获得绑定实例。
@@ -4733,7 +4732,7 @@ class TaskQueue {
 
 和`tryLock()`类似，`await()`可以在等待时间后，如果没有被其他线程通过`signal()`或`signalall()`唤醒，可以自己醒来。
 
-```
+```java
 if (condition.await(1, TimeUnit.SECONDS)) {
 	// 被其他线程唤醒
 } else {
@@ -4751,7 +4750,7 @@ if (condition.await(1, TimeUnit.SECONDS)) {
 
 `ReentrantLock`保证只有一个线程执行临界区代码：
 
-```
+```java
 public class Counter {
 	private final Lock lock = new ReentrantLock();
 	private int[] counts = new int[10];
@@ -4781,7 +4780,7 @@ public class Counter {
 
 把读写操作分别用读锁和写锁加锁，读取时多个线程可以同时获得锁，提高并发读的执行效率。
 
-```
+```java
 public class Counter {
 	private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 	private final Lock rlock = rwlock.readLock();
@@ -4819,7 +4818,7 @@ Java8引入了新的乐观读写锁`StampedLock`进一步提升了并发执行�
 
 写入的加锁和`ReadWriteLock`完全一样，不同的是读取，需要先通过`tryOptimisticRead()`获取一个乐观读锁并返回版本号，读取完成后通过`alidate()`验证版本号，如果在读的过程没有写入版本号不变，验证成功。如果在读的过程中写入，版本号发生变化，验证失败，在失败的时候通过获取悲观锁再次读取。
 
-```
+```java
 public class Point {
     private final StampedLock stampedLock = new StampedLock();
 
@@ -4867,7 +4866,7 @@ public class Point {
 
 通过`ReentrantLock`和`Condition`实现`BlockingQueue`，当一个线程调用TaskQueue的`getTask()`方法时，方法内部可能会让线程变成等待状态，直到队列满足条件不为空线程被唤醒后，`getTask()`方法才会返回。
 
-```
+```java
 public class TaskQueue {
 	private final Lock lock = new ReentrantLock();
 	private final Condition condition = lock newCondition();
@@ -4909,7 +4908,7 @@ public class TaskQueue {
 
 因为所有同步和加锁的逻辑都在集合内部实现，使用线程安全和非线程安全的并发集合相同，调用只需要按接口引用。以`ConcurrentHashMap`为例，当需要多线程访问直接替换`HashMap<>()`就可以了：
 
-```
+```java
 Map<String, String> map = new ConcurrentHashMap<>();
 // 在不听线程读写：
 map.put("A","1");
@@ -4919,7 +4918,7 @@ map.get("A","1");
 
 `java.util.Collections`工具类还提供旧的线程安全集合转换器，但通过`synchronized`加锁性能比`java.util.concurrent`集合要低很多。
 
-```
+```java
 Map unsafeMap = new HashMap();
 Map threadSafeMap = Collections.synchronizedMap(unsafeMap);
 ```
@@ -4940,7 +4939,7 @@ Map threadSafeMap = Collections.synchronizedMap(unsafeMap);
 
 `Atomic`类是通过无锁的方式实现的线程安全访问，原理是Compare and Set。在这个操作中如果`AtomicInteger`的当前值是`prev`就更新`next`，返回`true`。如果当前值不是`prev`直接返回`false`，配合`do...while`循环，即使其他线程修改了`AtomicInteger`结果也是正确的。
 
-```
+```java
 public int incrementAndGet (AtomicInteger var) {
 	int prev, next;
 	do {
@@ -4953,7 +4952,7 @@ public int incrementAndGet (AtomicInteger var) {
 
 利用`AtomicLong`编写一个多线程安全全局唯一ID生成器，通常不需要直接用`do...while`循环调用`compareAndSet`实现复杂并发操作，而是用`incrementAndGet()`这样的封装好的方法简化。
 
-```
+```java
 class IdGenerator {
 	AtomicLong var = new AtomicLong(0);
 	public long getNextId(){
@@ -4975,7 +4974,7 @@ JDK提供了`ExecutorService`实现了线程池功能：
 
 Java标准库提供`ExecutorService`接口表示线程池，典型用法：
 
-```
+```java
 // 创建固定大小的线程池
 ExecutroService executor = Executors.newFixedThreadPool(3);
 // 提交任务
@@ -4993,7 +4992,7 @@ executor.submit(task4);
 
 以`FixedThreadPool`为例，一次放入6个任务，由于线程池固定了4个线程，因此4个任务会同时执行，等到有空闲线程后才会执行后面两个任务。`shutdown()`方法会等待正在执行的任务完成后关闭，`shutdownNow()`会立刻停止正在执行的任务，`awaitTermination()`则会等待指定时间让线程关闭。
 
-```
+```java
 import java.util.concurrent.*;
 public class Main {
 	public static void main(String[] args) {
@@ -5027,7 +5026,7 @@ class Task implements Runnable {
 
 如果线程池改为`CachedThreadPool`则会动态调整线程池大小，6个任务一次性全部同时执行，如果需要限制线程池大小在4-10之间查看`Executors.newCachedThreadPool()`方法的源码后可以这么写：
 
-```
+```java
 int min = 4;
 int max = 10;
 ExecutorSerice es = new ThreadPoolExecutor(min, max, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
@@ -5039,27 +5038,27 @@ ExecutorSerice es = new ThreadPoolExecutor(min, max, 60L, TimeUnit.SECONDS, new 
 
 创建一个`ScheduledThreadPool`是通过`Executors`类：
 
-```
+```java
 ScheduledExecutorService ses = Executors.newScheduledThreadPool(4);
 ```
 
 提交一次性任务，在指定延迟后只执行一次：
 
-```
+```java
 // 1秒后执行一次性任务
 ses.schedule(new Task("one-time"), 1, TimeUnit.SECONDS);
 ```
 
 任务固定每3秒执行：
 
-```
+```java
 // 2秒后开始执行定时任务，每3秒执行:
 ses.scheduleAtFixedRate(new Task("fixed-rate"), 2, 3, TimeUnit.SECONDS);
 ```
 
 任务固定3秒为间隔时间执行：
 
-```
+```java
 // 2秒后开始执行定时任务，以3秒为间隔执行:
 ses.scheduleWithFixedDelay(new Task("fixed-delay"), 2, 3, TimeUnit.SECONDS);
 ```
@@ -5081,7 +5080,7 @@ Java标准库还提供了一个`java.util.Timer`类，这个类也可以定期�
 
 实现`Callable`接口可以让线程池执行任务，并返回值，泛型接口可指定返回类型。当提交一个`callable`任务后同时得到一个`Future`对象，调用`get()`方法当任务完成获得异步执行结果，如果任务没有完成发生阻塞，直到任务完成后才返回结果。
 
-```
+```java
 ExecutorService executor = Executors.newFixedThreadPool(4); 
 // 定义任务:
 Callable<String> task = new Task();
@@ -5111,7 +5110,7 @@ String result = future.get(); // 可能阻塞
 
 以获取股票价格为例，`CompletableFuture`示例：
 
-```
+```java
 import java.util.concurrent.CompletableFuture;
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -5151,7 +5150,7 @@ public class Main {
 
 多个`CompletableFuture`可以串行执行，如第一个`CompletableFuture`根据证券名称查询证券代码，第二个`CompletableFuture`根据证券代码查询证券价格，串行操作如下：
 
-```
+```java
 import java.util.concurrent.CompletableFuture;
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -5191,7 +5190,7 @@ public class Main {
 
 多个`CompletableFuture`还可以并行执行，如同时从新浪和网易查询证券代码，只要任意一个返回结果，就进行下一步查询价格，查询价格也同时从新浪和网易查询，只要任意一个返回结果。
 
-```
+```java
 import java.util.concurrent.CompletableFuture;
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -5264,7 +5263,7 @@ Fork/Join是一种基于“分治”的算法：通过分解任务，并行执�
 
 对大数据并行求和示例：
 
-```
+```java
 import java.util.Random;
 import java.util.concurrent.*;
 public class Main {
@@ -5341,7 +5340,7 @@ class SumTask extends RecursieTask<long> {
 
 `Thread`对象代表一个线程，可以在代码中调用`Thread.currentThread()`获取当前线程。
 
-```
+```java
 public class Main {
 	public static void main(String[] args) throws Exception {
 		log("start main...");
@@ -5361,7 +5360,7 @@ public class Main {
 
 在一个线程中横跨若干方法调用传递对象称为上下文（Context）。给每个方法都增加一个context参数非常麻烦，Java标准库提供了一个特殊的`ThreadLocal`，它可以在线程中传递同一个对象。
 
-```
+```java
 // 静态实例初始化
 static ThreadLocal<User> threadLocalUser = new ThreadLocal<>();
 // 使用方式
@@ -5395,7 +5394,7 @@ void step2() {
 
 为了保证释放`ThreadLocal`关联的实例，通过`AutoCloseable`接口配合`try (resource) {...}`结构，让编译器自动为我们关闭。
 
-```
+```java
 public class UserContext implements AutoCloseable {
 
     static final ThreadLocal<String> ctx = new ThreadLocal<>();
@@ -5417,7 +5416,7 @@ public class UserContext implements AutoCloseable {
 
 使用时借助`try (resource) {...}`结构：
 
-```
+```java
 try (var ctx = new UserContext("Bob")) {
     // 可任意调用UserContext.currentUser():
     String currentUser = UserContext.currentUser();
@@ -5446,7 +5445,7 @@ try (var ctx = new UserContext("Bob")) {
 
 Java标准库提供了`ServerSocket`来实现对指定IP和指定端口的监听。
 
-```
+```java
 public class Server {
     public static void main(String[] args) throws IOException {
         ServerSocket ss = new ServerSocket(6666); // 监听指定端口
@@ -5505,7 +5504,7 @@ class Handler extends Thread {
 
 #### 客户端
 
-```
+```java
 public class Client {
     public static void main(String[] args) throws IOException {
         Socket sock = new Socket("localhost", 6666); // 连接指定服务器和端口
@@ -5543,7 +5542,7 @@ public class Client {
 
 因为TCP是一种基于流的协议，因此，Java标准库使用`InputStream`和`OutputStream`来封装Socket的数据流，这样我们使用Socket的流，和普通IO流类似：
 
-```
+```java
 // 用于读取网络数据:
 InputStream in = sock.getInputStream();
 // 用于写入网络数据:
@@ -5563,7 +5562,7 @@ OutputStream out = sock.getOutputStream();
 
 在服务器端，使用UDP也需要监听指定的端口。Java提供了`DatagramSocket`来实现这个功能。
 
-```
+```java
 DatagramSocket ds = new DatagramSocket(6666); // 监听指定端口
 for (;;) { // 无限循环
     // 数据缓冲区:
@@ -5582,7 +5581,7 @@ for (;;) { // 无限循环
 
 #### 客户端
 
-```
+```java
 DatagramSocket ds = new DatagramSocket();
 ds.setSoTimeout(1000);
 ds.connect(InetAddress.getByName("localhost"), 6666); // 连接指定服务器和端口
@@ -5645,7 +5644,7 @@ SMTP协议：Simple Mail Transport Protocol，使用标准端口25，也可以�
 
 以587端口为例，连接SMTP服务器时，需要准备一个Properties对象，填入相关信息。最后获取Session实例时，如果服务器需要认证，还需要传入一个Authenticator对象，并返回指定的用户名和口令。当我们获取到Session实例后，打开调试模式可以看到SMTP通信的详细内容。
 
-```
+```java
 // 服务器地址:
 String smtp = "smtp.office365.com";
 // 登录用户名:
@@ -5672,7 +5671,7 @@ session.setDebug(true);
 
 构造一个`Message`对象，然后调用`Transport.send(Message)`即可完成发送，绝大多数邮件服务器要求发送方地址和登录用户名必须一致，否则发送将失败。
 
-```
+```java
 MimeMessage message = new MimeMessage(session);
 // 设置发送方地址:
 message.setFrom(new InternetAddress("me@example.com"));
@@ -5769,7 +5768,7 @@ message.setText(body, "UTF-8", "html");
 
 发送附件不能直接调用`message.setText()`方法，而是要构造一个`Multipart`对象， 一个`Multipart`对象可以添加若干个`BodyPart`，其中第一个`BodyPart`是文本，即邮件正文，后面的BodyPart是附件。`BodyPart`依靠`setContent()`决定添加的内容，如果添加文本，用`setContent("...", "text/plain;charset=utf-8")`添加纯文本，或者用`setContent("...", "text/html;charset=utf-8")`添加HTML文本。如果添加附件，需要设置文件名（不一定和真实文件名一致），并且添加一个`DataHandler()`，传入文件的MIME类型。二进制文件可以用`application/octet-stream`，Word文档则是`application/msword`。最后，通过`setContent()`把`Multipart`添加到`Message`中即可发送。
 
-```
+```java
 Multipart multipart = new MimeMultipart();
 // 添加text:
 BodyPart textpart = new MimeBodyPart();
@@ -5788,7 +5787,7 @@ message.setContent(multipart);
 
 如果给一个`<img src="http://example.com/test.jpg">`，这样的外部图片链接通常会被邮件客户端过滤，并提示用户显示图片并不安全。只有内嵌的图片才能正常在邮件中显示。内嵌图片实际上也是一个附件即邮件本身也是`Multipart`，但需要做额外的处理：在HTML邮件中引用图片时，需要设定一个ID，用类似`<img src=\"cid:img01\">`引用，然后，在添加图片作为BodyPart时，除了要正确设置MIME类型（根据图片类型使用`image/jpeg`或`image/png`），还需要设置一个Header：`imagepart.setHeader("Content-ID", "<img01>");` 这个ID和HTML中引用的ID对应起来，邮件客户端就可以正常显示内嵌图片。
 
-```
+```java
 Multipart multipart = new MimeMultipart();
 // 添加text:
 BodyPart textpart = new MimeBodyPart();
@@ -5819,7 +5818,7 @@ IMAP和POP3的主要区别是，IMAP协议在本地的所有操作都会自动�
 
 POP3收取Email：
 
-```
+```java
 // 准备登录信息:
 String host = "pop3.example.com";
 int port = 995;
@@ -5844,7 +5843,7 @@ store.connect();
 
 一个`Store`对象表示整个邮箱的存储，要收取邮件，我们需要通过`Store`访问指定的`Folder`（文件夹），通常是`INBOX`表示收件箱：
 
-```
+```java
 // 获取收件箱:
 Folder folder = store.getFolder("INBOX");
 // 以读写方式打开:
@@ -5864,7 +5863,7 @@ for (Message message : messages) {
 
 当我们获取到一个`Message`对象时，可以强制转型为MimeMessage，然后打印出邮件主题、发件人、收件人等信息：
 
-```
+```java
 void printMessage(MimeMessage msg) throws IOException, MessagingException {
     // 邮件主题:
     System.out.println("Subject: " + MimeUtility.decodeText(msg.getSubject()));
@@ -5881,7 +5880,7 @@ void printMessage(MimeMessage msg) throws IOException, MessagingException {
 
 比较麻烦的是获取邮件的正文。一个`MimeMessage`对象也是一个`Part`对象，它可能只包含一个文本，也可能是一个`Multipart`对象，即由几个`Part`构成，因此，需要递归地解析出完整的正文：
 
-```
+```java
 String getBody(Part part) throws MessagingException, IOException {
     if (part.isMimeType("text/*")) {
         // Part是文本:
@@ -5966,7 +5965,7 @@ HTTP有固定的响应代码：
 
 发送请求后获取响应内容，Java标准库提供基于HTTP的包，早期通过`HttpURLConnection`访问HTTP：
 
-```
+```java
 URL url = new URL("http://www.example.com/path/to/target?a=1&b=2");
 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 conn.setRequestMethod("GET");
@@ -5995,7 +5994,7 @@ InputStream input = conn.getInputStream();
 
 **使用`GET`请求获取文本内容：**
 
-```
+```java
 import java.net.URI;
 import java.net.http.*;
 import java.net.http.HttpClient.Version;
@@ -6030,7 +6029,7 @@ public class Main {
 
 **使用`POST`请求要准备好发送的Body数据并正确设置`Content-Type`：**
 
-```
+```java
 String url = "http://www.example.com/login";
 String body = "username=bob&password=123456";
 HttpRequest request = HttpRequest.newBuilder(new URI(url))
@@ -6057,7 +6056,7 @@ String s = response.body();
 
 RMI是Remote Method Invocation的缩写，是指一个JVM中的代码可以通过网络实现远程调用另一个JVM的某个方法。要实现RMI服务端和客户端必须共享同一接口，此接口必须派生自`java.rmi.Remote`，并在每个方法声明抛出`RemoteException`。
 
-```
+```java
 public interface WorldClock extends Remote {
     LocalDateTime getLocalDateTime(String zoneId) throws RemoteException;
 }
@@ -6065,7 +6064,7 @@ public interface WorldClock extends Remote {
 
 服务器实现类：
 
-```
+```java
 public class WorldClockService implements WorldClock {
     @Override
     public LocalDateTime getLocalDateTime(String zoneId) throws RemoteException {
@@ -6076,7 +6075,7 @@ public class WorldClockService implements WorldClock {
 
 通过Java RMI提供的一系列底层接口把编写的服务以RMI形式暴露在网络上给客户端调用：
 
-```
+```java
 public class Server {
     public static void main(String[] args) throws RemoteException {
         System.out.println("create World clock remote service...");
@@ -6094,7 +6093,7 @@ public class Server {
 
 将`WorldClock.java`这个接口文件复制到客户端实现RMI调用：
 
-```
+```java
 public class Client {
     public static void main(String[] args) throws RemoteException, NotBoundException {
         // 连接到服务器localhost，端口1099:
@@ -6216,7 +6215,7 @@ Java提供DOM API解析XML：
 
 `DocumentBuilder.parse()`用于解析一个XML，它可以接收InputStream，File或者URL，如果解析无误将获得一个Document对象。
 
-```
+```java
 InputStream input = Main.class.getResourceAsStream("/book.xml");
 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 DocumentBuilder db = dbf.newDocumentBuilder();
@@ -6225,7 +6224,7 @@ Document doc = db.parse(input);
 
 这个对象代表了整个XML文档的树形结构，需要遍历以便读取指定元素的值：
 
-```
+```java
 void printNode(Node n, int indent) {
     for (int i = 0; i < indent; i++) {
         System.out.print(' ');
@@ -6272,7 +6271,7 @@ SAX解析会触发一系列事件：
 
 用SAX API解析XML：
 
-```
+```java
 InputStream input = Main.class.getResourceAsStream("/book.xml");
 SAXParserFactory spf = SAXParserFactory.newInstance();
 SAXParser saxParser = spf.newSAXParser();
@@ -6281,7 +6280,7 @@ saxParser.parse(input, new MyHandler());
 
 传入回调对象`MyHandler`继承自`DefaultHandler`：
 
-```
+```java
 class MyHandler extends DefaultHandler {
     public void startDocument() throws SAXException {
         print("start document");
@@ -6358,7 +6357,7 @@ class MyHandler extends DefaultHandler {
 </book>
 ```
 
-```
+```java
 public class Book {
     public long id;
     public String name;
@@ -6426,7 +6425,7 @@ jsonStr = JSON.stringify(jsObj);
 
 创建一个`ObjectMapper`对象，关闭`DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES`功能使得解析时如果JavaBean不存在该属性时解析不会报错。
 
-```
+```java
 InputStream input = Main.class.getResourceAsStream("/book.json");
 ObjectMapper mapper = new ObjectMapper();
 // 反序列化时忽略不存在的JavaBean属性:
@@ -6496,7 +6495,7 @@ public class Book {
 
 直接解析报错，需定义一个`IsbnDeserializer`，用于解析含有非数字的字符串：
 
-```
+```java
 public class IsbnDeserializer extends JsonDeserializer<BigInteger> {
     public BigInteger deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
         // 读取原始的JSON字符串内容:
@@ -6515,7 +6514,7 @@ public class IsbnDeserializer extends JsonDeserializer<BigInteger> {
 
 然后在`Book`类中使用注解标注：
 
-```
+```java
 public class Book {
     public String name;
     // 表示反序列化isbn时使用自定义的IsbnDeserializer:
@@ -6624,7 +6623,7 @@ Java的标准库`java.sql`大部分都是接口，接口不能直接实例化而
 
 通过脚本插入数据：
 
-```
+```java
 -- 创建数据库learjdbc:
 DROP DATABASE IF EXISTS learnjdbc;
 CREATE DATABASE learnjdbc;
@@ -6671,7 +6670,7 @@ jdbc:mysql://<hostname>:<port>/<db>?key1=value1&key2=value2
 jdbc:mysql://localhost:3306/learnjdbc?useSSL=false&characterEncoding=utf8
 ```
 
-```
+```java
 // JDBC连接的URL, 不同数据库有不同的格式:
 String JDBC_URL = "jdbc:mysql://localhost:3306/test";
 String JDBC_USER = "root";
@@ -6691,7 +6690,7 @@ conn.close();
 
 `Statment`和`ResultSet`都是需要关闭的资源，因此嵌套使用`try (resource)`确保及时关闭；`rs.next()`用于判断是否有下一行记录，如果有，将自动把当前行移动到下一行；`ResultSet`获取列时，索引从`1`开始而不是`0`；必须根据`SELECT`的列的对应位置的数据类型来调用`getLong(1)`，`getString(2)`这些方法。
 
-```
+```java
 try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
     try (Statement stmt = conn.createStatement()) {
         try (ResultSet rs = stmt.executeQuery("SELECT id, grade, name, gender FROM students WHERE gender=1")) {
@@ -6726,7 +6725,7 @@ SELECT * FROM user WHERE login='bob' OR pass=' AND pass=' OR pass=''
 
 这样就不用判断口令是否正确，登录形同虚设。要避免SQL注入攻击，可以针对所有字符串参数进行转义，但很麻烦，而且需要在任何使用SQL的地方增加转义代码。还有一种办法就是使用`PreparedStatement`可以完全避免SQL注入的问题，因为`PreparedStatement`始终使用`?`作为占位符，并且把数据连同SQL本身传给数据库，这样可以保证每次传给数据库的SQL是相同的，只是占位符的数据不同，还能高效利用数据库本身对查询的缓存，所以，`PreparedStatement`比`Statement`更安全，而且更快。改写如下：
 
-```
+```java
 User login(String name, String pass) {
     ...
     String sql = "SELECT * FROM user WHERE login=? AND pass=?";
@@ -6739,7 +6738,7 @@ User login(String name, String pass) {
 
 使用`PreparedStatement`和`Statement`稍有不同，必须首先调用`setObject()`设置每个占位符`?`的值，最后获取的仍然是`ResultSet`对象。从结果集读取列时，使用`String`类型的列名比索引要易读，而且不易出错。
 
-```
+```java
 try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
     try (PreparedStatement ps = conn.prepareStatement("SELECT id, grade, name, gender FROM students WHERE gender=? AND grade=?")) {
         ps.setObject(1, "M"); // 注意：索引从1开始
@@ -6783,7 +6782,7 @@ JDBC在`java.sql.Types`定义了一组常量来表示如何映射SQL数据类型
 
 设置参数和查询一样，有几个`?`占位符就必须要设置对应的参数，当成功执行`executeUpdate()`后，返回值是`int`表示插入的记录数量。此出因为只插入了一条记录返回`1`。
 
-```
+```java
 try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
     try (PreparedStatement ps = conn.prepareStatement(
             "INSERT INTO students (id, grade, name, gender) VALUES (?,?,?,?)")) {
@@ -6802,7 +6801,7 @@ try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PAS
 
 对于使用自增主键的程序需要获取插入后自增主键的值，要获取自增主键不能先插入再查询，因为两条SQL执行期间可能有别的程序也插入了同一个表，获取自增主键的正确写法是在创建`PreparedStatement`的时候，指定一个`RETURN_GENERATED_KEYS`标志位，表示JDBC驱动必须返回插入的自增主键。
 
-```
+```java
 try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
     try (PreparedStatement ps = conn.prepareStatement(
             "INSERT INTO students (grade, name, gender) VALUES (?,?,?)",
@@ -6826,7 +6825,7 @@ try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PAS
 
 更新操作是`UPDATE`语句，它可以一次更新若干列的记录。`executeUpdate()`返回数据库实际更新的行数，返回结果可能是正数，也可能是0表示没有更新。
 
-```
+```java
 try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
     try (PreparedStatement ps = conn.prepareStatement("UPDATE students SET name=? WHERE id=?")) {
         ps.setObject(1, "Bob"); // 注意：索引从1开始
@@ -6842,7 +6841,7 @@ try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PAS
 
 删除操作是`DELETE`语句，它可以一次删除若干列。
 
-```
+```java
 try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
     try (PreparedStatement ps = conn.prepareStatement("DELETE FROM students WHERE id=?")) {
         ps.setObject(1, 999); // 注意：索引从1开始
@@ -6877,7 +6876,7 @@ UPDATE accounts SET balance = balance + 100 WHERE id=456;
 
 在JDBC执行事物就是把多条SQL包裹在一个数据库事物中心执行。
 
-```
+```java
 Connection conn = openConnection();
 try {
     // 关闭自动提交:
@@ -6910,7 +6909,7 @@ conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
 使用JDBC操作数据库经常会执行一些批量操作，只有占位符参数不同，SQL实际是一样的，可以通过循环执行每个`PreparedStatement`：
 
-```
+```java
 INSERT INTO coupons (user_id, type, expires) VALUES (123, 'DISCOUNT', '2030-12-31');
 INSERT INTO coupons (user_id, type, expires) VALUES (234, 'DISCOUNT', '2030-12-31');
 INSERT INTO coupons (user_id, type, expires) VALUES (345, 'DISCOUNT', '2030-12-31');
@@ -6928,7 +6927,7 @@ for (var params : paramsList) {
 
 虽然可行但性能很低，通过batch执行速度远远快于循环执行每个SQL：
 
-```
+```java
 try (PreparedStatement ps = conn.prepareStatement("INSERT INTO students (name, gender, grade, score) VALUES (?, ?, ?, ?)")) {
     // 对同一个PreparedStatement反复设置参数并调用addBatch():
     for (Student s : students) {
@@ -6973,7 +6972,7 @@ try (PreparedStatement ps = conn.prepareStatement("INSERT INTO students (name, g
 
 创建一个`DataSource`实例表示连接池：
 
-```
+```java
 HikariConfig config = new HikariConfig();
 config.setJdbcUrl("jdbc:mysql://localhost:3306/test");
 config.setUsername("root");
@@ -6987,7 +6986,7 @@ DataSource ds = new HikariDataSource(config);
 
 使用连接池：
 
-```
+```java
 try (Connection conn = ds.getConnection()) { // 在此获取连接
     ...
 } // 在此“关闭”连接
@@ -7021,7 +7020,7 @@ try (Connection conn = ds.getConnection()) { // 在此获取连接
 
 以`Comparator`为例，调用`Arrays.sort()`时，可以传入一个`Comparator`实例，以匿名类方式编写如下：
 
-```
+```java
 String[] array = ...
 Arrays.sort(array, new Comparator<String>() {
     public int compare(String s1, String s2) {
@@ -7032,7 +7031,7 @@ Arrays.sort(array, new Comparator<String>() {
 
 上面的写法非常繁琐，Java8可以用Lambda表达式替换单方法接口。改写如下：
 
-```
+```java
 import java.util.Arrays;
 public class Main {
     public static void main(String[] args) {
@@ -7059,7 +7058,7 @@ Arrays.sort(array, (s1, s2) -> s1.compareTo(s2));
 
 把只定义了单方法的接口称之为`FunctionalInterface`，用注解`@FunctionalInterface`标记。例如，`Callable`接口：
 
-```
+```java
 @FunctionalInterface
 public interface Callable<V> {
     V call() throws Exception;
@@ -7068,7 +7067,7 @@ public interface Callable<V> {
 
 而`Comparator`接口有很多方法，但只有一个抽象方法`int compare(T o1, T o2)`，其他的方法都是`default`方法或`static`方法。另外注意到`boolean equals(Object obj)`是`Object`定义的方法，不算在接口方法内。因此，`Comparator`也是一个`FunctionalInterface`。
 
-```
+```java
 @FunctionalInterface
 public interface Comparator<T> {
 
@@ -7105,7 +7104,7 @@ public interface Comparator<T> {
 
 使用Lambda表达式就可以不必编写`FunctionalInterface`接口的实现类，从而简化代码：
 
-```
+```java
 Arrays.sort(array, (s1, s2) -> {
     return s1.compareTo(s2);
 });
@@ -7113,7 +7112,7 @@ Arrays.sort(array, (s1, s2) -> {
 
 因为`Comparator<String>`接口定义的方法是`int compare(String, String)`，和静态方法`int cmp(String, String)`相比，除了方法名外，方法参数一致，返回类型相同。因此如果某个方法签名和接口恰好一致还可以直接传入方法引用：
 
-```
+```java
 import java.util.Arrays;
 public class Main {
     public static void main(String[] args) {
@@ -7130,7 +7129,7 @@ public class Main {
 
 #### 实例方法引用
 
-```
+```java
 import java.util.Arrays;
 public class Main {
     public static void main(String[] args) {
@@ -7143,7 +7142,7 @@ public class Main {
 
 `String.compareTo()`的方法定义，这个方法的签名只有一个参数，为什么和`int Comparator<String>.compare(String, String)`能匹配呢？
 
-```
+```java
 public final class String {
     public int compareTo(String o) {
         ...
@@ -7161,7 +7160,7 @@ public static int compareTo(this, String o);
 
 如果要把一个`List<String>`转换为`List<Person>`，应该怎么办？
 
-```
+```java
 class Person {
     String name;
     public Person(String name) {
@@ -7175,7 +7174,7 @@ List<Person> persons = ???
 
 传统做法是先定义一个`ArrayList<Person>`然后for循环填充这个`List`：
 
-```
+```java
 List<String> names = List.of("Bob", "Alice", "Tim");
 List<Person> persons = new ArrayList<>();
 for (String name : names) {
@@ -7185,7 +7184,7 @@ for (String name : names) {
 
 更简单地实现`String`到`Person`转换，可以引用`Person`的构造方法：
 
-```
+```java
 // 引用构造方法
 import java.util.*;
 import java.util.stream.*;
@@ -7211,7 +7210,7 @@ class Person {
 
 这里`Stream`的`map()`方法要传入`FunctionalInterface`：
 
-```
+```java
 @FunctionalInterface
 public interface Function<T, R> {
     R apply(T t);
@@ -7256,7 +7255,7 @@ Stream<BigInteger> streamNxN = naturals.map(n -> n.multiply(n));
 
 `streamNxN`也有无限多个元素，要打印它，必须首先把无限多个元素变成有限个元素，可以用`limit()`方法截取前100个元素，最后用`forEach()`处理每个元素，这样，我们就打印出了前100个自然数的平方：
 
-```
+```java
 Stream<BigInteger> naturals = createNaturalStream();
 naturals.map(n -> n.multiply(n)) // 1, 4, 9, 16, 25...
         .limit(100)
@@ -7265,7 +7264,7 @@ naturals.map(n -> n.multiply(n)) // 1, 4, 9, 16, 25...
 
 Stream API的基本用法就是：创建一个`Stream`，然后做若干次转换，最后调用一个求值方法获取真正计算的结果：
 
-```
+```java
 int result = createNaturalStream() // 创建Stream
              .filter(n -> n % 2 == 0) // 任意个转换
              .map(n -> n * n) // 任意个转换
@@ -7287,7 +7286,7 @@ int result = createNaturalStream() // 创建Stream
 
 创建`Stream`最简单的方式是直接用`Stream.of()`静态方法，传入可变参数即创建了一个能输出确定元素的`Stream`，没啥实质性用途，但测试的时候很方便。
 
-```
+```java
 import java.util.stream.Stream;
 public class Main {
     public static void main(String[] args) {
@@ -7303,7 +7302,7 @@ public class Main {
 
 第二种创建`Stream`的方法是基于一个数组或者`Collection`，这样该`Stream`输出的元素就是数组或者`Collection`持有的元素。把数组变成`Stream`使用`Arrays.stream()`方法。对于`Collection`（`List`、`Set`、`Queue`等），直接调用`stream()`方法就可以获得`Stream`。
 
-```
+```java
 import java.util.*;
 import java.util.stream.*;
 public class Main {
@@ -7326,7 +7325,7 @@ Stream<String> s = Stream.generate(Supplier<String> sp);
 
 不断调用`Supplier.get()`方法来不断产生下一个元素，这种`Stream`保存的不是元素而是算法，它可以用来表示无限序列。
 
-```
+```java
 import java.util.function.*;
 import java.util.stream.*;
 public class Main {
@@ -7355,7 +7354,7 @@ class NatualSupplier implements Supplier<Integer> {
 
 例如`Files`类的`lines()`方法可以把一个文件变成一个`Stream`，每个元素代表文件的一行内容：
 
-```
+```java
 try (Stream<String> lines = Files.lines(Paths.get("/path/to/file.txt"))) {
     ...
 }
@@ -7363,7 +7362,7 @@ try (Stream<String> lines = Files.lines(Paths.get("/path/to/file.txt"))) {
 
 另外正则表达式的`Pattern`对象有一个`splitAsStream()`方法，可以直接把一个长字符串分割成`Stream`序列而不是数组：
 
-```
+```java
 Pattern p = Pattern.compile("\\s+");
 Stream<String> s = p.splitAsStream("The quick brown fox jumps over the lazy dog");
 s.forEach(System.out::println);
@@ -7373,7 +7372,7 @@ s.forEach(System.out::println);
 
 Java泛型不支持基本类型，所以无法用`Stream<int>`，使用`Stream<Integer>`会频繁的装箱、拆箱操作。为了提高运行效率，Java标准库提供了`IntStream`、`LongStream`和`DoubleStream`这三种使用基本类型的`Stream`，它们的使用方法和范型`Stream`没有大的区别。
 
-```
+```java
 // 将int[]数组变为IntStream:
 IntStream is = Arrays.stream(new int[] { 1, 2, 3 });
 // 将Stream<String>转换为LongStream:
@@ -7391,7 +7390,7 @@ Stream<Integer> s2 = s.map(n -> n * n);
 
 利用`map()`，不但能完成数学计算，对于字符串操作，以及任何Java对象都是非常有用的。
 
-```
+```java
 import java.util.*;
 import java.util.stream.*;
 public class Main {
@@ -7412,7 +7411,7 @@ public class Main {
 
 用`IntStream`写出上面的逻辑如下：
 
-```
+```java
 import java.util.stream.IntStream;
 public class Main {
     public static void main(String[] args) {
@@ -7426,7 +7425,7 @@ public class Main {
 
 `filter()`除了常用于数值外，也可应用于任何Java对象。如从一组给定的`LocalDate`中过滤掉工作日，以便得到休息日：
 
-```
+```java
 import java.time.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -7456,7 +7455,7 @@ class LocalDateSupplier implements Supplier<LocalDate> {
 
 `reduce()`方法将一个`Stream`的每个元素依次作用于`BinaryOperator`，并将结果合并。`reduce()`是聚合方法，聚合方法会立刻对`Stream`进行计算。
 
-```
+```java
 import java.util.stream.*;
 public class Main {
     public static void main(String[] args) {
@@ -7469,7 +7468,7 @@ public class Main {
 
 `reduce()`方法传入的对象是`BinaryOperator`接口，它定义了一个`apply()`方法，负责把上次的结果和本次的元素进行运算并返回结果：
 
-```
+```java
 @FunctionalInterface
 public interface BinaryOperator<T> {
     // Bi操作：两个输入，一个输出
@@ -7479,7 +7478,7 @@ public interface BinaryOperator<T> {
 
 `reduce()`操作首先初始化结果为指定值（这里是0），紧接着，`reduce()`对每个元素依次调用`(acc, n) -> acc + n`，`acc`是上次计算的结果，因此这个`reduce()`操作是求和。如果去掉初始值会得到一个`Optional<Integer>`：
 
-```
+```java
 Optional<Integer> opt = stream.reduce((acc, n) -> acc + n);
 if (opt.isPresent()) {
     System.out.println(opt.get());
@@ -7490,7 +7489,7 @@ if (opt.isPresent()) {
 
 利用`reduce()`可以把求和改成求积：
 
-```
+```java
 import java.util.stream.*;
 public class Main {
     public static void main(String[] args) {
@@ -7503,7 +7502,7 @@ public class Main {
 
 除了可以对数值进行累积计算外，灵活运用`reduce()`也可以对Java对象进行操作。下面的代码演示了如何将配置文件的每一行配置通过`map()`和`reduce()`操作聚合成一个`Map<String, String>`：
 
-```
+```java
 import java.util.*;
 public class Main {
     public static void main(String[] args) {
@@ -7537,7 +7536,7 @@ public class Main {
 
 对于`Stream`转换操作如`map()`、`filter()`不会触发任何计算，而聚合操作`reduce()`会立刻促使`Stream`输出它的每一个元素，并依次纳入计算以获得最终结果。
 
-```
+```java
 // 因为s1是一个Long类型的序列，它的元素高达922亿个，但执行上述代码，既不会有任何内存增长，也不会有任何计算，因为转换操作只是保存了转换规则，无论我们对一个Stream转换多少次，都不会有任何实际计算发生。
 import java.util.function.Supplier; 
 import java.util.stream.Stream;
@@ -7560,7 +7559,7 @@ class NatualSupplier implements Supplier<Long> {
 
 ```
 
-```
+```java
 // 对s4进行reduce()聚合计算，会不断请求s4输出它的每一个元素。因为s4的上游是s3，它又会向s3请求元素，导致s3向s2请求元素，s2向s1请求元素，最终，s1从Supplier实例中请求到真正的元素，并经过一系列转换，最终被reduce()聚合出结果。可见，聚合操作是真正需要从Stream请求数据的，对一个Stream做聚合计算后，结果就不是一个Stream，而是一个其他的Java对象。
 Stream<Long> s1 = Stream.generate(new NatualSupplier());
 Stream<Long> s2 = s1.map(n -> n * n);
@@ -7573,7 +7572,7 @@ s4.reduce(0, (acc, n) -> acc + n);
 
 因为`List`的元素是确定的Java对象，把`Stream`保存到集合是聚合操作，强制`Stream`输出每个元素。
 
-```
+```java
 import java.util.*;
 import java.util.stream.*;
 public class Main {
@@ -7600,7 +7599,7 @@ String[] array = list.stream().toArray(String[]::new);
 
 如果我们要把Stream的元素收集到Map中，就稍微麻烦一点。因为对于每个元素，添加到Map时需要key和value，因此，我们要指定两个映射函数，分别把元素映射为key和value：
 
-```
+```java
 import java.util.*;
 import java.util.stream.*;
 public class Main {
@@ -7622,7 +7621,7 @@ public class Main {
 
 `Stream`可以按组输出，使用`Collectors.groupingBy()`，它需要提供两个函数：一个是分组的key，这里使用`s -> s.substring(0, 1)`，表示只要首字母相同的`String`分到一组，第二个是分组的value，这里直接使用`Collectors.toList()`，表示输出为`List`：
 
-```
+```java
 import java.util.*;
 import java.util.stream.*;
 public class Main {
@@ -7661,7 +7660,7 @@ public class Main {
 
 `Stream`排序只需调用`sorted()`方法：
 
-```
+```java
 import java.util.*;
 import java.util.stream.*;
 public class Main {
@@ -7688,7 +7687,7 @@ List<String> list = List.of("Orange", "apple", "Banana")
 
 可以直接用`distinct()`：
 
-```
+```java
 List.of("A", "B", "A", "C", "B", "D")
     .stream()
     .distinct()
@@ -7699,7 +7698,7 @@ List.of("A", "B", "A", "C", "B", "D")
 
 `skip()`用于跳过当前`Stream`的前N个元素，`limit()`用于截取当前`Stream`最多前N个元素：
 
-```
+```java
 List.of("A", "B", "C", "D", "E", "F")
     .stream()
     .skip(2) // 跳过A, B
@@ -7711,7 +7710,7 @@ List.of("A", "B", "C", "D", "E", "F")
 
 使用静态方法`concat()`：
 
-```
+```java
 Stream<String> s1 = List.of("A", "B", "C").stream();
 Stream<String> s2 = List.of("D", "E").stream();
 // 合并:
@@ -7723,7 +7722,7 @@ System.out.println(s.collect(Collectors.toList())); // [A, B, C, D, E]
 
 如果`Stream`元素是集合：
 
-```
+```java
 Stream<List<Integer>> s = Stream.of(
         Arrays.asList(1, 2, 3),
         Arrays.asList(4, 5, 6),
@@ -7740,7 +7739,7 @@ Stream<Integer> i = s.flatMap(list -> list.stream());
 
 对`Stream`的元素进行处理是单线程的，在元素数量非常大的情况，多线程并行处理可以大大加快处理速度。只需要用`parallel()`进行转换：
 
-```
+```java
 Stream<String> s = ...
 String[] result = s.parallel() // 变成一个可以并行处理的Stream
                    .sorted() // 可以进行并行排序
