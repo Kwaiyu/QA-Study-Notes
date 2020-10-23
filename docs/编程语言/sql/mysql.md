@@ -1,3 +1,41 @@
+# MySQL
+
+MySQL本身实际上只是一个SQL接口，它的内部还包含了多种数据引擎，常用的包括：
+
+- InnoDB：由Innobase Oy公司开发的一款支持事务的数据库引擎，2006年被Oracle收购；
+- MyISAM：MySQL早期集成的默认数据库引擎，不支持事务。
+
+MySQL接口和数据库引擎的关系就好比某某浏览器和浏览器引擎（IE引擎或Webkit引擎）的关系。对用户而言，切换浏览器引擎不影响浏览器界面，切换MySQL引擎不影响自己写的应用程序使用MySQL的接口。
+
+使用MySQL时，不同的表还可以使用不同的数据库引擎。如果你不知道应该采用哪种引擎，记住总是选择*InnoDB*就好了。
+
+因为MySQL一开始就是开源的，所以基于MySQL的开源版本，又衍生出了各种版本：
+
+### MariaDB
+
+由MySQL的创始人创建的一个开源分支版本，使用XtraDB引擎。
+
+### Aurora
+
+由Amazon改进的一个MySQL版本，专门提供给在AWS托管MySQL用户，号称5倍的性能提升。
+
+### PolarDB
+
+由Alibaba改进的一个MySQL版本，专门提供给在[阿里云](https://promotion.aliyun.com/ntms/yunparter/invite.html?userCode=cz36baxa)托管的MySQL用户，号称6倍的性能提升。
+
+而MySQL官方版本又分了好几个版本：
+
+- Community Edition：社区开源版本，免费；
+- Standard Edition：标准版；
+- Enterprise Edition：企业版；
+- Cluster Carrier Grade Edition：集群版。
+
+以上版本的功能依次递增，价格也依次递增。不过，功能增加的主要是监控、集群等管理功能，对于基本的SQL功能是完全一样的。
+
+所以使用MySQL就带来了一个巨大的好处：可以在自己的电脑上安装免费的Community Edition版本，进行学习、开发、测试，部署的时候，可以选择付费的高级版本，或者云服务商提供的兼容版本，而不需要对应用程序本身做改动。
+
+# 安装
+
 Linux上安装软件常见的几种方式：
 
 - 源码编译
@@ -417,7 +455,7 @@ MySQL依赖libaio库，如果没有先安装一下：
 
 *其他配置与yum、rpm相同，不再赘述*
 
-#  配置数据库
+# 配置数据库
 
     vim /etc/my.cnf
 

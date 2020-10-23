@@ -1,4 +1,4 @@
-[JavaTutorial](/编程语言/java/JavaTutorial.md)
+[Java教程](/编程语言/java/JavaTutorial.md)
 
 [Java数据结构与算法](/编程语言/java/DataStructure.md)
 
