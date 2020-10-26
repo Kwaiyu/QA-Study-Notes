@@ -292,7 +292,7 @@ SQL语言关键字不区分大小写，但是针对不同的数据库对于表�
 
 外键并不是通过列名实现的，而是通过定义外键约束实现的：
 
-```
+```sql
 ALTER TABLE students
 ADD CONSTRAINT fk_class_id
 FOREIGN KEY (class_id)
@@ -307,7 +307,7 @@ REFERENCES classes (id);
 
 要删除一个外键约束，也是通过`ALTER TABLE`实现的：
 
-```
+```sql
 ALTER TABLE students
 DROP FOREIGN KEY fk_class_id;
 ```
@@ -403,14 +403,14 @@ DROP FOREIGN KEY fk_class_id;
 
 如果要经常根据`score`列进行查询，就可以对`score`列创建索引：
 
-```
+```sql
 ALTER TABLE students
 ADD INDEX idx_score (score);
 ```
 
 使用`ADD INDEX idx_score (score)`就创建了一个名称为`idx_score`，使用列`score`的索引。索引名称是任意的，索引如果有多列，可以在括号里依次写上，例如：
 
-```
+```sql
 ALTER TABLE students
 ADD INDEX idx_name_score (name, score);
 ```
@@ -427,7 +427,7 @@ ADD INDEX idx_name_score (name, score);
 
 但是，这些列根据业务要求，又具有唯一性约束：即不能出现两条记录存储了同一个身份证号。这个时候，就可以给该列添加一个唯一索引。例如，我们假设`students`表的`name`不能重复：
 
-```
+```sql
 ALTER TABLE students
 ADD UNIQUE INDEX uni_name (name);
 ```
@@ -436,7 +436,7 @@ ADD UNIQUE INDEX uni_name (name);
 
 也可以只对某一列添加一个唯一约束而不创建唯一索引：
 
-```
+```sql
 ALTER TABLE students
 ADD CONSTRAINT uni_name UNIQUE (name);
 ```
@@ -549,7 +549,7 @@ SELECT * FROM classes;
 
 `SELECT`语句其实并不要求一定要有`FROM`子句。我们来试试下面的`SELECT`语句：
 
-```
+```sql
 SELECT 100+200;
 ```
 
@@ -568,19 +568,19 @@ SELECT * FROM <表名> WHERE <条件表达式>
 - 条件1：根据score列的数据判断：`score >= 80`；
 - 条件2：根据gender列的数据判断：`gender = 'M'`，注意`gender`列存储的是字符串，需要用单引号括起来。
 
-```mysql
+```sql
 SELECT * FROM students WHERE score >= 80 AND gender = 'M';
 ```
 
 第二种条件是`<条件1> OR <条件2>`，表示满足条件1或者满足条件2。例如，把上述`AND`查询的两个条件改为`OR`，查询结果就是“分数在80分或以上”或者“男生”，满足任意之一的条件即选出该记录：
 
-```
+```sql
 SELECT * FROM students WHERE score >= 80 OR gender = 'M';
 ```
 
 第三种条件是`NOT <条件>`，表示“不符合该条件”的记录。例如，写一个“不是2班的学生”这个条件，可以先写出“是2班的学生”：`class_id = 2`，再加上`NOT`：`NOT class_id = 2`：
 
-```
+```sql
 SELECT * FROM students WHERE NOT class_id = 2;
 ```
 
@@ -588,7 +588,7 @@ SELECT * FROM students WHERE NOT class_id = 2;
 
 要组合三个或者更多的条件，就需要用小括号`()`表示如何进行条件运算。例如，编写一个复杂的条件：分数在80以下或者90以上，并且是男生：
 
-```
+```sql
 SELECT * FROM students WHERE (score < 80 OR score > 90) AND gender = 'M';
 ```
 
@@ -602,7 +602,7 @@ SELECT * FROM students WHERE (score < 80 OR score > 90) AND gender = 'M';
 
 例如，从`students`表中返回`id`、`score`和`name`这三列：
 
-```
+```sql
 SELECT id, score, name FROM students;
 ```
 
@@ -610,13 +610,13 @@ SELECT id, score, name FROM students;
 
 例如，以下`SELECT`语句将列名`score`重命名为`points`，而`id`和`name`列名保持不变：
 
-```
+```sql
 SELECT id, score points, name FROM students;
 ```
 
 投影查询同样可以接`WHERE`条件，实现复杂的查询：
 
-```
+```sql
 SELECT id, score points, name FROM students WHERE gender = 'M';
 ```
 
@@ -640,7 +640,7 @@ SELECT id, name, gender, score FROM students ORDER BY score DESC;
 
 如果`score`列有相同的数据，要进一步排序，可以继续添加列名。例如，使用`ORDER BY score DESC, gender`表示先按`score`列倒序，如果有相同分数的，再按`gender`列排序：
 
-```mysql
+```sql
 SELECT id, name, gender, score FROM students ORDER BY score DESC, gender;
 ```
 
@@ -648,7 +648,7 @@ SELECT id, name, gender, score FROM students ORDER BY score DESC, gender;
 
 如果有`WHERE`子句，那么`ORDER BY`子句要放到`WHERE`子句后面。例如，查询一班的学生成绩，并按照倒序排序：
 
-```mysql
+```sql
 SELECT id, name, gender, score
 FROM students
 WHERE class_id = 1
@@ -661,13 +661,13 @@ ORDER BY score DESC;
 
 分页实际上就是从结果集中“截取”出第M~N条记录。这个查询可以通过`LIMIT <M> OFFSET <N>`子句实现。我们先把所有学生按照成绩从高到低进行排序：
 
-```
+```sql
 SELECT id, name, gender, score FROM students ORDER BY score DESC;
 ```
 
 把结果集分页，每页3条记录。要获取第1页的记录，可以使用`LIMIT 3 OFFSET 0`：
 
-```
+```sql
 SELECT id, name, gender, score
 FROM students
 ORDER BY score DESC
@@ -676,7 +676,7 @@ LIMIT 3 OFFSET 0;
 
 上述查询`LIMIT 3 OFFSET 0`表示，对结果集从0号记录开始，最多取3条。注意SQL记录集的索引从0开始。如果要查询第2页，那么我们只需要“跳过”头3条记录，也就是对结果集从3号记录开始查询，把`OFFSET`设定为3。查询第3页的时候，`OFFSET`应该设定为6，查询第4页的时候`OFFSET`应该设定为9。
 
-```
+```sql
 SELECT id, name, gender, score
 FROM students
 ORDER BY score DESC
@@ -787,18 +787,581 @@ SELECT class_id, gender, COUNT(*) num FROM students GROUP BY class_id, gender;
 
 ### 多表查询
 
-使用多表查询可以获取M x N行记录；
-
-多表查询的结果集可能非常巨大。
+使用多表查询可以获取M x N行记录，查询的结果集可能非常巨大。
 
 查询多张表的语法是：`SELECT * FROM <表1> <表2>`。
 
+```sql
+SELECT * FROM students, classes;
+```
 
+查询的结果也是一个二维表，它是`students`表和`classes`表的“乘积”，结果集的列数是`students`表和`classes`表的列数之和，行数是`students`表和`classes`表的行数之积，这种多表查询又称笛卡尔查询。
+
+上述查询结果集有两列`id`和两列`name`不好区分，可以利用投影查询设置列的别名来给两个表同名列各自起别名：
+
+```sql
+SELECT
+    students.id sid,
+    students.name,
+    students.gender,
+    students.score,
+    classes.id cid,
+    classes.name cname
+FROM students, classes;
+```
+
+多表查询时，要使用`表名.列名`这样的方式来引用列和设置别名，这样就避免了结果集的列名重复问题。但是用`表名.列名`这种方式列举两个表的所有列实在是很麻烦，FROM`子句给表设置别名的语法是`FROM <表名1> <别名1>, <表名2> <别名2>`。这样我们用别名`s`和`c`分别表示`students`表和`classes`表。：
+
+```sql
+SELECT
+    s.id sid,
+    s.name,
+    s.gender,
+    s.score,
+    c.id cid,
+    c.name cname
+FROM students s, classes c;
+```
+
+多表查询也是可以添加`WHERE`条件的：
+
+```sql
+SELECT
+    s.id sid,
+    s.name,
+    s.gender,
+    s.score,
+    c.id cid,
+    c.name cname
+FROM students s, classes c
+WHERE s.gender = 'M' AND c.id = 1;
+```
 
 ### 连接查询
 
+JOIN查询需要先确定主表，然后把另一个表的数据“附加”到结果集上；
+
+INNER JOIN是最常用的一种JOIN查询，它的语法是`SELECT ... FROM <表1> INNER JOIN <表2> ON <条件...>`；
+
+JOIN查询仍然可以使用`WHERE`条件和`ORDER BY`排序。
+
+连接查询是另一种类型的多表查询。连接查询对多个表进行JOIN运算，简单地说，就是先确定一个主表作为结果集，然后，把其他表的行有选择性地“连接”在主表结果集上。
+
+例如，我们想要选出`students`表的所有学生信息，可以用一条简单的SELECT语句完成：
+
+```sql
+SELECT s.id, s.name, s.class_id, s.gender, s.score FROM students s;
+```
+
+假设我们希望结果集同时包含所在班级的名称，上面的结果集只有`class_id`列，缺少对应班级的`name`列。而存放班级名称的`name`列存储在`classes`表中，只有根据`students`表的`class_id`，找到`classes`表对应的行，再取出`name`列，就可以获得班级名称。先使用最常用的一种内连接INNER JOIN来实现：
+
+```sql
+SELECT s.id, s.name, s.class_id, c.name class_name, s.gender, s.score
+FROM students s
+INNER JOIN classes c
+ON s.class_id = c.id;
+```
+
+注意INNER JOIN查询的写法是：
+
+1. 先确定主表，仍然使用`FROM <表1>`的语法；
+2. 再确定需要连接的表，使用`INNER JOIN <表2>`的语法；
+3. 然后确定连接条件，使用`ON <条件...>`，这里的条件是`s.class_id = c.id`，表示`students`表的`class_id`列与`classes`表的`id`列相同的行需要连接；
+4. 可选：加上`WHERE`子句、`ORDER BY`等子句。
+
+把内连接查询改成外连接查询：
+
+```sql
+SELECT s.id, s.name, s.class_id, c.name class_name, s.gender, s.score
+FROM students s
+RIGHT OUTER JOIN classes c
+ON s.class_id = c.id;
+```
+
+执行上述RIGHT OUTER JOIN可以看到，和INNER JOIN相比，RIGHT OUTER JOIN多了一行，多出来的一行是“四班”，但是，学生相关的列如`name`、`gender`、`score`都为`NULL`。
+
+这也容易理解，因为根据`ON`条件`s.class_id = c.id`，`classes`表的id=4的行正是“四班”，但是，`students`表中并不存在class_id=4的行。
+
+有RIGHT OUTER JOIN，就有LEFT OUTER JOIN，以及FULL OUTER JOIN。它们的区别是：
+
+INNER JOIN只返回同时存在于两张表的行数据，由于`students`表的`class_id`包含1，2，3，`classes`表的`id`包含1，2，3，4，所以，INNER JOIN根据条件`s.class_id = c.id`返回的结果集仅包含1，2，3。
+
+RIGHT OUTER JOIN返回右表都存在的行。如果某一行仅在右表存在，那么结果集就会以`NULL`填充剩下的字段。
+
+LEFT OUTER JOIN则返回左表都存在的行。如果我们给students表增加一行，并添加class_id=5，由于classes表并不存在id=5的行，所以，LEFT OUTER JOIN的结果会增加一行，对应的`class_name`是`NULL`：![]()
+
+```sql
+-- 先增加一列class_id=5:
+INSERT INTO students (class_id, name, gender, score) values (5, '新生', 'M', 88);
+-- 使用LEFT OUTER JOIN
+SELECT s.id, s.name, s.class_id, c.name class_name, s.gender, s.score
+FROM students s
+LEFT OUTER JOIN classes c
+ON s.class_id = c.id;
+```
+
+最后，我们使用FULL OUTER JOIN，它会把两张表的所有记录全部选择出来，并且，自动把对方不存在的列填充为NULL：
+
+```sql
+SELECT s.id, s.name, s.class_id, c.name class_name, s.gender, s.score
+FROM students s
+FULL OUTER JOIN classes c
+ON s.class_id = c.id;
+```
+
+假设查询语句是：
+
+```sql
+SELECT ... FROM tableA ??? JOIN tableB ON tableA.column1 = tableB.column2;
+```
+
+我们把tableA看作左表，把tableB看成右表，那么INNER JOIN是选出两张表都存在的记录：
+
+![](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/inner-join.png)
+
+LEFT OUTER JOIN是选出左表存在的记录：
+
+![](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/left-outer-join.png)
+
+RIGHT OUTER JOIN是选出右表存在的记录：
+
+![](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/right-outer-join.png)
+
+FULL OUTER JOIN则是选出左右表都存在的记录：
+
+![](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/full-outer-join.png)
+
 ## 修改数据
+
+关系数据库的基本操作就是增删改查，即CRUD：Create、Retrieve、Update、Delete。其中，对于查询已经详细讲述了`SELECT`语句的详细用法。
+
+而对于增、删、改，对应的SQL语句分别是：
+
+- INSERT：插入新记录；
+- UPDATE：更新已有记录；
+- DELETE：删除已有记录。
+
+### INSERT
+
+使用`INSERT`，我们就可以一次向一个表中插入一条或多条记录。
+
+`INSERT`语句的基本语法是：
+
+```sql
+INSERT INTO <表名> (字段1, 字段2, ...) VALUES (值1, 值2, ...);
+```
+
+我们向`students`表插入一条新记录，先列举出需要插入的字段名称，然后在`VALUES`子句中依次写出对应字段的值：
+
+```sql
+INSERT INTO students (class_id, name, gender, score) VALUES (2, '大牛', 'M', 80);
+-- 查询并观察结果:
+SELECT * FROM students;
+```
+
+注意并没有列出`id`字段和值，这是因为`id`字段是一个自增主键，它的值可以由数据库自己推算出来。如果一个字段有默认值，那么在`INSERT`语句中也可以不出现。字段顺序不必和数据库表的字段顺序一致，但值的顺序必须和字段顺序一致。可以写`INSERT INTO students (score, gender, name, class_id) ...`，但是对应的`VALUES`就得变成`(80, 'M', '大牛', 2)`。
+
+还可以一次性添加多条记录，只需要在`VALUES`子句中指定多个记录值，每个记录是由`(...)`包含的一组值：
+
+```sql
+INSERT INTO students (class_id, name, gender, score) VALUES
+  (1, '大宝', 'M', 87),
+  (2, '二宝', 'M', 81);
+SELECT * FROM students;
+```
+
+### UPDATE
+
+使用`UPDATE`，我们就可以一次更新表中的一条或多条记录。
+
+`UPDATE`语句的基本语法是：
+
+```sql
+UPDATE <表名> SET 字段1=值1, 字段2=值2, ... WHERE ...;
+```
+
+更新`students`表`id=1`的记录的`name`和`score`这两个字段，先写出`UPDATE students SET name='大牛', score=66`，然后在`WHERE`子句中写出需要更新的行的筛选条件`id=1`：
+
+```sql
+UPDATE students SET name='大牛', score=66 WHERE id=1;
+-- 查询并观察结果:
+SELECT * FROM students WHERE id=1;
+```
+
+注意到`UPDATE`语句的`WHERE`条件和`SELECT`语句的`WHERE`条件其实是一样的，因此完全可以一次更新多条记录：
+
+```sql
+UPDATE students SET name='小牛', score=77 WHERE id>=5 AND id<=7;
+-- 查询并观察结果:
+SELECT * FROM students;
+```
+
+在`UPDATE`语句中，更新字段时可以使用表达式。例如，把所有80分以下的同学的成绩加10分：
+
+```sql
+UPDATE students SET score=score+10 WHERE score<80;
+-- 查询并观察结果:
+SELECT * FROM students;
+```
+
+如果`WHERE`条件没有匹配到任何记录，`UPDATE`语句不会报错，也不会有任何记录被更新。当`UPDATE`语句没有`WHERE`条件时整个表的所有记录都会被更新。所以在执行`UPDATE`语句时要非常小心，最好先用`SELECT`语句来测试`WHERE`条件是否筛选出了期望的记录集，然后再用`UPDATE`更新。
+
+在使用MySQL这类真正的关系数据库时，`UPDATE`语句会返回更新的行数以及`WHERE`条件匹配的行数。
+
+```sql
+mysql> UPDATE students SET name='大宝' WHERE id=1;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+```
+
+### DELETE
+
+使用`DELETE`，我们就可以一次删除表中的一条或多条记录。
+
+`DELETE`语句的基本语法是：
+
+```sql
+DELETE FROM <表名> WHERE ...;
+```
+
+例如，我们想删除`students`表中`id=1`的记录，就需要这么写：
+
+```sql
+DELETE FROM students WHERE id=1;
+-- 查询并观察结果:
+SELECT * FROM students;
+```
+
+`DELETE`语句也可以一次删除多条记录：
+
+```
+DELETE FROM students WHERE id>=5 AND id<=7;
+-- 查询并观察结果:
+SELECT * FROM students;
+```
+
+如果`WHERE`条件没有匹配到任何记录，`DELETE`语句不会报错，也不会有任何记录被删除。
+
+和`UPDATE`类似，不带`WHERE`条件的`DELETE`语句会删除整个表的数据：
+
+```
+DELETE FROM students;
+```
+
+这时，整个表的所有记录都会被删除。所以在执行`DELETE`语句时也要非常小心，最好先用`SELECT`语句来测试`WHERE`条件是否筛选出了期望的记录集，然后再用`DELETE`删除。
+
+在使用MySQL这类真正的关系数据库时，`DELETE`语句也会返回删除的行数以及`WHERE`条件匹配的行数。
+
+```
+mysql> DELETE FROM students WHERE id=1;
+Query OK, 1 row affected (0.01 sec)
+```
 
 ## MySQL
 
+命令行程序`mysql`实际上是MySQL客户端，真正的MySQL服务器程序是`mysqld`，在后台运行。
+
+> [!NOTE]
+>
+> MySQL Client的可执行程序是mysql，MySQL Server的可执行程序是mysqld。
+
+在MySQL Client中输入的SQL语句通过TCP连接发送到MySQL Server。默认端口号是3306，即如果发送到本机MySQL Server，地址就是`127.0.0.1:3306`。
+
+也可以只安装MySQL Client，然后连接到远程MySQL Server。假设远程MySQL Server的IP地址是`10.0.1.99`，那么就使用`-h`指定IP或域名：
+
+```
+mysql -h 10.0.1.99 -u root -p
+```
+
+### 管理MySQL
+
+要管理MySQL，可以使用可视化图形界面[MySQL Workbench](https://dev.mysql.com/downloads/workbench/)
+
+MySQL Workbench可以用可视化的方式查询、创建和修改数据库表，但是归根到底是一个图形客户端，它对MySQL的操作仍然是发送SQL语句并执行。因此本质上，MySQL Workbench和MySQL Client命令行都是客户端，和MySQL交互唯一的接口就是SQL。因此MySQL提供了大量的SQL语句用于管理。虽然可以使用MySQL Workbench图形界面来直接管理MySQL，但是很多时候，通过SSH远程连接时，只能使用SQL命令。
+
+#### 数据库
+
+要列出所有数据库，使用命令：
+
+```
+mysql> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| shici              |
+| sys                |
+| test               |
+| school             |
++--------------------+
+```
+
+其中，`information_schema`、`mysql`、`performance_schema`和`sys`是系统库，不要去改动它们。其他的是用户创建的数据库。
+
+创建一个新数据库，使用命令：
+
+```
+mysql> CREATE DATABASE test;
+Query OK, 1 row affected (0.01 sec)
+```
+
+要删除一个数据库，使用命令：
+
+```
+mysql> DROP DATABASE test;
+Query OK, 0 rows affected (0.01 sec)
+```
+
+对一个数据库进行操作时，要首先将其切换为当前数据库：
+
+```
+mysql> USE test;
+Database changed
+```
+
+#### 表
+
+列出当前数据库的所有表，使用命令：
+
+```
+mysql> SHOW TABLES;
++---------------------+
+| Tables_in_test      |
++---------------------+
+| classes             |
+| statistics          |
+| students            |
+| students_of_class1  |
++---------------------+
+```
+
+查看一个表的结构，使用命令：
+
+```
+mysql> DESC students;
++----------+--------------+------+-----+---------+----------------+
+| Field    | Type         | Null | Key | Default | Extra          |
++----------+--------------+------+-----+---------+----------------+
+| id       | bigint(20)   | NO   | PRI | NULL    | auto_increment |
+| class_id | bigint(20)   | NO   |     | NULL    |                |
+| name     | varchar(100) | NO   |     | NULL    |                |
+| gender   | varchar(1)   | NO   |     | NULL    |                |
+| score    | int(11)      | NO   |     | NULL    |                |
++----------+--------------+------+-----+---------+----------------+
+5 rows in set (0.00 sec)
+```
+
+还可以使用以下命令查看创建表的SQL语句：
+
+```
+mysql> SHOW CREATE TABLE students;
++----------+-------------------------------------------------------+
+| students | CREATE TABLE `students` (                             |
+|          |   `id` bigint(20) NOT NULL AUTO_INCREMENT,            |
+|          |   `class_id` bigint(20) NOT NULL,                     |
+|          |   `name` varchar(100) NOT NULL,                       |
+|          |   `gender` varchar(1) NOT NULL,                       |
+|          |   `score` int(11) NOT NULL,                           |
+|          |   PRIMARY KEY (`id`)                                  |
+|          | ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 |
++----------+-------------------------------------------------------+
+1 row in set (0.00 sec)
+```
+
+创建表使用`CREATE TABLE`语句，而删除表使用`DROP TABLE`语句：
+
+```
+mysql> DROP TABLE students;
+Query OK, 0 rows affected (0.01 sec)
+```
+
+修改表就比较复杂。如果要给`students`表新增一列`birth`，使用：
+
+```
+ALTER TABLE students ADD COLUMN birth VARCHAR(10) NOT NULL;
+```
+
+要修改`birth`列，例如把列名改为`birthday`，类型改为`VARCHAR(20)`：
+
+```
+ALTER TABLE students CHANGE COLUMN birth birthday VARCHAR(20) NOT NULL;
+```
+
+要删除列，使用：
+
+```
+ALTER TABLE students DROP COLUMN birthday;
+```
+
+使用`EXIT`命令退出MySQL：
+
+```
+mysql> EXIT
+Bye
+```
+
+`EXIT`仅仅断开了客户端和服务器的连接，MySQL服务器仍然继续运行。
+
+### 实用SQL语句
+
+#### 插入或替换
+
+如果我们希望INSERT插入一条新记录，但如果记录已经存在就先删除原记录，再插入新记录。此时可以使用`REPLACE`语句，这样就不必先查询再决定是否先删除再插入：
+
+```sql
+REPLACE INTO students (id, class_id, name, gender, score) VALUES (1, 1, '小明', 'F', 99);
+```
+
+若`id=1`的记录不存在，`REPLACE`语句将插入新记录，否则当前`id=1`的记录将被删除，然后再插入新记录。
+
+#### 插入或更新
+
+如果我们希望INSERT插入一条新记录，但如果记录已经存在就更新该记录，此时可以使用`INSERT INTO ... ON DUPLICATE KEY UPDATE ...`语句：
+
+```sql
+INSERT INTO students (id, class_id, name, gender, score) VALUES (1, 1, '小明', 'F', 99) ON DUPLICATE KEY UPDATE name='小明', gender='F', score=99;
+```
+
+若`id=1`的记录不存在，`INSERT`语句将插入新记录，否则当前`id=1`的记录将被更新，更新的字段由`UPDATE`指定。
+
+#### 插入或忽略
+
+如果我们希望INSERT插入一条新记录，但如果记录已经存在就直接忽略，此时可以使用`INSERT IGNORE INTO ...`语句：
+
+```sql
+INSERT IGNORE INTO students (id, class_id, name, gender, score) VALUES (1, 1, '小明', 'F', 99);
+```
+
+若`id=1`的记录不存在，`INSERT`语句将插入新记录，否则不执行任何操作。
+
+#### 快照
+
+如果想要对一个表进行快照，即复制一份当前表的数据到一个新表，可以结合`CREATE TABLE`和`SELECT`：
+
+```sql
+-- 对class_id=1的记录进行快照，并存储为新表students_of_class1:
+CREATE TABLE students_of_class1 SELECT * FROM students WHERE class_id=1;
+```
+
+新创建的表结构和`SELECT`使用的表结构完全一致。
+
+#### 写入查询结果集
+
+如果查询结果集需要写入到表中，可以结合`INSERT`和`SELECT`，将`SELECT`语句的结果集直接插入到指定表中。
+
+例如，创建一个统计成绩的表`statistics`，记录各班的平均成绩：
+
+```sql
+CREATE TABLE statistics (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    class_id BIGINT NOT NULL,
+    average DOUBLE NOT NULL,
+    PRIMARY KEY (id)
+);
+```
+
+然后，我们就可以用一条语句写入各班的平均成绩：
+
+```sql
+INSERT INTO statistics (class_id, average) SELECT class_id, AVG(score) FROM students GROUP BY class_id;
+```
+
+确保`INSERT`语句的列和`SELECT`语句的列能一一对应，就可以在`statistics`表中直接保存查询的结果：
+
+```sql
+> SELECT * FROM statistics;
++----+----------+--------------+
+| id | class_id | average      |
++----+----------+--------------+
+|  1 |        1 |         86.5 |
+|  2 |        2 | 73.666666666 |
+|  3 |        3 | 88.333333333 |
++----+----------+--------------+
+3 rows in set (0.00 sec)
+```
+
+#### 强制实用指定索引
+
+在查询的时候数据库系统会自动分析查询语句，并选择一个最合适的索引。但是很多时候，数据库系统的查询优化器并不一定总是能使用最优索引。如果我们知道如何选择索引，可以使用`FORCE INDEX`强制查询使用指定的索引。例如：
+
+```sql
+> SELECT * FROM students FORCE INDEX (idx_class_id) WHERE class_id = 1 ORDER BY id DESC;
+```
+
+指定索引的前提是索引`idx_class_id`必须存在。
+
 ## 事物
+
+数据库事务具有ACID特性，用来保证多条SQL的全部执行。
+
+在执行SQL语句的时候，某些业务要求，一系列操作必须全部执行，而不能仅执行一部分。例如，一个转账操作：
+
+```
+-- 从id=1的账户给id=2的账户转账100元
+-- 第一步：将id=1的A账户余额减去100
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+-- 第二步：将id=2的B账户余额加上100
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+```
+
+这两条SQL语句必须全部执行，或者，由于某些原因，如果第一条语句成功，第二条语句失败，就必须全部撤销。
+
+这种把多条语句作为一个整体进行操作的功能，被称为数据库*事务*。数据库事务可以确保该事务范围内的所有操作都可以全部成功或者全部失败。如果事务失败，那么效果就和没有执行这些SQL一样，不会对数据库数据有任何改动。
+
+可见，数据库事务具有ACID这4个特性：
+
+- A：Atomic，原子性，将所有SQL作为原子工作单元执行，要么全部执行，要么全部不执行；
+- C：Consistent，一致性，事务完成后，所有数据的状态都是一致的，即A账户只要减去了100，B账户则必定加上了100；
+- I：Isolation，隔离性，如果有多个事务并发执行，每个事务作出的修改必须与其他事务隔离；
+- D：Duration，持久性，即事务完成后，对数据库数据的修改被持久化存储。
+
+对于单条SQL语句，数据库系统自动将其作为一个事务执行，这种事务被称为*隐式事务*。
+
+要手动把多条SQL语句作为一个事务执行，使用`BEGIN`开启一个事务，使用`COMMIT`提交一个事务，这种事务被称为*显式事务*，例如，把上述的转账操作作为一个显式事务：
+
+```
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+COMMIT;
+```
+
+很显然多条SQL语句要想作为一个事务执行，就必须使用显式事务。
+
+`COMMIT`是指提交事务，即试图把事务内的所有SQL所做的修改永久保存。如果`COMMIT`语句执行失败了，整个事务也会失败。
+
+有些时候，我们希望主动让事务失败，这时，可以用`ROLLBACK`回滚事务，整个事务会失败：
+
+```
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+ROLLBACK;
+```
+
+数据库事务是由数据库系统保证的，我们只需要根据业务逻辑使用它就可以。
+
+**隔离级别**
+
+对于两个并发执行的事务，如果涉及到操作同一条记录的时候，可能会发生问题。因为并发操作会带来数据的不一致性，包括脏读、不可重复读、幻读等。数据库系统提供了隔离级别来让我们有针对性地选择事务的隔离级别，避免数据不一致的问题。
+
+SQL标准定义了4种隔离级别，分别对应可能出现的数据不一致的情况：
+
+| Isolation Level  | 脏读（Dirty Read） | 不可重复读（Non Repeatable Read） | 幻读（Phantom Read） |
+| :--------------- | :----------------- | :-------------------------------- | :------------------- |
+| Read Uncommitted | Yes                | Yes                               | Yes                  |
+| Read Committed   | -                  | Yes                               | Yes                  |
+| Repeatable Read  | -                  | -                                 | Yes                  |
+| Serializable     | -                  | -                                 | -                    |
+
+后面会依次介绍4种隔离级别的数据一致性问题。
+
+### Read Uncommitted
+
+### Read Committed
+
+### Repeatable Read
+
+### Serializable
