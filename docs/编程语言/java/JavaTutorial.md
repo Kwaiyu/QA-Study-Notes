@@ -8115,7 +8115,7 @@ String url = builder.toString();
 
 ```
 String url = URLBuilder.builder() // 创建Builder
-        .setDomain("www.liaoxuefeng.com") // 设置domain
+        .setDomain("www.lsaiah.cn") // 设置domain
         .setScheme("https") // 设置scheme
         .setPath("/") // 设置路径
         .setQuery(Map.of("a", "123", "q", "K&R")) // 设置query
@@ -9658,7 +9658,7 @@ public interface Command {
 解释器模式（Interpreter）是一种针对特定问题设计的一种解决方案。例如，匹配字符串的时候，由于匹配条件非常灵活，使得通过代码来实现非常不灵活。举个例子，针对以下的匹配条件：
 
 - 以`+`开头的数字表示的区号和电话号码，如`+861012345678`；
-- 以英文开头，后接英文和数字，并以.分隔的域名，如`www.liaoxuefeng.com`；
+- 以英文开头，后接英文和数字，并以.分隔的域名，如`www.lsaiah.cn`；
 - 以`/`开头的文件路径，如`/path/to/file.txt`；
 - ...
 
@@ -10923,7 +10923,7 @@ private void handle(InputStream input, OutputStream output) throws IOException {
 }
 ```
 
-核心代码是先读取HTTP请求，这里我们只处理`GET /`的请求，当读取到空行时，表示已读到连续两个`\r\n`，说明请求结束，可以发送响应。发送响应的时候，首先发送响应代码`HTTP/1.0 200 OK`表示一个成功的200响应，使用`HTTP/1.0`协议，然后，依次发送Header，发送完Header后，再发送一个空行标识Header结束，紧接着发送HTTP Body，在浏览器输入`http://local.liaoxuefeng.com:8080/`就可以看到响应页面。1.0是早期版本，浏览器每次建立TCP连接后，只发送一个HTTP请求并接收一个HTTP响应，然后就关闭TCP连接。由于创建TCP连接本身就需要消耗一定的时间，因此，HTTP 1.1允许浏览器和服务器在同一个TCP连接上反复发送、接收多个HTTP请求和响应，这样就大大提高了传输效率。HTTP 2.0可以支持浏览器同时发出多个请求，但每个请求需要唯一标识，服务器可以不按请求的顺序返回多个响应，由浏览器自己把收到的响应和请求对应起来。可见，HTTP 2.0进一步提高了传输效率，因为浏览器发出一个请求后，不必等待响应，就可以继续发下一个请求。HTTP 3.0为了进一步提高速度，将抛弃TCP协议，改为使用无需创建连接的UDP协议。
+核心代码是先读取HTTP请求，这里我们只处理`GET /`的请求，当读取到空行时，表示已读到连续两个`\r\n`，说明请求结束，可以发送响应。发送响应的时候，首先发送响应代码`HTTP/1.0 200 OK`表示一个成功的200响应，使用`HTTP/1.0`协议，然后，依次发送Header，发送完Header后，再发送一个空行标识Header结束，紧接着发送HTTP Body，在浏览器输入`http://local.lsaiah.cn:8080/`就可以看到响应页面。1.0是早期版本，浏览器每次建立TCP连接后，只发送一个HTTP请求并接收一个HTTP响应，然后就关闭TCP连接。由于创建TCP连接本身就需要消耗一定的时间，因此，HTTP 1.1允许浏览器和服务器在同一个TCP连接上反复发送、接收多个HTTP请求和响应，这样就大大提高了传输效率。HTTP 2.0可以支持浏览器同时发出多个请求，但每个请求需要唯一标识，服务器可以不按请求的顺序返回多个响应，由浏览器自己把收到的响应和请求对应起来。可见，HTTP 2.0进一步提高了传输效率，因为浏览器发出一个请求后，不必等待响应，就可以继续发下一个请求。HTTP 3.0为了进一步提高速度，将抛弃TCP协议，改为使用无需创建连接的UDP协议。
 
 ### Servlet入门
 
@@ -12899,7 +12899,7 @@ public class FileServlet extends HttpServlet {
 server {
     listen 80;
 
-    server_name www.local.liaoxuefeng.com
+    server_name www.local.lsaiah.cn
 
     # 静态文件根目录:
     root /path/to/src/main/webapp;
@@ -14127,7 +14127,7 @@ public class BookService {
 
 考察业务模型可以发现，`BookService`关系的是自身的核心逻辑，但整个系统还要求关注安全检查、日志、事务等功能，这些功能实际上“横跨”多个业务方法，为了实现这些功能，不得不在每个业务方法上重复编写代码。
 
-一种可行的方式是使用[Proxy模式](https://www.liaoxuefeng.com/wiki/1252599548343744/1281319432618017)，将某个功能，例如，权限检查，放入Proxy中：
+一种可行的方式是使用代理模式，将某个功能，例如，权限检查，放入Proxy中：
 
 ```
 public class SecurityCheckBookService implements BookService {
@@ -15069,7 +15069,7 @@ SELECT id, email, office_address AS workAddress, name FROM users WHERE email = ?
 
 Spring提供的声明式事务极大地方便了在数据库中使用事务，正确使用声明式事务的关键在于确定好事务边界，理解事务传播级别。
 
-使用Spring操作JDBC虽然方便，但是我们在前面讨论JDBC的时候，讲到过[JDBC事务](https://www.liaoxuefeng.com/wiki/1252599548343744/1321748500840481)，如果要在Spring中操作事务，没必要手写JDBC事务，可以使用Spring提供的高级接口来操作事务。
+使用Spring操作JDBC虽然方便，但是我们在前面讨论JDBC的时候，讲到过JDBC事物，如果要在Spring中操作事务，没必要手写JDBC事务，可以使用Spring提供的高级接口来操作事务。
 
 Spring提供了一个`PlatformTransactionManager`来表示事务管理器，所有的事务都由它负责管理。而事务由`TransactionStatus`表示。如果手写事务代码，使用`try...catch`如下：
 
@@ -15662,7 +15662,7 @@ public class AppConfig {
 }
 ```
 
-注意我们在[定制Bean](https://www.liaoxuefeng.com/wiki/1252599548343744/1308043627200545)中讲到过`FactoryBean`，`LocalSessionFactoryBean`是一个`FactoryBean`，它会再自动创建一个`SessionFactory`，在Hibernate中，`Session`是封装了一个JDBC `Connection`的实例，而`SessionFactory`是封装了JDBC `DataSource`的实例，即`SessionFactory`持有连接池，每次需要操作数据库的时候，`SessionFactory`创建一个新的`Session`，相当于从连接池获取到一个新的`Connection`。`SessionFactory`就是Hibernate提供的最核心的一个对象，但`LocalSessionFactoryBean`是Spring提供的为了让我们方便创建`SessionFactory`的类。
+注意我们在定制Bean中讲到过`FactoryBean`，`LocalSessionFactoryBean`是一个`FactoryBean`，它会再自动创建一个`SessionFactory`，在Hibernate中，`Session`是封装了一个JDBC `Connection`的实例，而`SessionFactory`是封装了JDBC `DataSource`的实例，即`SessionFactory`持有连接池，每次需要操作数据库的时候，`SessionFactory`创建一个新的`Session`，相当于从连接池获取到一个新的`Connection`。`SessionFactory`就是Hibernate提供的最核心的一个对象，但`LocalSessionFactoryBean`是Spring提供的为了让我们方便创建`SessionFactory`的类。
 
 注意到上面创建`LocalSessionFactoryBean`的代码，首先用`Properties`持有Hibernate初始化`SessionFactory`时用到的所有设置，常用的设置请参考[Hibernate文档](https://docs.jboss.org/hibernate/orm/5.4/userguide/html_single/Hibernate_User_Guide.html#configurations)，这里我们只定义了3个设置：
 
@@ -17167,7 +17167,7 @@ public class ApiController {
 
 编写REST接口只需要定义`@RestController`，然后，每个方法都是一个API接口，输入和输出只要能被Jackson序列化或反序列化为JSON就没有问题。我们用浏览器测试GET请求，可直接显示JSON响应：
 
-![user-api](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/Json响应)
+![user-api](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/Json响应.png)
 
 要测试POST请求，可以用curl命令：
 
@@ -17636,7 +17636,7 @@ CORS可以控制指定域的页面JavaScript能否访问API。
 第一种方法是使用`@CrossOrigin`注解，可以在`@RestController`的class级别或方法级别定义一个`@CrossOrigin`，例如：
 
 ```
-@CrossOrigin(origins = "http://local.liaoxuefeng.com:8080")
+@CrossOrigin(origins = "http://local.lsaiah.cn:8080")
 @RestController
 @RequestMapping("/api")
 public class ApiController {
@@ -17644,7 +17644,7 @@ public class ApiController {
 }
 ```
 
-上述定义在`ApiController`处的`@CrossOrigin`指定了只允许来自`local.liaoxuefeng.com`跨域访问，允许多个域访问需要写成数组形式，例如`origins = {"http://a.com", "https://www.b.com"})`。如果要允许任何域访问，写成`origins = "*"`即可。
+上述定义在`ApiController`处的`@CrossOrigin`指定了只允许来自`local.lsaiah.cn`跨域访问，允许多个域访问需要写成数组形式，例如`origins = {"http://a.com", "https://www.b.com"})`。如果要允许任何域访问，写成`origins = "*"`即可。
 
 如果有多个REST Controller都需要使用CORS，那么，每个Controller都必须标注`@CrossOrigin`注解。
 
@@ -17659,7 +17659,7 @@ WebMvcConfigurer createWebMvcConfigurer() {
         @Override
         public void addCorsMappings(CorsRegistry registry) {
             registry.addMapping("/api/**")
-                    .allowedOrigins("http://local.liaoxuefeng.com:8080")
+                    .allowedOrigins("http://local.lsaiah.cn:8080")
                     .allowedMethods("GET", "POST")
                     .maxAge(3600);
             // 可以继续添加其他URL规则:
@@ -17682,24 +17682,24 @@ WebMvcConfigurer createWebMvcConfigurer() {
 我们先用`http://localhost:8080`在Chrome浏览器中打开首页，然后打开Chrome的开发者工具，切换到Console，输入一个JavaScript语句来跨域访问API：
 
 ```
-$.getJSON( "http://local.liaoxuefeng.com:8080/api/users", (data) => console.log(JSON.stringify(data)));
+$.getJSON( "http://local.lsaiah.cn:8080/api/users", (data) => console.log(JSON.stringify(data)));
 ```
 
-上述源站的域是`http://localhost:8080`，跨域访问的是`http://local.liaoxuefeng.com:8080`，因为配置的CORS不允许`localhost`访问，所以不出意外地得到一个错误：
+上述源站的域是`http://localhost:8080`，跨域访问的是`http://local.lsaiah.cn:8080`，因为配置的CORS不允许`localhost`访问，所以不出意外地得到一个错误：
 
-![cors-deny](https://www.liaoxuefeng.com/files/attachments/1347273845899329/l)
+![cors-deny](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/cors-deny.png)
 
 浏览题打印了错误原因就是`been blocked by CORS policy`。
 
-我们再用`http://local.liaoxuefeng.com:8080`在Chrome浏览器中打开首页，在Console中执行JavaScript访问`localhost`：
+我们再用`http://local.lsaiah.cn:8080`在Chrome浏览器中打开首页，在Console中执行JavaScript访问`localhost`：
 
 ```
 $.getJSON( "http://localhost:8080/api/users", (data) => console.log(JSON.stringify(data)));
 ```
 
-因为CORS规则允许来自`http://local.liaoxuefeng.com:8080`的访问，因此访问成功，打印出API的返回值：
+因为CORS规则允许来自`http://local.lsaiah.cn:8080`的访问，因此访问成功，打印出API的返回值：
 
-![cors-ok](https://www.liaoxuefeng.com/files/attachments/1347274521182273/l)
+![cors-ok](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/cors-ok.png)
 
 #### 国际化
 
@@ -18047,11 +18047,11 @@ public DeferredResult<User> user(@PathVariable("id") long id) {
 
 运行程序，当我们访问`http://localhost:8080/api/users/1`时，假定用户存在，则浏览器在1秒后返回结果：
 
-![deferred-result-ok](https://www.liaoxuefeng.com/files/attachments/1348288580157506/l)
+![deferred-result-ok](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/deferred-result-ok.png)
 
 访问一个不存在的User ID，则等待1秒后返回错误结果：
 
-![deferred-result-error](https://www.liaoxuefeng.com/files/attachments/1348288645169218/l)
+![deferred-result-error](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/deferred-result-error.png)
 
 **使用Filter**
 
@@ -18315,7 +18315,7 @@ window.chatWs.send(JSON.stringify({text: inputText}));
 
 最后，连调浏览器和服务器端，如果一切无误，可以开多个不同的浏览器测试WebSocket的推送和广播：
 
-![chat](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/chat)
+![chat](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/chat.png)
 
 和上一节我们介绍的异步处理类似，Servlet的线程模型并不适合大规模的长链接。基于NIO的Netty等框架更适合处理WebSocket长链接，我们将在后面介绍。
 
@@ -18474,10 +18474,10 @@ Artemis有个很好的设计，就是它把程序和数据完全分离了。我�
 
 ```
 $ pwd
-/Users/liaoxuefeng/workspace/spring-integration-jms
+/Users/lsaiah/workspace/spring-integration-jms
 
 $ artemis create jms-data
-Creating ActiveMQ Artemis instance at: /Users/liaoxuefeng/workspace/spring-integration-jms/jms-data
+Creating ActiveMQ Artemis instance at: /Users/lsaiah/workspace/spring-integration-jms/jms-data
 
 --user: is a mandatory property!
 Please provide the default username:
@@ -18496,11 +18496,11 @@ done! Your system can make 0.09 writes per millisecond, your journal-buffer-time
 
 You can now start the broker by executing:  
 
-   "/Users/liaoxuefeng/workspace/spring-integration-jms/jms-data/bin/artemis" run
+   "/Users/lsaiah/workspace/spring-integration-jms/jms-data/bin/artemis" run
 
 Or you can run the broker in the background using:
 
-   "/Users/liaoxuefeng/workspace/spring-integration-jms/jms-data/bin/artemis-service" start
+   "/Users/lsaiah/workspace/spring-integration-jms/jms-data/bin/artemis-service" start
 ```
 
 在创建过程中，会要求输入连接用户和口令，这里我们设定`admin`和`password`，以及是否允许匿名访问（这里选择`N`）。
@@ -18829,7 +18829,7 @@ public class TaskService {
 - 是否忘记了在`AppConfig`中标注`@EnableScheduling`；
 - 是否忘记了在定时任务的方法所在的class标注`@Component`。
 
-除了可以使用`fixedRate`外，还可以使用`fixedDelay`，两者的区别我们已经在[使用线程池](https://www.liaoxuefeng.com/wiki/1252599548343744/1306581130018849)一节中讲过，这里不再重复。
+除了可以使用`fixedRate`外，还可以使用`fixedDelay`，两者的区别我们已经在使用线程池一节中讲过，这里不再重复。
 
 有的童鞋在实际开发中会遇到一个问题，因为Java的注解全部是常量，写死了`fixedDelay=30000`，如果根据实际情况要改成60秒怎么办，只能重新编译？
 
@@ -18861,7 +18861,7 @@ public class TaskService {
 @Scheduled(initialDelay = 30_000, fixedDelayString = "${task.checkDiskSpace:PT2M30S}")
 ```
 
-以字符串`PT2M30S`表示的`Duration`就是2分30秒，请参考[LocalDateTime](https://www.liaoxuefeng.com/wiki/1252599548343744/1303871087444002)一节的Duration相关部分。
+以字符串`PT2M30S`表示的`Duration`就是2分30秒，请参考LocalDateTime一节的Duration相关部分。
 
 多个`@Scheduled`方法完全可以放到一个Bean中，这样便于统一管理各类定时任务。
 
@@ -19107,7 +19107,7 @@ public class BlacklistInterceptor implements HandlerInterceptor {
 
 下一步就是正常启动Web应用程序，不要关闭它，我们打开另一个命令行窗口，输入`jconsole`启动JavaSE自带的一个JMX客户端程序：
 
-![jconsole](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/jconsole)
+![jconsole](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/jconsole.png)
 
 通过jconsole连接到一个Java进程最简单的方法是直接在Local Process中找到正在运行的`AppConfig`，点击Connect即可连接到我们当前正在运行的Web应用，在jconsole中可直接看到内存、CPU等资源的监控。
 
