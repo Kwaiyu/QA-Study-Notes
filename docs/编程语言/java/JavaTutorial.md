@@ -6046,6 +6046,130 @@ HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandle
 String s = response.body();
 ```
 
+**使用okhttp3的RequestBody**
+
+[又拍云内容识别](https://help.upyun.com/knowledge-base/audit_nostorage/#e59bbee78987e8af86e588abe59bbee78987e58685e5aeb9)
+
+```
+package file;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.text.SimpleDateFormat;
+import java.util.Base64;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+/**
+ * 又拍云图片识别
+ * 文档：http://docs.upyun.com/ai/audit_nostorage/#_2
+ * @author mark
+ *
+ */
+public class Identify {
+
+	private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
+
+	public static void main(String[] args) throws Exception {
+		//图片路径
+		File pic = new File("20190604.jpg");
+		//秘钥，控制台获取
+		String clientKey = "";
+		String clientSecret = "";
+		//鉴权参数
+		String method = "POST";
+		String uri = "/image/bin/check?act=porn&act=political&act=terror";
+		String date = getRFC1123Time();
+		
+		 String sign = sign(clientKey, clientSecret, method, uri, date, "", "");
+         System.out.println(sign);
+
+		OkHttpClient client = new OkHttpClient().newBuilder().build();
+		MediaType mediaType = MediaType.parse("image/jpeg");
+		RequestBody body = RequestBody.create(mediaType, pic);
+		Request request = new Request.Builder()
+				.url("http://banma.api.upyun.com" + uri)
+				.method("POST", body)
+				.addHeader("Authorization", sign)
+				.addHeader("Date", date)
+				.addHeader("Content-Type", "image/jpeg")
+				.build();
+		Response response = client.newCall(request).execute();
+		System.out.println(response.body().string());
+	}
+
+	/**
+	 * 获取 RFC1123 格式的时间字符串 Sun, 06 Nov 1994 08:49:37 GMT
+	 * 
+	 * @see https://www.w3.org/Protocols/rfc2616/rfc2616.txt
+	 * @return RFC1123 格式的时间字符串
+	 */
+	public static String getRFC1123Time() {
+		Calendar cal = Calendar.getInstance();
+		// 按照文档要求格式化时间格式，并指定日期格式符号的区域设置
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+		// 设置时区
+		sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+		return sdf.format(cal.getTime());
+	}
+
+	public static String md5(String string) {
+		byte[] hash;
+		try {
+			hash = MessageDigest.getInstance("MD5").digest(string.getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException("UTF-8 is unsupported", e);
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException("MessageDigest不支持MD5Util", e);
+		}
+		StringBuilder hex = new StringBuilder(hash.length * 2);
+		for (byte b : hash) {
+			if ((b & 0xFF) < 0x10)
+				hex.append("0");
+			hex.append(Integer.toHexString(b & 0xFF));
+		}
+		return hex.toString();
+	}
+
+	public static byte[] hashHmac(String data, String key)
+			throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+		SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), HMAC_SHA1_ALGORITHM);
+		Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+		mac.init(signingKey);
+		return mac.doFinal(data.getBytes());
+	}
+
+	public static String sign(String key, String secret, String method, String uri, String date, String policy,
+			String md5) throws Exception {
+		String value = method + "&" + uri + "&" + date;
+		if (policy != "") {
+			value = value + "&" + policy;
+		}
+		if (md5 != "") {
+			value = value + "&" + md5;
+		}
+		byte[] hmac = hashHmac(value, secret);
+		String sign = Base64.getEncoder().encodeToString(hmac);
+		return "UPYUN " + key + ":" + sign;
+	}
+
+}
+```
+
 
 
 ### RMI远程调用
