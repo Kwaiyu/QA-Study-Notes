@@ -69,4 +69,4 @@ $ git reflog
 
 ### 命令脑图
 
-![img](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/git.image)
+![img](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/git.png)
