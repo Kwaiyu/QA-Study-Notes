@@ -707,6 +707,22 @@ list元素也可以是另一个list，比如：
 
 #### tuple
 
+tuple序列表叫元组，tuple和list非常类似，但是tuple一旦初始化就不能修改。如列出同学的名字：
+
+```python
+>>> classmates = ('Michael', 'Bob', 'Tracy')
+```
+
+没有append()，insert()这样的方法。其他获取元素的方法和list是一样的，你可以正常地使用`classmates[0]`，`classmates[-1]`，但不能赋值成另外的元素。因为tuple不可变，所以代码更安全。如果可能能用tuple代替list就尽量用tuple。
+
+```
+
+>>> t = (1, 2)
+>>> t
+(1, 2)
+
+```
+
 
 
 ### 条件判断
