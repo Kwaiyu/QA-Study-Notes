@@ -572,9 +572,7 @@ The area of a circle with radius 2.5 is 19.62
 
 ### 使用list和tuple
 
-list和tuple是Python内置的有序集合，一个可变，一个不可变。根据需要来选择使用它们。
-
-#### list
+#### list可变集合
 
 Python内置的一种数据类型列表list是一种有序的集合，可以随时添加和删除其中的元素。
 
@@ -705,7 +703,7 @@ list元素也可以是另一个list，比如：
 0
 ```
 
-#### tuple
+#### tuple不可变集合
 
 tuple序列表叫元组，tuple和list非常类似，但是tuple一旦初始化就不能修改。如列出同学的名字：
 
@@ -745,9 +743,204 @@ tuple序列表叫元组，tuple和list非常类似，但是tuple一旦初始化�
 
 ### 条件判断
 
+比如，输入用户年龄，根据年龄打印不同的内容，在Python程序中，用`if`语句实现：
+
+```python
+age = 20
+if age >= 18:
+    print('your age is', age)
+    print('adult')
+```
+
+根据Python的缩进规则，如果`if`语句判断是`True`，就把缩进的两行print语句执行了，否则，什么也不做。
+
+也可以给`if`添加一个`else`语句，意思是，如果`if`判断是`False`，不要执行`if`的内容，去把`else`执行了：
+
+```python
+age = 3
+if age >= 18:
+    print('your age is', age)
+    print('adult')
+else:
+    print('your age is', age)
+    print('teenager')
+```
+
+当然上面的判断是很粗略的，完全可以用`elif`做更细致的判断：
+
+```
+age = 3
+if age >= 18:
+    print('adult')
+elif age >= 6:
+    print('teenager')
+else:
+    print('kid')
+```
+
+`elif`是`else if`的缩写，完全可以有多个`elif`，所以`if`语句的完整形式就是：
+
+```python
+if <条件判断1>:
+    <执行1>
+elif <条件判断2>:
+    <执行2>
+elif <条件判断3>:
+    <执行3>
+else:
+    <执行4>
+```
+
+`if`语句执行有个特点，它是从上往下判断，如果在某个判断上是`True`，把该判断对应的语句执行后，就忽略掉剩下的`elif`和`else`。
+
+`if`判断条件还可以简写，比如写：
+
+```python
+if x:
+    print('True')
+```
+
+只要`x`是非零数值、非空字符串、非空list等，就判断为`True`，否则为`False`。
+
+**从input获取条件**
+
+```python
+birth = input('birth: ')
+if birth < 2000:
+    print('00前')
+else:
+    print('00后')
+```
+
+输入`1982`，结果报错：
+
+```python
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: unorderable types: str() > int()
+```
+
+这是因为`input()`返回的数据类型是`str`，`str`不能直接和整数比较，必须先把`str`转换成整数。Python提供了`int()`函数来完成这件事情：
+
+```python
+s = input('birth: ')
+birth = int(s)
+if birth < 2000:
+    print('00前')
+else:
+    print('00后')
+```
+
+再次运行，就可以得到正确地结果。但是，如果输入`abc`又会得到一个错误信息。因为`int()`函数发现一个字符串并不是合法的数字时就会报错，程序就退出了。
+
 ### 循环
 
+`break`语句可以在循环过程中直接退出循环，而`continue`语句可以提前结束本轮循环，并直接开始下一轮循环。这两个语句通常都*必须*配合`if`语句使用。
+
+*要特别注意*，不要滥用`break`和`continue`语句。`break`和`continue`会造成代码执行逻辑分叉过多，容易出错。大多数循环并不需要用到`break`和`continue`语句，上面的两个例子，都可以通过改写循环条件或者修改循环逻辑，去掉`break`和`continue`语句。
+
+有些时候，如果代码写得有问题，会让程序陷入“死循环”，也就是永远循环下去。这时可以用`Ctrl+C`退出程序，或者强制结束Python进程。
+
+Python的循环有两种，一种是for...in循环，依次把list或tuple中的每个元素迭代出来，看例子：
+
+```python
+names = ['Michael', 'Bob', 'Tracy']
+for name in names:
+    print(name)
+```
+
+执行这段代码，会依次打印`names`的每一个元素。
+
+所以`for x in ...`循环就是把每个元素代入变量`x`，然后执行缩进块的语句。
+
+再比如我们想计算1-10的整数之和，可以用一个`sum`变量做累加：
+
+```python
+sum = 0
+for x in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+    sum = sum + x
+print(sum)
+```
+
+如果要计算1-100的整数之和，从1写到100有点困难，幸好Python提供一个`range()`函数，可以生成一个整数序列，再通过`list()`函数可以转换为list。比如`range(5)`生成的序列是从0开始小于5的整数：
+
+```python
+>>> list(range(5))
+[0, 1, 2, 3, 4]
+>>>
+sum = 0
+for x in range(101):
+    sum = sum + x
+print(sum)
+```
+
+第二种循环是while循环，只要条件满足，就不断循环，条件不满足时退出循环。比如我们要计算100以内所有奇数之和，可以用while循环实现：
+
+```python
+sum = 0
+n = 99
+while n > 0:
+    sum = sum + n
+    n = n - 2
+print(sum)
+```
+
+在循环内部变量`n`不断自减，直到变为`-1`时，不再满足while条件，循环退出。
+
+**练习**
+
+利用循环依次对list中的每个名字打印出Hello, xxx!
+
+```python
+# -*- coding: utf-8 -*-
+L = ['Bart','Lisa','Adam']
+for i in L:
+    print('Hello, %s!' %i)
+```
+
+**break**
+
+如果要提前结束循环，可以用`break`语句：
+
+```python
+n = 1
+while n <= 100:
+    if n > 10: # 当n = 11时，条件满足，执行break语句
+        break # break语句会结束当前循环
+    print(n)
+    n = n + 1
+print('END')
+```
+
+执行上面的代码可以看到，打印出1~10后，紧接着打印`END`，程序结束。
+
+**continue**
+
+在循环过程中，也可以通过`continue`语句，跳过当前的这次循环，直接开始下一次循环。
+
+```python
+n = 0
+while n < 10:
+    n = n + 1
+    print(n)
+```
+
+上面的程序可以打印出1～10。但是，如果我们想只打印奇数，可以用`continue`语句跳过某些循环：
+
+```python
+n = 0
+while n < 10:
+    n = n + 1
+    if n % 2 == 0: # 如果n是偶数，执行continue语句
+        continue # continue语句会直接继续下一轮循环，后续的print()语句不会执行
+    print(n)
+```
+
+执行上面的代码可以看到，打印的不再是1～10，而是1，3，5，7，9。
+
 ### 使用dict和set
+
+
 
 ## 函数
 
