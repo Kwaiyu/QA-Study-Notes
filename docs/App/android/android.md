@@ -381,7 +381,19 @@ logcat -v time -f /xxx.txt
 
 ```
 adb shell dumpsys window w |findstr \/ |findstr name=
+或
+aapt dump badging D:\weixin658android1060.apk
+或
+java -jar D:\Tools\apktool_2.2.3.jar d D:\Tools\weixin658android1060.apk
 ```
+
+获取第三方apk包名：
+
+```
+adb shell pm list package -3 -f
+```
+
+
 
 ### 调用 Activity 管理器 (`am`)
 
@@ -640,4 +652,137 @@ Enter ".help" for instructions
 ```
 
 要了解详情，请参阅 [sqlite3 命令行文档](http://www.sqlite.org/cli.html)。
+
+## 反编译
+
+### sdk api对应的android版本
+
+|                                                              |                                                             |                                                              |                                                              |
+| :----------------------------------------------------------- | :---------------------------------------------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+| 平台版本                                                     | API 级别                                                    | VERSION_CODE                                                 | 备注                                                         |
+| [Android 10.0](https://developer.android.com/preview)        | [29](https://developer.android.com/sdk/api_diff/29/changes) | [`Q`](https://developer.android.com/reference/android/os/Build.VERSION_CODES#Q) | [平台亮点](https://developer.android.com/about/versions/10/features) |
+| [Android 9](https://developer.android.com/about/versions/pie) | [28](https://developer.android.com/sdk/api_diff/28/changes) | [`P`](https://developer.android.com/reference/android/os/Build.VERSION_CODES#P) | [平台亮点](https://developer.android.com/about/versions/pie/android-9.0) |
+| [Android 8.1](https://developer.android.com/about/versions/oreo/android-8.1) | [27](https://developer.android.com/sdk/api_diff/27/changes) | `O_MR1`                                                      | [平台亮点](https://developer.android.com/about/versions/oreo/android-8.1) |
+| [Android 8.0](https://developer.android.com/about/versions/oreo) | [26](https://developer.android.com/sdk/api_diff/26/changes) | `O`                                                          | [平台亮点](https://developer.android.com/about/versions/oreo/android-8.0) |
+| [Android 7.1.1 Android 7.1](https://developer.android.com/about/versions/nougat/android-7.1) | [25](https://developer.android.com/sdk/api_diff/25/changes) | `N_MR1`                                                      | [平台亮点](https://developer.android.com/about/versions/nougat) |
+| [Android 7.0](https://developer.android.com/about/versions/nougat/android-7.0) | [24](https://developer.android.com/sdk/api_diff/24/changes) | `N`                                                          | [平台亮点](https://developer.android.com/about/versions/nougat) |
+| [Android 6.0](https://developer.android.com/about/versions/marshmallow/android-6.0) | [23](https://developer.android.com/sdk/api_diff/23/changes) | `M`                                                          | [平台亮点](https://developer.android.com/about/versions/marshmallow) |
+| [Android 5.1](https://developer.android.com/about/versions/android-5.1) | [22](https://developer.android.com/sdk/api_diff/22/changes) | `LOLLIPOP_MR1`                                               | [平台亮点](https://developer.android.com/about/versions/lollipop) |
+| [Android 5.0](https://developer.android.com/about/versions/android-5.0) | [21](https://developer.android.com/sdk/api_diff/21/changes) | `LOLLIPOP`                                                   |                                                              |
+| Android 4.4W                                                 | [20](https://developer.android.com/sdk/api_diff/20/changes) | `KITKAT_WATCH`                                               | 仅限 KitKat for Wearables                                    |
+| [Android 4.4](https://developer.android.com/about/versions/android-4.4) | [19](https://developer.android.com/sdk/api_diff/19/changes) | `KITKAT`                                                     | [平台亮点](https://developer.android.com/about/versions/kitkat) |
+| [Android 4.3](https://developer.android.com/about/versions/android-4.3) | [18](https://developer.android.com/sdk/api_diff/18/changes) | `JELLY_BEAN_MR2`                                             | [平台亮点](https://developer.android.com/about/versions/jelly-bean) |
+| [Android 4.2、4.2.2](https://developer.android.com/about/versions/android-4.2) | [17](https://developer.android.com/sdk/api_diff/17/changes) | `JELLY_BEAN_MR1`                                             | [平台亮点](https://developer.android.com/about/versions/jelly-bean#android-42) |
+| [Android 4.1、4.1.1](https://developer.android.com/about/versions/android-4.1) | [16](https://developer.android.com/sdk/api_diff/16/changes) | `JELLY_BEAN`                                                 | [平台亮点](https://developer.android.com/about/versions/jelly-bean#android-41) |
+| [Android 4.0.3、4.0.4](https://developer.android.com/about/versions/android-4.0.3) | [15](https://developer.android.com/sdk/api_diff/15/changes) | `ICE_CREAM_SANDWICH_MR1`                                     | [平台亮点](https://developer.android.com/about/versions/android-4.0-highlights) |
+| [Android 4.0、4.0.1、4.0.2](https://developer.android.com/about/versions/android-4.0) | [14](https://developer.android.com/sdk/api_diff/14/changes) | `ICE_CREAM_SANDWICH`                                         |                                                              |
+| [Android 3.2](https://developer.android.com/about/versions/android-3.2) | [13](https://developer.android.com/sdk/api_diff/13/changes) | `HONEYCOMB_MR2`                                              |                                                              |
+| [Android 3.1.x](https://developer.android.com/about/versions/android-3.1) | [12](https://developer.android.com/sdk/api_diff/12/changes) | `HONEYCOMB_MR1`                                              | [平台亮点](https://developer.android.com/about/versions/android-3.1-highlights) |
+| [Android 3.0.x](https://developer.android.com/about/versions/android-3.0) | [11](https://developer.android.com/sdk/api_diff/11/changes) | `HONEYCOMB`                                                  | [平台亮点](https://developer.android.com/about/versions/android-3.0-highlights) |
+| [Android 2.3.4 Android 2.3.3](https://developer.android.com/about/versions/android-2.3.3) | [10](https://developer.android.com/sdk/api_diff/10/changes) | `GINGERBREAD_MR1`                                            | [平台亮点](https://developer.android.com/about/versions/android-2.3-highlights) |
+| [Android 2.3.2 Android 2.3.1 Android 2.3](https://developer.android.com/about/versions/android-2.3) | [9](https://developer.android.com/sdk/api_diff/9/changes)   | `GINGERBREAD`                                                |                                                              |
+| [Android 2.2.x](https://developer.android.com/about/versions/android-2.2) | [8](https://developer.android.com/sdk/api_diff/8/changes)   | `FROYO`                                                      | [平台亮点](https://developer.android.com/about/versions/android-2.2-highlights) |
+| [Android 2.1.x](https://developer.android.com/about/versions/android-2.1) | [7](https://developer.android.com/sdk/api_diff/7/changes)   | `ECLAIR_MR1`                                                 | [平台亮点](https://developer.android.com/about/versions/android-2.0-highlights) |
+| [Android 2.0.1](https://developer.android.com/about/versions/android-2.0.1) | [6](https://developer.android.com/sdk/api_diff/6/changes)   | `ECLAIR_0_1`                                                 |                                                              |
+| [Android 2.0](https://developer.android.com/about/versions/android-2.0) | [5](https://developer.android.com/sdk/api_diff/5/changes)   | `ECLAIR`                                                     |                                                              |
+| [Android 1.6](https://developer.android.com/about/versions/android-1.6) | [4](https://developer.android.com/sdk/api_diff/4/changes)   | `DONUT`                                                      | [平台亮点](https://developer.android.com/about/versions/android-1.6-highlights) |
+| [Android 1.5](https://developer.android.com/about/versions/android-1.5) | [3](https://developer.android.com/sdk/api_diff/3/changes)   | `CUPCAKE`                                                    | [平台亮点](https://developer.android.com/about/versions/android-1.5-highlights) |
+| [Android 1.1](https://developer.android.com/about/versions/android-1.1) | 2                                                           | `BASE_1_1`                                                   |                                                              |
+| Android 1.0                                                  | 1                                                           | `BASE`                                                       |                                                              |
+
+### apktool获取资源文件
+
+使用ApkTool反编译APK得到xml文件、AndroidManifest.xml和图片
+
+```
+apktool d xxx.apk
+```
+
+直接解压AndroidManifest.xml乱码
+
+### dex2jar将dex反编译成jar
+
+由于APkTool只能将资源文件提取处理，对于.dex类型的文件是无法查看的，这里就需要用到dex2jar了。
+
+```
+sh d2j-dex2jar.sh classes.dex
+sh d2j-dex2jar.sh classes2.dex
+windows:
+d2j-dex2jar.bat classes.dex
+d2j-dex2jar.bat classes2.dex
+```
+
+### JD-GUI查看反编译后的程序源码
+
+如果apk在发布的时候加过混淆处理，那么也只能得到混淆后的版本。
+
+破解难度大
+
+### 重新打包签名
+
+#### 修改res文件夹
+
+1. 回编译apk
+
+   files就是对应刚刚修改的apk文件夹，执行完后会重新生成一个apk文件。
+
+   ```
+   apktool b files
+   编译后apk安装不成功提示INSTALL_PARSE_FAILED_UNEXPECTED_EXCEPTION
+   ```
+
+   
+
+2. 生成签名
+
+   -genkey 产生证书文件
+   -alias 产生别名
+   -keystore 指定密钥库的.keystore文件中
+   -keyalg 指定密钥的算法,这里指定为RSA(非对称密钥算法)
+   -validity 为证书有效天数，这里我们写的是40000天
+
+   ```
+   keytool -genkey -keystore coolapk.keystore -keyalg RSA -validity 10000 -alias coolapk
+   ```
+
+   ```
+   keytool -genkey -alias demo.keystore -keyalg RSA -validity 40000 -keystore demo.keystore
+   ```
+
+3. 为apk增加签名
+
+   -verbose 指定生成详细输出
+   -keystore 指定数字证书存储路径
+
+   ```
+   jarsigner -digestalg SHA1 -sigalg MD5withRSA -tsa -verbose -keystore coolapk.keystore -signedjar coolapk-signed.apk coolapk.apk coolapk
+   ```
+
+   ```
+   jarsigner -verbose -keystore demo.keystore demo.apk demo.keystore
+   ```
+
+4. 验证签名
+
+   ```
+   jarsigner -verify [待验证的apk]
+   ```
+
+#### 修改代码
+
+1. 将改好的class复制到classes-dex2jar.jar包中覆盖替换。
+
+2. 把classes-dex2jar.jar包重新转成dex文件。
+
+   ```
+   d2j-jar2dex classes-dex2jar.jar
+   ```
+
+3. 将修改完成的dex文件复制到原来的apk包覆盖替换。
+
+4. 由于apk包防篡改机制在编译打包成apk时自动生成META-INF文件夹下的MANIFEST.MF、CERT.RSA、CERT.SF对文件进行了标识记录。
+
+   删除重新生成一份新的，或使用签名工具重新签名。
+
+
 
