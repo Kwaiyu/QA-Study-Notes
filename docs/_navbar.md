@@ -55,7 +55,7 @@
   
 * App
 
-  * [Android](/App/android/am.md)
+  * [Android](/App/android/android.md)
   * [IOS](/App/ios)
   
 * 其它
