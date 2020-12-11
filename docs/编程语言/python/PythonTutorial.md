@@ -4,8 +4,6 @@
 
 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。由 Guido van Rossum 于 1989 年底发明，第一个公开发行版发行于 1991 年。像 Perl 语言一样, Python 源代码同样遵循 GPL(GNU General Public License) 协议。
 
-$$x=\frac {-b±\sqrt{b^2-4ac}}{2a}$$
-
 ### 安装
 
 **在Mac上安装Python**
@@ -233,8 +231,6 @@ line1
 line2
 line3
 ```
-
-上面是在交互式命令行内输入，注意在输入多行内容时，提示符由`>>>`变为`...`，提示你可以接着上一行输入，注意`...`是提示符，不是代码的一部分。当输入完结束符`````和括号`)`后，执行该语句并打印结果。
 
 如果写成程序并存为`.py`文件，就是：
 
@@ -1799,6 +1795,286 @@ def move(n, a, b, c):
 
 
 ## 高级特性
+
+在Python中，代码越少越简单开发效率越高。
+
+### 切片
+
+取一个list或tuple的部分元素非常常见，如取list的前3个元素：
+
+```python
+>>> L = ['Michael', 'Sarah', 'Tracy', 'Bob', 'Jack']
+>>> [L[0], L[1], L[2]]
+```
+
+取list的前n个元素，索引为0 - (N-1)，可以用循环：
+
+```python
+>>> r = []
+>>> n = 3
+>>> for i in range(n):
+...     r.append(L[i])
+... 
+>>> r
+```
+
+指定索引范围循环复杂，因此python提供了切片（Slice）操作符，简化操作。如取前3个元素：
+
+```python
+>>> L[0:3]
+['Michael', 'Sarah', 'Tracy']
+```
+
+`L[0:3]`表示，从索引`0`开始取，直到索引`3`为止，但不包括索引`3`。即索引`0`，`1`，`2`。如果第一个索引是`0`还可以省略。支持`L[-1]`取倒数第一个元素。
+
+先创建一个0-99的数列：
+
+```python
+>>> L = list(range(1000))
+>>> L
+[0,1,2,3,...,99]
+```
+
+```python
+# 取前10个：
+>>> L[:10]
+# 取后10个：
+>>> L[-10:]
+# 前11-20个
+>>> L[10:20]
+[10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+# 前10个数每2个取1个：
+>>> L[:10:2]
+[0, 2, 4, 6, 8]
+# 所有数每5个取1个：
+>>> L[::5]
+[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+# 复制原list
+>>> L[:]
+```
+
+tuple不可变集合也可以用切片操作：
+
+```python
+>>> (0, 1, 2, 3, 4, 5)[:3]
+(0, 1, 2)
+```
+
+字符串也可以看成一种list，每个元素就是一个字符，因此也可以用切片操作：
+
+```python
+>>> 'ABCDEFG'[:3]
+'ABC'
+```
+
+**练习**
+
+利用切片操作实现函数trim()，去除字符串首尾的空格，不要调用str的strip()方法。
+
+```python
+# -*- coding: utf-8 -*-
+def trim(s):
+    while s = None:
+        return '字符串空'
+    while ' ' == s[:1]:
+        s = s[1:]
+    while ' ' == s[-1:]:
+        s = s[:-1]
+    return s
+# 测试:
+if trim('hello  ') != 'hello':
+    print('测试失败!')
+elif trim('  hello') != 'hello':
+    print('测试失败!')
+elif trim('  hello  ') != 'hello':
+    print('测试失败!')
+elif trim('  hello  world  ') != 'hello  world':
+    print('测试失败!')
+elif trim('') != '':
+    print('测试失败!')
+elif trim('    ') != '':
+    print('测试失败!')
+else:
+    print('测试成功!')
+```
+
+
+
+### 迭代
+
+通过`for`循环遍历list或tuple称为迭代（iteration），在Python中迭代是通过`for ... in`来完成的。而很多语言迭代是通过下标完成的。所以python的`for`循环还可以作用在其他可迭代对象上，如迭代dict。
+
+因为dict的存储不是按照list的方式顺序排列，所以迭代出的结果很可能不一样。默认dict迭代key，迭代value可以用`for value in d.values()`，如果同时迭代key和value可以用`for k, v in d.items()`。
+
+字符串也是可迭代对象：
+
+```python
+>>> for ch in 'ABC':
+		print(ch)
+A
+B
+C
+```
+
+所以在使用`for`循环时，不用关心对象的数据类型，而是判断对象是否可迭代。通过collections模块的Iterable类型判断：
+
+```python
+>>> from collections import Iterable
+>>> isinstance('abc', Iterable) # str是否可迭代
+True
+>>> isinstance([1,2,3], Iterable) # list是否可迭代
+True
+>>> isinstance(123, Iterable) # 整数是否可迭代
+False
+```
+
+在Java中可以实现对list迭代下标索引，而在Python中内置的`enumerate`函数可以把一个list变成索引-元素对。
+
+```
+>>> for i, value in enumerate(['A'], ['B'], ['C'])
+...     print(i, value)
+...
+0 A
+1 B
+2 C
+```
+
+**练习**
+
+迭代查找一个list中最大和最小值，返回一个tuple：
+
+```python
+# -*- coding: utf-8 -*-
+def findMinAndMax(L):
+    if L == []:
+        return (Nonoe, None)
+    else:
+        Min = Max = L[0]
+        for i in L:
+            if i <= Min:
+                Min = i
+            elif i >= Max:
+                Max = i
+    return(Min,Max)
+# 测试
+if findMinAndMax([]) != (None, None):
+    print('测试失败!')
+elif findMinAndMax([7]) != (7, 7):
+    print('测试失败!')
+elif findMinAndMax([7, 1]) != (1, 7):
+    print('测试失败!')
+elif findMinAndMax([7, 1, 3, 9, 5]) != (1, 9):
+    print('测试失败!')
+else:
+    print('测试成功!')
+```
+
+
+
+### 列表生成式
+
+列表生成式即List Comprehensions，是Python内置的简单却强大创建list生成式。如生成list`[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]`可以用`list(range(1, 11))`。
+
+但要生成`[1x1, 2x2, 3x3, ..., 10x10]`，使用循环：
+
+```python
+>>> L = []
+>>> for x in range(1, 11):
+...    L.append(x * x)
+```
+
+使用列表生成式：
+
+```python
+>>> [x * x for x in range(1, 11)]
+[1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+```
+
+把要生成的元素`x * x`放到前面，后面跟`for`循环，就可以把list创建出来，for循环后面还可以加上if判断，这样我们就可以筛选出仅偶数的平方：
+
+```python
+>>> [x * x for x in range(1, 11) if x % 2 == 0]
+[4, 16, 36, 64, 100]
+```
+
+还可以使用两层循环，生成全排列。
+
+```python
+>>> [m + n for m in 'ABC' for n in 'XYZ']
+['AX', 'AY', 'AZ', 'BX', 'BY', 'BZ', 'CX', 'CY', 'CZ']
+```
+
+运用列表生成式可写出非常简洁的代码，如列出当前目录下的所有文件和目录名：
+
+```python
+>>> import os
+>>> [d for d in os.listdir('.')] # 列出文件和目录
+['.emacs.d', '.ssh', '.Trash', 'Adlm', 'Applications', 'Desktop', 'Documents', 'Downloads', 'Library', 'Movies', 'Music', 'Pictures', 'Public', 'VirtualBox VMs', 'Workspace', 'XCode']
+```
+
+`for`循环可以同时使用两个甚至更多变量，比如`dict`的`items()`可以同时迭代key和value：
+
+```python
+>>> d = {'x': 'A', 'y': 'B', 'z': 'C'}
+>>> for k,v in d.items():
+		print(k, '=', v)
+y = B
+x = A
+z = C
+```
+
+列表生成式也可以使用两个变量来生成list：
+
+```python
+>>> d = {'x': 'A', 'y': 'B', 'z': 'C'}
+>>> [k + '=' + v for k, v in d.items()]
+['y=B', 'x=A', 'z=C']
+```
+
+把list中所有字符串变成小写：
+
+```python
+>>> L = ['Hello', 'World', 'IBM', 'Apple']
+>>> [s.lower() for s in L]
+```
+
+**if...else**
+
+如正常输出偶数，在列表生成式后加`if`条件筛选
+
+```python
+>>> [x for x in range(1, 11) if x % 2 == 0]
+[2, 4, 6, 8, 10]
+```
+
+但是在后面加上`else`报错`SyntaxError: invalid syntax`
+
+当把`if`写在`for`前面，不加`else`报错。
+
+```python
+>>> [x if x % 2 == 0 for x in range(1, 11)]
+  File "<stdin>", line 1
+    [x if x % 2 == 0 for x in range(1, 11)]
+                       ^
+SyntaxError: invalid syntax
+```
+
+这是因为`for`前面的部分是一个表达式，它必须根据`x`计算出一个结果。因此，考察表达式：`x if x % 2 == 0`，它无法根据`x`计算出结果，因为缺少`else`，必须加上`else`：
+
+```python
+>>> [x if x % 2 == 0 else -x for x in range(1, 11)]
+[-1, 2, -3, 4, -5, 6, -7, 8, -9, 10]
+```
+
+可见，在一个列表生成式中，`for`前面的`if ... else`是表达式，而`for`后面的`if`是过滤条件，不能带`else`。
+
+**练习**
+
+
+
+### 生成器
+
+### 迭代器
 
 ## 函数式编程
 
