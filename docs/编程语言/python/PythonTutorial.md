@@ -2466,11 +2466,321 @@ return 11
 
 #### map/reduce
 
+`map()`函数接收两个参数，一个是函数，一个是`Iterable`，将传入的函数依次作用到序列的每个元素，并把结果作为新的`Iterator`返回。比如函数f(x)=x2作用在list`[1, 2, 3, 4, 5, 6, 7, 8, 9]`上，用`map()`实现：
 
+```python
+>>> def f(x):
+    	return x * x
+>>> r = map(f,[1,2,3,4,5,6,7,8,9])
+# 第一个参数f是函数本身，第二个是Iterable，结果r是Iterator，惰性序列
+>>> list(r)
+# 通过list函数把整个惰性序列计算出来
+[1, 4, 9, 16, 25, 36, 49, 64, 81]
+```
+
+也可通过循环实现：
+
+```python
+L = []
+for n in [1,2,3,4,5,6,7,8,9]:
+    L.append(f(n))
+print(L)
+```
+
+`map()`作为高阶函数把运算规则抽象了，因此还可以计算复杂的函数，如把list所有数字转为字符串：
+
+```python
+>>> list(map(str, [1,2,3,4,5,6,7,8,9]))
+['1', '2', '3', '4', '5', '6', '7', '8', '9']
+```
+
+`reduce`把一个函数作用在一个序列[x1, x2, x3, ...]上，必须接收两个参数，`reduce`把结果继续和序列的下一个元素做累积计算，其效果就是：
+
+```python
+reduce(f, [x1, x2, x3, x4]) = f(f(f(x1,x2), x3), x4)
+```
+
+比如对一个序列求和就可以用`reduce`实现：
+
+```python
+>>> from functools import reduce
+>>> def add(x, y):
+    	return x + y
+>>> reduce(add, [1,3,5,7,9])
+25
+```
+
+求和也可以直接用Python内置函数`sum()`。
+
+把`str`转换为`int`函数：
+
+```python
+from functools import reduce
+DIGITS = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
+def str2int(s):
+    def fn(x,y):
+        return x * 10 + y
+    def char2num(s):
+        return DIGITS(s)
+    return reduce(fn, map(char2num, s))
+```
+
+可以用lambda函数进一步简化：
+
+```python
+from functools import reduce
+
+DIGITS = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
+
+def char2num(s):
+    return DIGITS[s]
+
+def str2int(s):
+    return reduce(lambda x, y: x * 10 + y, map(char2num, s))
+```
+
+不使用python提供的`int()`函数，完全可以自己写一个字符串转证书的函数。
+
+**练习**
+
+利用`map()`函数把用户输入不规范的英文名变为首字母大写，其他小写。输入`['adam', 'LISA', 'barT']`，输出：`['Adam', 'Lisa', 'Bart']`：
+
+```python
+# -*- coding: utf-8 -*-
+def normalize(name):
+    return name.capitalize()
+L1 = ['adam', 'LISA', 'barT']
+L2 = list(map(normalize, L1))
+print(L2)
+```
+
+请编写一个`prod()`函数，可以接受一个list并利用`reduce()`求积：
+
+```python
+# -*- coding: utf-8 -*-
+from functools import reduce
+def prod(L):
+    return reduce(lambda x,y: x * y, L)
+print('3 * 5 * 7 * 9 =', prod([3, 5, 7, 9]))
+if prod([3, 5, 7, 9]) == 945:
+    print('测试成功!')
+else:
+    print('测试失败!')
+```
+
+利用`map()`和`reduce()`写一个`str2float`的函数，把字符串`'123.456'`转换成浮点数`123.456`。
+
+```python
+# -*- coding: utf-8 -*-
+from functools import reduce
+def str2float(s)
+	d = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
+    s1,s2 = s.split('.')
+    s = s.replace('.','')
+    inte = reduce(lambda x, y: 10*x+y, map(lambda x: d[x], s))
+    return inte/(10**len(s2))
+```
+
+#### filter
+
+`filter()`函数用于过滤序列，接收一个函数和一个序列，与`map()`不同的是把传入的函数依次作用于每个元素，然后根据返回值是`True`还是`False`决定保留还是丢弃该元素。
+
+在一个list中删掉偶数，保留奇数：
+
+```python
+def is_odd(n):
+    return n % 2 == 1
+list(filter(is_odd, [1,2,4,5,6,9,10,15]))
+# 结果：[1,5,9,15]
+```
+
+把一个序列中的空字符串删掉：
+
+```python
+def not_empty(s):
+    return s and s.strip()
+list(filter(not_empty, ['A','','B',None,'C',' ']))
+# 结果：['A','B','C']
+```
+
+注意刀`filter()`函数返回一个`Iterator`惰性序列，所以要强迫`filter()`完成计算结果，需要用`list()`函数获得所有结果并返回。
+
+**用filter求素数**
+
+又叫质数大于等于2，不能被它本身和1以外的数整除。
+
+计算素数的一个方法是埃氏筛法：
+
+首先，列出从2开始的所有自然数构造一个序列：
+
+2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, ...
+
+取序列的第一个数2，一定是素数，然后用2把序列的2的倍数筛掉：
+
+3, ~~4~~, 5, ~~6~~, 7, ~~8~~, 9, ~~10~~, 11, ~~12~~, 13, ~~14~~, 15, ~~16~~, 17, ~~18~~, 19, ~~20~~, ...
+
+取新序列第一个数3，一定是素数，然后用3把序列3的倍数筛掉：
+
+5, ~~6~~, 7, ~~8~~, ~~9~~, ~~10~~, 11, ~~12~~, 13, ~~14~~, ~~15~~, ~~16~~, 17, ~~18~~, 19, ~~20~~, ...
+
+取新序列第一个数5，一定是素数，然后用5把序列5的倍数筛掉：
+
+7, ~~8~~, ~~9~~, ~~10~~, 11, ~~12~~, 13, ~~14~~, ~~15~~, ~~16~~, 17, ~~18~~, 19, ~~20~~, ...
+
+不断筛选就可以得到所有素数。
+
+用Python实现，先构造一个从3开始的奇数序列：
+
+```python
+def _odd_iter():
+    n = 1
+    while True:
+        n = n+2
+        yield n
+```
+
+合适一个无限序列生成器。然后定义筛选函数：
+
+```python
+def _not_divisible(n):
+    return lambda x: x % n > 0
+```
+
+最后定义一个生成器不断返回下一个素数：
+
+```python
+def primes():
+    yield 2
+    it = _odd_iter() # 初始序列
+    while True:
+        n = next(it) # 返回序列的第一个数
+        yield n
+        it = filter(_not_divisible(n), it) # 构造新序列
+```
+
+这个生成器先返回第一个素数`2`，然后，利用`filter()`不断产生筛选后的新的序列。
+
+由于`primes()`也是一个无限序列，所以调用时需要设置一个退出循环的条件：
+
+```python
+# 打印1000以内的素数:
+for n in primes():
+    if n < 1000:
+        print(n)
+    else:
+        break
+```
+
+注意到`Iterator`是惰性计算的序列，所以我们可以用Python表示“全体自然数”，“全体素数”这样的序列，而代码非常简洁。
+
+**练习**
+
+回数是指从左向右和从右向左读都一样的数，如`12321`，用`filter()`筛选出回数。
+
+```python
+# -*- coding: utf-8 -*-
+def is_palindrome(n):
+    nv = list(map(int, str(n)))
+    nv1 = list(map(int,str(n)))
+    nv.reverse()
+    return nv == nv1
+output = filter(is_palindrome, range(1, 1000))
+print('1~1000:', list(output))
+if list(filter(is_palindrome, range(1, 200))) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33, 44, 55, 66, 77, 88, 99, 101, 111, 121, 131, 141, 151, 161, 171, 181, 191]:
+    print('测试成功!')
+else:
+    print('测试失败!')
+```
 
 #### filter
 
 #### sorted
+
+**排序算法**
+
+Python内置的`sorted()`函数可以对list进行排序：
+
+```python
+>>> sorted([36,5,-12,9,-21])
+[-21,-12,5,9,36]
+```
+
+此外，`sorted()`函数也是一个高阶函数，可以接收一个`key`函数实现自定义排序。如按绝对值大小排序：
+
+```python
+>>> sorted([36,5,-12,9,-21], key=abs)
+[5, 9, -12, -21, 36]
+```
+
+默认情况对字符串排序按照ASCII大小比较，对字符串排序：
+
+```python
+>>> sorted(['bob', 'about', 'Zoo', 'Credit'])
+['Credit', 'Zoo', 'about', 'bob']
+```
+
+现在排序要忽略大小写，按字母排序。只要把key函数映射一个忽略大小写的函数即可。忽略大小写比较实际就是先把字符串都变成大写或者都变成小写再比较。
+
+```python
+>>> sorted(['bob', 'about', 'Zoo', 'Credit'], key=str.lower)
+['about', 'bob', 'Credit', 'Zoo']
+```
+
+要进行反向排序，不比改动key函数，可以传入第三个参数`reverse=True`：
+
+```python
+>>> sorted(['bob', 'about', 'Zoo', 'Credit'], key=str.lower, reverse=True)
+['Zoo', 'Credit', 'bob', 'about']
+```
+
+**练习**
+
+假设我们用一组tuple表示学生名字和成绩：
+
+```python
+L = [('Bob', 75), ('Adam', 92), ('Bart', 66), ('Lisa', 88)]
+```
+
+请用`sorted()`对上述列表分别按名字排序：
+
+```python
+# -*- coding: utf-8 -*-
+
+L = [('Bob', 75), ('Adam', 92), ('Bart', 66), ('Lisa', 88)]
+def by_name(t):
+    return t[0]
+L2 = sorted(L, key=by_name)
+print(L2)
+```
+
+按分数从高到低排序：
+
+```python
+def by_score(t):
+    return -t[1]
+L2 = sorted(L, key=by_score)
+print(L2)
+```
+
+```python
+def by_score(t):
+    return t[1]
+L3 = sorted(L, key=by_score, reverse=True)
+print(L3)
+```
+
+**小结**
+
+- tuple是用  ()  来表示的，比如（1,2,3），它是不可变的，但如果里面有list，list是可变的，适合平常存放数据；
+- list是用  []  来表示的，比如['c','b'.'a']，它是一个有序集合，可以添加删除元素，适合平常的增删改查使用；
+- dict是用 {} 来表示的，比如{'b': 12, 'a' : 23}，它是key-value组合，特性与list类似，但它查找速度快，占用内存高，key必须是不可变的，适合用来快速查找数据；
+- set也是用 {} 来表示的，比如{1,2,4}，它是key的组合，无value，key是唯一的，所以set中的元素都不相同，而且元素也是不可变的，适合用来做不同set间的或与非判断；
+
+凡是可作用于`for`循环的对象都是`Iterable`类型；
+
+凡是可作用于`next()`函数的对象都是`Iterator`类型，它们表示一个惰性计算的序列；
+
+集合数据类型如`list`、`dict`、`str`等是`Iterable`但不是`Iterator`，不过可以通过`iter()`函数获得一个`Iterator`对象。
 
 ### 返回函数
 
@@ -2510,4 +2820,4 @@ return 11
 
 ## 使用MicroPython
 
-## 实战
+## 实战T
