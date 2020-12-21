@@ -1,6 +1,6 @@
 <!-- _navbar.md -->
 
-- [<span class="feather feather-archive"></span> 归档](/README.md)
+- [<span class="iconfont icon-wenzhang"></span> 归档](/README.md)
   - [C++](README?id=C++)
   - [Java](README?id=Java)
   - [Python](README?id=Python)
@@ -23,6 +23,6 @@
   - [Gradle](README?id=Gradle)
   - [总结](README?id=总结)
   
-- [<span class="feather feather-message-square"></span> 留言板](https://www.lsaiah.cn/comment.html)
-- [<span class="feather feather-link"></span> 友链](https://www.lsaiah.cn/friends.html)
-- [<span class="feather feather-flag"></span> 关于](https://www.lsaiah.cn/about.html)
+- [<span class="iconfont icon-pinglun"></span> 留言板](https://www.lsaiah.cn/comment.html)
+- [<span class="iconfont icon-lianjie"></span> 友链](https://www.lsaiah.cn/friends.html)
+- [<span class="iconfont icon-wodeguanzhu"></span> 关于](https://www.lsaiah.cn/about.html)
