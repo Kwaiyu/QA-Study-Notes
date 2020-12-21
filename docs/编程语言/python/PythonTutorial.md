@@ -2782,6 +2782,176 @@ print(L3)
 
 ### 返回函数
 
+**函数作为返回值**
+
+高阶函数除了可以接受函数作为参数外，还可以把函数作为结果返回。
+
+实现一个可变参数的求和函数：
+
+```python
+def calc_sum(*args):
+    ax = 0
+    for n in args:
+        ax = ax + n
+    return ax
+```
+
+如果不需要立刻求和，而是在后面的代码中根据需要计算，可以不返回结果而是返回求和函数：
+
+```python
+def lazy_sum(*args):
+    def sum():
+        ax = 0
+        for n in args:
+            ax = ax + n
+        return ax
+    return sum
+```
+
+调用`lazy_sum()`时返回的并不是求和结果，而是求和函数：
+
+```python
+>>> f = lazy_sum(1, 3, 5, 7, 9)
+>>> f
+<function lazy_sum.<locals>.sum at 0x101c6ed90>
+>>> f()
+25
+```
+
+调用函数`f`时才是真正计算求和的结果。
+
+内部函数`sum`可以引用外部函数`lazy_sum`的参数和局部变量，当`lazy_sum`返回函数`sum`时，相关参数和变量都保存在返回的函数中，这种称为闭包（Closure）。
+
+注意当调用`lazy_sum()`时，每次调用都会返回一个新的函数，即使传入相同的参数，`f1()`和`f2()`调用结果互不影响。
+
+```python
+>>> f1 = lazy_sum(1, 3, 5, 7, 9)
+>>> f2 = lazy_sum(1, 3, 5, 7, 9)
+>>> f1==f2
+False
+```
+
+**闭包**
+
+```python
+def count():
+    fs = []
+    for i in range(1,4):
+        def f():
+            return i*i
+        fs.append(f)
+    return fs
+f1,f2,f3 = count()
+```
+
+```python
+>>> f1()
+9
+>>> f2()
+9
+>>> f3()
+9
+```
+
+调用`f1()`，`f2()`和`f3()`结果不是`1`，`4`，`9`。因为返回的函数引用了变量`i`，不是立刻执行。等到3个函数都返回时，变量`i`已经变成了3，最终结果9。
+
+> [!ATTENTION]
+>
+> 返回闭包时，返回函数不要引用任何循环变量或者后续会发生变化的变量。
+
+如果一定要引用循环变量，方法是再创建一个函数，用该函数的参数绑定循环变量当前的值，无论该循环变量后续如何更改，已绑定到函数参数的值不变：
+
+```python
+def count():
+    def f(j):
+        def g():
+            return j*j
+        return g
+    fs = []
+    for i in range(1, 4):
+        fs.append(f(i)) # f(i)立刻被执行，因此i的当前值被传入f()
+    return fs
+```
+
+```python
+>>> f1, f2, f3 = count()
+>>> f1()
+1
+>>> f2()
+4
+>>> f3()
+9
+```
+
+**练习**
+
+利用闭包返回一个计数器函数，每次调用它返回递增整数：
+
+```python
+# -*- coding：utf-8 -*-
+# 方法一：
+# 声明静态变量的关键字是  nonlocal
+def createCounter():
+    a = 0
+    def counter():
+        nonlocal a
+        a += 1
+        return a
+    return counter
+
+# 测试:
+counterA = createCounter()
+print(counterA(), counterA(), counterA(), counterA(), counterA()) # 1 2 3 4 5
+counterB = createCounter()
+if [counterB(), counterB(), counterB(), counterB()] == [1, 2, 3, 4]:
+    print('测试通过!')
+else:
+    print('测试失败!')
+
+
+# 方法二
+def createCounter():
+    c = [0]
+    def counter():
+        c[0] += 1
+        return c[0]
+    return counter
+
+# 测试:
+counterA = createCounter()
+print(counterA(), counterA(), counterA(), counterA(), counterA()) # 1 2 3 4 5
+counterB = createCounter()
+if [counterB(), counterB(), counterB(), counterB()] == [1, 2, 3, 4]:
+    print('测试通过!')
+else:
+    print('测试失败!')
+
+
+# 方法三
+def createCounter():
+	def iterator():	#定义一个生成器
+		i = 0
+		while True:
+			i += 1
+			yield i
+	g = iterator()
+	
+	def counter():
+		return next(g)
+	return counter
+
+# 测试:
+counterA = createCounter()
+print(counterA(), counterA(), counterA(), counterA(), counterA()) # 1 2 3 4 5
+counterB = createCounter()
+if [counterB(), counterB(), counterB(), counterB()] == [1, 2, 3, 4]:
+    print('测试通过!')
+else:
+    print('测试失败!')
+```
+
+
+
 ### 匿名函数
 
 ### 装饰器
@@ -2790,7 +2960,7 @@ print(L3)
 
 ## 模块
 
-## 面向对
+## 面向对象编程
 
 ## 面向对象高级编程
 
