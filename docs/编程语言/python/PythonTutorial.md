@@ -2890,7 +2890,8 @@ def count():
 ```python
 # -*- coding：utf-8 -*-
 # 方法一：
-# 声明静态变量的关键字是  nonlocal
+# 声明静态变量的关键字是nonlocal作用对象是外层变量
+# global声明代码块中的变量使用外部全局的同名变量
 def createCounter():
     a = 0
     def counter():
@@ -2950,11 +2951,275 @@ else:
     print('测试失败!')
 ```
 
-
-
 ### 匿名函数
 
+当传入函数时，有些时候不需要显示定义函数，直接传入匿名函数更方便。在Python中关键字`lambda`表示匿名函数，以`map()`函数为例，计算f(x)=x2时，除了定义一个`f(x)`的函数外，还可以直接传入匿名函数：
+
+```python
+>>> list(map(lambda x: x*x, [1,2,3,4,5,6,7,8,9]))
+[1, 4, 9, 16, 25, 36, 49, 64, 81]
+```
+
+匿名函数`lambda x: x*x`，冒号前面的`x`表示函数参数，冒号后面表示表达式，不用写`return`，返回值就是表达式的结果。实际上就是：
+
+```python
+def f(x):
+	return x*x
+```
+
+匿名函数没有名字不会函数名冲突，且匿名函数是一个对象可以赋值给一个变量，通过变量调用。
+
+```python
+>>> f = lambda x: x * x
+>>> f
+<function <lambda> at 0x101c6ef28>
+>>> f(5)
+25
+```
+
+同样也可以把匿名函数作为返回值返回：
+
+```python
+def build(x,y):
+    return lambda: x * x + y * y
+```
+
+**练习**
+
+将下面的代码改成匿名函数：
+
+```python
+# -*- coding: utf-8 -*-
+def is_odd(n):
+    return n % 2 == 1
+L = list(filter(is_odd, range(1,20)))
+L1 = list(filter(lambda x: x % 2 == 1, range(1,20)))
+print(L,L1)
+```
+
+
+
 ### 装饰器
+
+函数也是一个对象，可以赋值给变量，通过变量调用该函数。
+
+```python
+>>> def now():
+    	print('2020-12-21')
+>>> f = now
+>>> f()
+2015-3-25
+```
+
+函数对象有一个`__name__`属性，可以拿到函数的名字：
+
+```python
+>>> now.__name__
+'now'
+>>> f.__name__
+'now'
+```
+
+假设现在要增强`now()`函数的功能，比如在调用前后自动打印日志，但又不修改`now()`函数的定义，这种在代码运行期间动态增加功能的方式成为装饰器（Decorator）。本质上decorator是一个返回函数的高阶函数，定义一个能打印日志的decorator：
+
+```python
+def log(func):
+    def wrapper(*args, **kw):
+        print('call %s():' % func.__name__)
+        return func(*args, **kw)
+    return wrapper
+```
+
+`log`是一个decorator，接收一个函数作为参数，并返回一个函数。借助Python的@语法把装饰器置于函数定义处：
+
+```python
+@log
+def now():
+    print('2020-12-21')
+```
+
+当调用`now()`函数，会在运行函数前打印一行日志。
+
+```python
+>>> now()
+call now():
+2020-12-21
+```
+
+把`@log`放到`now()`函数定义处就相当于：
+
+```python
+now = log(now)
+```
+
+调用`now()`将执行新函数，即在`log()`函数中返回的`wrapper()`函数。`wrapper()`函数的参数定义是`(*args, **kw)`，因此，`wrapper()`函数可以接受任意参数的调用。在`wrapper()`函数内，首先打印日志，再紧接着调用原始函数。
+
+```
+>>> now()
+call wrapper:
+call now():
+2020-12-21
+```
+
+如果decorator本身需要传入参数，那就需要编写一个返回decorator的高阶函数。比如自定义log文本：
+
+```python
+def log(text):
+    def decorator(func):
+        def wrapper(*args, **kw):
+            print('%s %s():' % (text, func.__name__))
+            return func(*args, **kw)
+        return wrapper
+    return decorator
+```
+
+这个三层签到的decorator用法如下：
+
+```python
+@log('execute')
+def now():
+    print('2020-12-21')
+```
+
+执行结果如下：
+
+```python
+>>> now()
+execute now():
+2020-12-21
+```
+
+把`log(text)`放在`now()`函数定义处就相当于：
+
+```python
+>>> now = log('execute')(now)
+```
+
+分析上面的语句，首先执行`log('execute')`，返回`decorator`函数，再调用返回的`wrapper`函数，参数是`now`，返回值是`wrapper`函数。由于函数也是对象，它有`__name__`属性，经过decorator装饰后的函数已经从原来的`'now'`变成了`'wrapper'`：
+
+```python
+>>> now.__name__
+'wrapper'
+```
+
+因为最终返回值`wrapper()`函数的名字就是`'wrapper'`，所以需要把原始函数的`__name__`等属性复制到`wrapper()`函数中，否则有些依赖函数的代码就会出错。
+
+不需要编写`wrapper.__name__ = func.__name__`这样的代码，Python内置的`functools.wraps`就是干这个事的，所以一个完整的decorator的写法如下：
+
+```python
+import functools
+def log(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kw):
+        print('call %s():' % func.__name__)
+    return wrapper
+```
+
+带参数的decorator：
+
+```python
+import functools
+def log(text):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            print('call %s():' % func.__name__)
+            return func(**args, **kw)
+        return wrapper
+    return decorator
+```
+
+**练习**
+
+设计一个decorator，可以作用于任何函数并且打印该函数的执行事件：
+
+```python
+# -*- coding: utf-8 -*-
+import time, functools
+def metric(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kw):
+        startTime = time.time()
+        fn(*args, **kw)
+        endTime = time.time()
+        print("%s execute in %.2f time" % (fn.__name__,endTime - startTime))
+        return fn(*args, **kw)
+    return wrapper
+```
+
+**小结**
+
+在面向对象（OOP）的设计模式中，decorator被称为装饰模式。OOP的装饰模式需要通过继承和组合来实现，而Python除了能支持OOP的decorator外，直接从语法层次支持decorator。Python的decorator可以用函数实现，也可以用类实现。
+
+decorator可以增强函数的功能，定义起来虽然有点复杂，但使用起来非常灵活和方便。
+
+请编写一个decorator，能在函数调用的前后打印出`'begin call'`和`'end call'`的日志。
+
+再思考一下能否写出一个`@log`的decorator，使它既支持：
+
+```python
+@log
+def f():
+    pass
+```
+
+又支持：
+
+```python
+@log('execute')
+def f():
+    pass
+```
+
+同时适用是否带参数：
+
+```python
+import functools
+def log(x): 
+    if callable(x):
+        @functools.wraps(x)        
+        def wrapper(*args,**kw):            
+            print('call %s():' % x.__name__)            
+        return x(*args,**kw)        
+    return wrapper    
+    else:        
+        def decorator(func):            
+        @functools.wraps(func)            
+        def wrapper1(*args1,**kw):                
+            print('%s %s():' % (x, func.__name__))                
+        return func(*args1,**kw)            
+    return wrapper1        
+return decorator
+```
+
+```python
+# 同时适用于是否带参数
+import functools
+def log(text=None): #修饰器存在默认值：为没有参数
+    def de(func):
+        @functools.wraps(func)
+        def first(*args, **kw):
+            if text: # 当text为True，即修饰器携带参数
+                print('begin call', func.__name__, 'input is', text) # 函数开始前打印日志，并显示修饰器携带的参数
+            else: # 当为False时，text为None，即修饰器不携带参数
+                print('begin call', func.__name__) #函数开始前打印日志
+            rs = func(*args, **kw)
+            print('end call') #函数结束打印日志
+            return rs
+        return first
+    return de
+
+
+@log
+def f():
+    pass
+
+@log('execute')
+def f():
+    pass
+```
+
+
 
 ### 偏函数
 
