@@ -25,7 +25,8 @@
  
 ## Python
  * [Python教程](编程语言/python/PythonTutorial.md)
- * [Python正则表达式](编程语言/python/PythonRegularExpression.md)
+ * [Python正则表达式](编程语言/python/PythonRegularExpression.md)+
+ * [Pycharm](编程语言/python/Pycharm.md)
  
 ## Shell
  * [Shell教程](编程语言/Shell.md)
