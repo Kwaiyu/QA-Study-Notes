@@ -951,3 +951,146 @@ $表示结尾；
 {} 表示一个范围的约束；
 
 | 表示匹配多个表达式中的任何一个。
+
+## 常用批处理脚本
+
+批量视频格式转换，需指定ffmpeg位置：%~dp0ffmpeg\bin\ffmpeg.exe 表示当前文件夹下的ffmpeg\bin目录。将文件或文件夹拖入.bat
+
+```shell
+@echo off
+title 视频转码 - to MP4
+mode con cols=71 lines=14
+color 5f
+cls
+
+setlocal enabledelayedexpansion
+
+set d=%~f1
+set ffmpeg=%~dp0ffmpeg\bin\ffmpeg.exe
+
+if "%~f1" equ "" goto error
+if /i "%~x1" equ ".ogv" goto single
+if /i "%~x1" equ ".ogg" goto single
+if /i "%~x1" equ ".wmv" goto single
+if /i "%~x1" equ ".flv" goto single
+if /i "%~x1" equ ".mp4" goto single
+if /i "%~x1" equ ".mov" goto single
+if /i "%~x1" equ ".avi" goto single
+if /i "%~x1" equ ".mkv" goto single
+if /i "%~x1" equ ".mpg" goto single
+if /i "%~x1" equ ".vob" goto single
+goto multi
+
+:multi
+if not exist "%d%\mp4" md "%d%\mp4"
+for /R "%d%" %%f in (*.*) do (
+set mark=f
+if /i "%%~xf" equ ".ogv" set mark=t
+if /i "%%~xf" equ ".ogg" set mark=t
+if /i "%%~xf" equ ".wmv" set mark=t
+if /i "%%~xf" equ ".flv" set mark=t
+if /i "%%~xf" equ ".mp4" set mark=t
+if /i "%%~xf" equ ".mov" set mark=t
+if /i "%%~xf" equ ".avi" set mark=t
+if /i "%%~xf" equ ".mkv" set mark=t
+if /i "%%~xf" equ ".mpg" set mark=t
+if /i "%%~xf" equ ".vob" set mark=t
+if "!mark!" == "t" (
+%ffmpeg% -i "%%f" -c:v libx264 -crf 19 -preset slow -c:a aac -b:a 192k "%%~df%%~pf\mp4\%%~nf.mp4"
+)
+)
+goto end
+
+:single
+if not exist "%~d1%~p1\mp4" md "%~d1%~p1\mp4"
+%ffmpeg% -i "%d%" -c:v libx264 -crf 19 -preset slow -c:a aac -b:a 192k "%~d1%~p1\mp4\%~n1.mp4"
+goto end
+
+:end
+cls
+echo.
+echo.
+echo.
+echo.
+echo ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
+echo ※                                                                  ※
+echo ※                          ☆★ 提示 ★☆                          ※
+echo ※                                                                  ※
+echo ※                    处理完成，按任意键退出程序                    ※
+echo ※                                                                  ※
+echo ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
+echo.
+echo.
+echo.
+pause > nul
+exit
+
+:error
+cls
+echo.
+echo.
+echo.
+echo ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
+echo ※                                                                  ※
+echo ※                          ☆★ 错误 ★☆                          ※
+echo ※                                                                  ※
+echo ※     请勿直接运行程序，请将需要处理的视频文件(夹)拖放到程序上     ※
+echo ※                                                                  ※
+echo ※                         按任意键退出程序                         ※
+echo ※                                                                  ※
+echo ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
+echo.
+echo.
+pause > nul
+exit
+```
+
+批量文件重命名：
+
+1.
+
+```shell
+@echo off
+pushd %~dp0
+set /p=回车开始转换
+for /f "delims=" %%a in ('dir /a-d /b *.jpeg *.PNG *.TGA *.jpg') do ren "%%a" "%%~na.JPG"
+echo;修改扩展名完成
+setlocal enabledelayedexpansion
+set n=1
+for /f "delims=" %%i in ('dir *.jpg /b /a-d') do (
+ren %%i !n!.jpg&&call,set /a n+=1
+)
+echo 修改文件名完成
+pause
+```
+
+2.
+
+```shell
+# create.bat
+dir /a-d /b *.jpg>src.txt
+echo 收集文件名到src.txt成功！
+pause
+```
+
+```shell
+# trim.bat
+@echo off&setlocal enabledelayedexpansion
+for /f "delims=" %%i in ('dir /s/b *.*') do (
+    set "foo=%%~nxi"
+    set foo=!foo: =!
+    set foo=!foo: =!
+    ren "%%~fi" "!foo!"
+)
+exit
+```
+
+```shell
+# rename.bat 按照des.txt重命名
+@for /f %%s in (src.txt) do (
+if exist %%s for /f %%d in (des.txt) do (rename %%s %%d)
+)
+echo 操作成功！
+pause
+```
+
