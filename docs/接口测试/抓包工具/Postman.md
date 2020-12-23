@@ -1781,3 +1781,28 @@ require(moduleName:String):function → *
 - [大事记](https://nodejs.org/api/events.html)
 
 为了使用库，请调用`require`方法，将模块名称作为参数传递，然后将方法中的返回对象分配给变量。
+
+# UI测试
+
+- 发送请求获取Html响应
+- 解析Html标签，判断一些元素是否存在
+
+使用[Cheerio库](https://cheerio.js.org) 在SandBox中用来代替Jquery。无法处理ajax请求，交互式能力一般。
+
+```javascript
+var cheerio = require('cheerio'),
+    $ = cheerio.load('<h2 class = "title">hello world</h2>');
+$('h2.title').text('hello there!');
+$('h2').addclass('welcome');
+$.html();
+```
+
+```javascript
+var cheerio = require('cheerio');
+$ = cheerio.load(responseBody);
+pm.test("必须包含4门课程"， function(){
+    pm.response.to.be.success;
+    pm.expect($('.servive-block-in').length === 4);
+});
+```
+
