@@ -3249,11 +3249,364 @@ Python的`functools`模块还提供了很多功能，其中包含偏函数（Par
 12345
 ```
 
+但`int()`函数还提供额外的`base`参数，传入参数可做N进制转换：
+
+```python
+>>> int('12345', base=8)
+5349
+>>> int('12345', 16)
+74565
+```
+
+假设要转换大量的二进制字符串，每次都传入`int(x,base=2)`非常麻烦，可以定义一个`int2()`函数默认把`base=2`传进去：
+
+```python
+def int2(x, base=2):
+    return int(x,base)
+```
+
+这样调用`int2()`就可以实现默认转换二进制了：
+
+```python
+>>> int2('1000000')
+64
+```
+
+`functools.partial`就是创建偏函数的，不需要自己定义`int2()`，可以直接使用下面的代码创建一个新的`int2`：
+
+```python
+>>> import functools
+>>> int2 = functools.partial(int, base=2)
+>>> int2('1000000')
+64
+```
+
+所以`functools.partial()`的作用就是设置某个函数的默认参数值，并返回一个新的函数。
+
+上面的`int2`函数把`base`参数重新设定为2，但也可以在调用时传入其它值：
+
+```python
+>>> int2('1000000', base=10)
+1000000
+```
+
+创建偏函数时，可以接收函数对象、`*args`、`**kw`三个参数，
+
+```python
+int2 = functools.partial(int, base=2)
+```
+
+实际上固定了`int()`函数的关键字参数`base`，也就是
+
+```python
+int2('10010')
+```
+
+相当于
+
+```python
+kw = {'base': 2}
+int('10010', **kw)
+```
+
+```python
+max2 = functools.partial(max,10)
+```
+
+实际上会把`10`作为`*args`的一部分自动加到左边：
+
+```
+max2(5,6,7)
+args = (10,5,6,7)
+max(*args)
+```
+
 
 
 ## 模块
 
+将函数分组，一个.py文件就称为一个模块。
+
+- 模块名遵循Python变量命名规范，不要使用中文、特殊字符；
+- 模块名不能和系统模块名冲突，通过执行`import abc`检查系统是否存在此模块。不同包名下的同名模块不同。
+
+### 使用模块
+
+通过内置的`sys`模块编写一个`hello`模块：
+
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+' a test module '
+
+__author__ = 'Michael Liao'
+
+import sys
+
+def test():
+    args = sys.argv
+    if len(args)==1:
+        print('Hello, world!')
+    elif len(args)==2:
+        print('Hello, %s!' % args[1])
+    else:
+        print('Too many arguments!')
+
+if __name__=='__main__':
+    test()
+```
+
+第1和第2行是标准注释，1表示可以让这个模块直接在Unix/Linux/Mac上运行，2表示.py文件使用UTF-8编码；
+
+第4行是一个字符串，表示模块的文档注释，任何模块的第一个字符串都被视为模块的文档注释。第6行`__author__`表示作者名。
+
+通过`import`关键字导入`sys`模块后，变量sys指向该模块，通过这个变量就可以使用`sys`模块的功能。`sys.argv`变量表示用list存储了命令行的所有参数，`argv`至少有一个参数是该.py文件的名称。例如运行`python3 hello.py`获得`sys.argv`就是`['hello.py']`。
+
+```python
+if __name__=='__main__':
+    test()
+```
+
+当在命令行运行`hello`模块时，Python解释器把一个特殊变量`__name__`置为`__main__`，而如果在其他地方导入该`hello`模块时，`if`判断将失败，因此，这种`if`测试可以让一个模块通过命令行运行时执行一些额外的代码，最常见的就是运行测试。
+
+```python
+$ python3 hello.py
+Hello, world!
+```
+
+```python
+>>> import hello
+>>>
+```
+
+导入时没有打印是因为没有执行`test()`函数，调用`hello.test()`才能打印。而在命令行直接执行`hello.py`会调用`if __name__=='__main__'`方法。
+
+**作用域**
+
+在一个模块中，通过`_`前缀实现模块非公开private，不应该被直接引用。正常的函数和变量名都是公开的public，可以直接被引用。因为Python不能完全限制访问private的函数或变量。
+
+```python
+def _private_1(name):
+    return 'Hello, %s' % name
+
+def _private_2(name):
+    return 'Hi, %s' % name
+
+def greeting(name):
+    if len(name) > 3:
+        return _private_1(name)
+    else:
+        return _private_2(name)
+```
+
+在模块里公开`greeting()`函数，把内部逻辑用private函数隐藏了，这样调用`greeting()`函数不用关心内部private的细节，这是一种非常有用的代码封装和抽象的方法。即外部不需要引用的函数全部定义成private，只有外部需要引用的函数才定义为public。
+
+### 安装第三方模块
+
+ 在Mac或Linux系统上安装Python自带pip且已经添加到环境变量，在Windows安装时需要勾选。区分python3和python2使用pip3命令。
+
+通过[第三方库官网](https://pypi.org/)查找该库的名称进行安装：
+
+```python
+pip install Pillow
+```
+
+当需要安装很多个常用库时，推荐使用[Anaconda](https://www.anaconda.com/)，内置集成了许多非常有用的第三方库。
+
+**模块搜索路径**
+
+当试图导入加载一个模块时，Python会在指定路径搜索对应的.py文件，找不到就会报错`ImportError: No module named mymodule`，默认情况python解释器会搜索当前目录，所有已安装的内置和第三方模块，搜索路径放在`sys`模块的`path`变量中：
+
+```python
+>>> import sys
+>>> sys.path
+['', 'D:\\python\\python38.zip', 'D:\\python\\DLLs', 'D:\\python\\lib', 'D:\\pyt
+hon', 'D:\\python\\lib\\site-packages']
+```
+
+如果要添加自己的搜索目录，一是修改`sys.path`添加要搜索的目录。
+
+```python
+>>> import sys
+>>> sys.path.append('/Users/lsaiah/my_py_lib')
+```
+
+这种方法是在运行时修改，运行后失效。
+
+二是设置环境变量`PYTHONPATH`，该环境变量的内容会被自动添加到模块搜索路径中。
+
 ## 面向对象编程
+
+面向对象编程——Object Oriented Programming，是一种程序设计思想，把对象作为程序的基本单元，一个对象包含了数据和操作数据的函数。在Python中，所有数据类型都可以视为对象，也可以自定义对象。自定义的对象数据类型就是面向对象中的类（Class）的概念。
+
+通过一个例子来说明面向过程和面向对象在程序流程上的不同处，假设要处理学生的成绩表，为了表示一个学生的成绩，面向过程的程序可以用一个dict表示：
+
+```python
+std1 = {'name': 'Michael', 'score': 98}
+std2 = {'name': 'Bob', 'score': 81}
+```
+
+而处理学生成绩可以通过函数实现，比如打印学生成绩：
+
+```python
+def print_score(std):
+    print('%s: %s' % (std['name'], std['score']))
+```
+
+如果是面向对象的程序设计思想，首先考虑的不是程序的执行流程，而是`Student`这种数据类型应该被视为一个对象，这个对象有`name`和`score`两个属性（Property），如果要打印一个学生的成绩，首先必须创建出这个学生对应的对象，然后调用对象的`print_score`方法（Method）让对象自己把自己的数据打印出来。
+
+```python
+class Student(object):
+    def __init__(self, name, score):
+        self.name = name
+        self.score = score
+        
+    def print_score(self):
+        print('%s : %s' % (self.name, self.score))
+```
+
+```python
+bart = Student('Bart Simpson', 59)
+lisa = Student('Lisa Simpson', 87)
+bart.print_score()
+lisa.print_score()
+```
+
+面向对象的设计思想是从自然界中来的，因为在自然界中，Class是一种抽象概念，比如我们定义的Class——Student，是指学生这个概念，而实例（Instance）则是一个个具体的Student。所以面向对象的设计思想是抽象出Class，根据Class创建Instance。数据封装、继承和多态是面向对象的三大特点。
+
+###  类和实例
+
+面向对象最重要的概念就是类（Class）和实例（Instance），类是抽象的模板，比如Student。而实例时根据类创建出来的一个个具体对象，每个对象都拥有相同的方法，数据可能不同。
+
+```python
+class Student(object):
+```
+
+class关键字定义类名，通常大写开头，接着是`(object)`，表示该类是从哪个类继承下来的，如果没有合适的继承类就使用`object`类，这是所有类最终都会继承的类。定义好类后就可以根据`Student`类创建出`Student`的实例，通过类名+()实现：
+
+```python
+>>> bart = Student()
+>>> bart
+<__main__.Student object at 0x10a67a590>
+>>> Student
+<class '__main__.Student'>
+```
+
+变量`bart`指向的就是一个`Student`实例，后面`0x10a67a590`是内存地址，每个object的地址都不一样。
+
+可以给实例变量绑定属性：
+
+```python
+>>> bart.name = 'Bart Simpson'
+```
+
+通过定义一个特殊的`__init__`方法，在创建实例的时候把`name`，`score`等属性绑上去：
+
+```python
+class Student(object):
+    def __init__(self,name,score):
+        self.name = name
+        self.score = score
+```
+
+`__init__`方法的第一个参数永远是`self`，表示创建的实例本身，因此，在`__init__`方法内部，就可以把各种属性绑定到`self`。有了`__init__`方法，在创建实例的时候，就不能传入空的参数了，必须传入与`__init__`方法匹配的参数，但`self`不需要传，Python解释器自己会把实例变量传进去：
+
+```python
+>>> bart = Student('Bart Simpson', 59)
+>>> bart.name
+'Bart Simpson'
+>>> bart.score
+59
+```
+
+在类中定义的函数和普通函数相比，第一个参数永远是实例变量`self`，并且在调用时不用传该参数。除此之外没什么区别，所以类函数仍然可以使用默认参数，可变参数，关键字参数和命名关键字参数。
+
+**数据封装**
+
+在`Student`类中，每个实例都有各自的`name`和`score`，可以通过函数访问这些数据：
+
+```python
+>>> def print_score(std):
+...     print('%s: %s' % (std.name, std.score))
+...
+>>> print_score(bart)
+Bart Simpson: 59
+```
+
+在`Student`内部可以直接定义访问数据的函数，这样就把数据封装起来了，这些封装数据的函数和类关联称为方法：
+
+```python
+class Student(object):
+
+    def __init__(self, name, score):
+        self.name = name
+        self.score = score
+
+    def print_score(self):
+        print('%s: %s' % (self.name, self.score))
+```
+
+定义方法第一个参数是`self`和其它普通函数一样，在实例变量上直接调用，除了`self`不用传递，其它参数正常传入：
+
+```python
+>>> bart = Student('Bart Simpson', 59)
+>>> bart.print_score()
+Bart Simpson: 59
+```
+
+封装调用容易，不用知道内部实现的细节，另外还可以给`Student`类增加新的方法，比如`get_grade()`：
+
+```python
+class Student(object):
+    def __init__(self, name, score):
+        self.name = name
+        self.score = score
+
+    def print_score(self):
+        print('%s: %s' % (self.name, self.score))
+
+    def get_grade(self):
+        if self.score >= 90:
+            return 'A'
+        elif self.score >= 60:
+            return 'B'
+        else:
+            return 'C'
+```
+
+同样`get_grade()`可以直接调用，不需要知道实现细节：
+
+```python
+lisa = Student('Lisa', 99)
+bart = Student('Bart', 59)
+print(lisa.name, lisa.get_grade())
+print(bart.name, bart.get_grade())
+```
+
+和静态语言不同，Python允许对实例变量绑定任何数据，也就是说，对于两个实例变量，虽然它们都是同一个类的不同实例，但拥有的变量名称都可能不同：
+
+```python
+>>> bart = Student('Bart Simpson', 59)
+>>> lisa = Student('Lisa Simpson', 87)
+>>> bart.age = 8
+>>> bart.age
+8
+>>> lisa.age
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'Student' object has no attribute 'age'
+```
+
+bart对象的实例增加了自己的属性而不影响类，因此同一个类的不同对象lisa实例不能调用bart对象的属性。
+
+### 访问限制
+
+### 继承和多态
+
+### 获取对象信息
+
+### 实例属性和类属性
 
 ## 面向对象高级编程
 
