@@ -3602,7 +3602,242 @@ bart对象的实例增加了自己的属性而不影响类，因此同一个类�
 
 ### 访问限制
 
+Class内部的属性和方法可以直接调用，还可以自由修改。如果让内部属性不被外部访问，可以把属性名称前面加两个下划线`__`，在Python中实例变量如果以`__`开头就变成了一个私有变量（private），只有在class内部可以访问，外部不能访问。
+
+```python
+class Student(object):
+    def __init__(self, name, score):
+        self.__name = name
+        self.__score = score
+    def print_score(self):
+        print('%s: %s' % (self.__name, self.__score))
+```
+
+```python
+>>> bart = Student('Bart Simpson', 59)
+>>> bart.__name
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'Student' object has no attribute '__name'
+```
+
+这样就确保了外部代码不能随意修改对象内部状态，访问限制使得代码更健壮。如果外部代码要获取name和score，可以给Student类增加`get_name`和`get_score`方法：
+
+```python
+class Student(object):
+    def get_name(self):
+        return self.__name
+    def get_score(self):
+        return self.__score
+```
+
+如果还要允许外部代码修改score，可以给Student类增加`set_score`方法：
+
+```python
+class Student(object):
+    def set_score(self, score):
+        self.__score = score
+```
+
+没有`set_score`方法时也可以直接修改，但是不能检查传入的参数，为了避免传入无效参数：
+
+```python
+class Student(object):
+    def set_score(self, score):
+        if 0 <= score <= 100:
+            self.__score = score
+        else:
+            raise ValueError('bad score')
+```
+
+在Python中变量名类似`__xx__`双下划线开头和结尾属于特殊变量，不是private变量可以直接访问。类似`_xx`单下划线开头的变量外部是可以访问的，但是一般视为私有变量。`__name`不能直接访问，但是Python解释器把`__name`变量改成了`_Student__name`仍然可以通过`_Student__name`来访问`__name`变量，不同版本的解释器可能会把`__name`改成不同的变量名，所以不推荐这样访问。
+
+```python
+>>> bart._Student__name
+'Bart Simpson'
+```
+
+> [!ATTENTION]
+>
+> 错误写法：外部代码设置了`__name`变量，但实际上这个`__name`变量和class内部的`__name`变量*不是*一个变量！内部的`__name`变量已经被Python解释器自动改成了`_Student__name`，而外部代码给`bart`新增了一个`__name`变量。
+
+```python
+>>> bart = Student('Bart Simpson', 59)
+>>> bart.get_name()
+'Bart Simpson'
+>>> bart.__name = 'New Name' # 设置__name变量！
+>>> bart.__name
+'New Name'
+```
+
+```python
+>>> bart.get_name() # get_name()内部返回self.__name
+'Bart Simpson'
+```
+
+**练习**
+
+```python
+# -*- coding: utf-8 -*-
+class Student(object):
+    def __init__(self, name, gender):
+        self.name = name
+        self.__gender = gender
+    def get_gender(self):
+        return self.__gender
+    def set_gender(self, gender):
+        self.__gender = gender
+# 测试:
+bart = Student('Bart', 'male')
+if bart.get_gender() != 'male':
+    print('测试失败!')
+else:
+    bart.set_gender('female')
+    if bart.get_gender() != 'female':
+        print('测试失败!')
+    else:
+        print('测试成功!')
+```
+
 ### 继承和多态
+
+在面向对象编程OOP中，定义一个class的时候可以从某个现有的class中继承，新的class称为子类，被继承的类称为基类、父类或超类。
+
+比如编写一个`Animal`的class有一个`run()`方法：
+
+```python
+class Animal(object):
+	def run(self):
+        print('Animal is running ...')
+```
+
+当编写`Dog`和`Cat`类时，可以从`Animal`类中直接继承`run()`方法。
+
+```python
+class Dog(Animal):
+    pass
+class Cat(Animal):
+    pass
+```
+
+子类继承父类可以获得父类的全部功能：
+
+```python
+dog = Dog()
+dog.run()
+Animal is running...
+cat = Cat()
+cat.run()
+Animal is running...
+```
+
+子类继承父类可以重写父类的方法，运行时重写的方法覆盖了父类的方法，实现了多态性。也可以增加单独的方法。
+
+```python
+class Dog(Animal):
+    def run(self):
+        print('Dog is running...')
+    def eat(self):
+        print('Eating meat...')
+class Cat(Animal):
+    def run(self):
+        print('Cat is running...')
+```
+
+```python
+dog = Dog()
+dog.run()
+dog.eat()
+Dog is running...
+Eating meat...
+cat = Cat()
+cat.run()
+Cat is running...
+```
+
+当定义了一个class的时候，实际上定义了一种数据类型：
+
+```python
+a = list() # a是list类型
+b = Animal() # b是Animal类型
+c = Dog() # c是Dog类型
+```
+
+判断一个变量是否是某个类型可以用`isinstance()`判断：
+
+```python
+>>> isinstance(a, list)
+True
+>>> isinstance(b, Animal)
+True
+>>> isinstance(c, Dog)
+True
+```
+
+同时`Dog`是从`Animal`继承下来的，所以`c`也是`Animal`类：
+
+```python
+>>> isinstance(c, Animal)
+True
+```
+
+在继承关系中，如果一个实例的数据类型是某个子类，那它的数据类型也可以被看做是父类。反过来`Animal`不可以看成`Dog`：
+
+```python
+>>> b = Animal()
+>>> isinstance(b, Dog)
+False
+```
+
+多态的好处：
+
+```
+class Animal(object):   #编写Animal类
+    def run(self):
+        print("Animal is running...")
+
+class Dog(Animal):  #Dog类继承Amimal类，没有run方法
+    pass
+
+class Cat(Animal):  #Cat类继承Animal类，有自己的run方法
+    def run(self):
+        print('Cat is running...')
+    pass
+
+class Car(object):  #Car类不继承，有自己的run方法
+    def run(self):
+        print('Car is running...')
+
+class Stone(object):  #Stone类不继承，也没有run方法
+    pass
+
+def run_twice(animal):
+    animal.run()
+    animal.run()
+
+run_twice(Animal())
+run_twice(Dog())
+run_twice(Cat())
+run_twice(Car())
+run_twice(Stone())
+```
+
+输出结果如下：
+
+```
+Animal is running...
+Animal is running...
+Animal is running...
+Animal is running...
+Cat is running...
+Cat is running...
+Car is running...
+Car is running...
+
+AttributeError: 'Stone' object has no attribute 'run'
+```
+
+除石头吃了不会跑的亏外，其余的都能run，都是“鸭子”。
 
 ### 获取对象信息
 
