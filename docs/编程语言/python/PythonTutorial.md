@@ -3791,7 +3791,7 @@ False
 
 多态的好处：
 
-```
+```python
 class Animal(object):   #编写Animal类
     def run(self):
         print("Animal is running...")
@@ -3824,7 +3824,7 @@ run_twice(Stone())
 
 输出结果如下：
 
-```
+```python
 Animal is running...
 Animal is running...
 Animal is running...
@@ -3839,7 +3839,48 @@ AttributeError: 'Stone' object has no attribute 'run'
 
 除石头吃了不会跑的亏外，其余的都能run，都是“鸭子”。
 
+对于静态语言（例如Java）来说，如果需要传入`Animal`类型，则传入的对象必须是`Animal`类型或者它的子类，否则，将无法调用`run()`方法。对于Python这样的动态语言来说，则不一定需要传入`Animal`类型。我们只需要保证传入的对象有一个`run()`方法就可以调用`run_twice`。
+
 ### 获取对象信息
+
+**使用type()**
+
+使用`type()`判断对象的基本类型：
+
+```python
+>>> type(123)
+<class 'int'>
+>>> type('str')
+<class 'str'>
+>>> type(None)
+<type(None) 'NoneType'>
+```
+
+如果一个变量指向函数或者类也可以用`type()`判断：
+
+```python
+>>> type(abs)
+<class 'builtin_function_or_method'>
+>>> type(a)
+<class '__main__.Animal'>
+```
+
+`type()`函数返回对应的class类型，比较两个变量的`type()`是否相同：
+
+```python
+>>> type(123)==type(456)
+True
+>>> type(123)==int
+True
+>>> type('abc')==type('123')
+True
+>>> type('abc')==str
+True
+>>> type('abc')==type(123)
+False
+```
+
+
 
 ### 实例属性和类属性
 
