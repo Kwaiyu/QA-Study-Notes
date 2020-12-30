@@ -3880,11 +3880,235 @@ True
 False
 ```
 
+判断基本数据类型可以直接写`int`，`str`。判断一个对象是否是函数，可以使用`types`模块中定义的常量：
 
+```python
+>>> import types
+>>> def fn():
+...     pass
+...
+>>> type(fn)==types.FunctionType
+True
+>>> type(abs)==types.BuiltinFunctionType
+True
+>>> type(lambda x: x)==types.LambdaType
+True
+>>> type((x for x in range(10)))==types.GeneratorType
+True
+```
+
+**使用isinstance()**
+
+判断class类型，可以使用`isinstance()`，如下class继承关系：
+
+```python
+object -> Animal -> Dog -> Husky
+```
+
+先创建三种类型的对象：
+
+```python
+>>> a = Animal()
+>>> d = Dog()
+>>> h = Husky()
+```
+
+然后判断：
+
+```python
+>>> isinstance(h, Husky)
+True
+>>> isinstance(h, Dog)
+True
+>>> isinstance(h, Animal)
+True
+>>> isinstance(d, Dog) and isinstance(d, Animal)
+True
+>>> isinstance(d, Husky)
+False
+```
+
+`isinstance()`判断的是一个对象是否是该类型本身，或者位于该类型的父继承链上。
+
+能用`type()`判断的基本类型也可以用`isinstance()`判断：
+
+```python
+>>> isinstance('a', str)
+True
+>>> isinstance(123, int)
+True
+>>> isinstance(b'a', bytes)
+True
+```
+
+还可以判断一个变量是否是某些类型中的一种：
+
+```python
+>>> isinstance([1, 2, 3], (list, tuple))
+True
+>>> isinstance((1, 2, 3), (list, tuple))
+True
+```
+
+所以优先使用`isinstance()`判断类型。
+
+**使用dir()**
+
+获得一个对象的所有属性和方法，可以使用`dir()`函数，返回一个包含字符串的list：
+
+```python
+>>> dir('ABC')
+['__add__', '__class__',..., '__subclasshook__', 'capitalize', 'casefold',..., 'zfill']
+```
+
+类似`__xxx__`的属性和方法都有特殊用途，比如`__len__`方法返回长度，当调用`len()`函数获取对象长度时，在函数内部自动调用该对象的`__len__()`方法。
+
+```python
+>>> len('ABC')
+3
+>>> 'ABC'.__len__()
+3
+```
+
+自己写的类中想用`len(myObj)`，可以自己写一个`__len__()`方法：
+
+```python
+>>> class MyDog(object):
+...     def __len__(self):
+...         return 100
+...
+>>> dog = MyDog()
+>>> len(dog)
+100
+```
+
+只列出属性和方法不够，可以配合`getattr()`、`setattr()`以及`hasattr()`直接操作一个对象的状态：
+
+```python
+>>> class MyObject(object):
+...     def __init__(self):
+...         self.x = 9
+...     def power(self):
+...         return self.x * self.x
+...
+>>> obj = MyObject()
+```
+
+获取对象的属性：
+
+```python
+>>> hasattr(obj, 'x') # 有属性'x'吗？
+True
+>>> obj.x
+9
+>>> hasattr(obj, 'y') # 有属性'y'吗？
+False
+>>> setattr(obj, 'y', 19) # 设置一个属性'y'
+>>> hasattr(obj, 'y') # 有属性'y'吗？
+True
+>>> getattr(obj, 'y') # 获取属性'y'
+19
+>>> obj.y # 获取属性'y'
+19
+>>> getattr(obj, 'z') # 获取不存在的属性'z'抛出AttributeError的错误
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'MyObject' object has no attribute 'z'
+>>> getattr(obj, 'z', 404) # 获取属性'z'，如果不存在，返回默认值404
+404
+```
+
+获取对象的方法：
+
+```python
+>>> hasattr(obj, 'power') # 有方法'power'吗？
+True
+>>> getattr(obj, 'power') # 获取方法'power'
+<bound method MyObject.power of <__main__.MyObject object at 0x10077a6a0>>
+>>> fn = getattr(obj, 'power') # 获取方法'power'并赋值到变量fn
+>>> fn # fn指向obj.power
+<bound method MyObject.power of <__main__.MyObject object at 0x10077a6a0>>
+>>> fn() # 调用fn()与调用obj.power()是一样的
+81
+```
+
+只有在不知道对象信息的时候才会获取对象信息。正确示例：
+
+```python
+def readImage(fp):
+    if hasattr(fp, 'read'):
+        return readData(fp)
+    return None
+```
+
+从文件流fp中读取图像，首先要判断fp对象是否存在read方法，如果存在则对象时一个流，如果不存在则无法读取。注意根据鸭子类型，有`read()`方法，不代表该fp对象就是一个文件流，它也可能是网络流，也可能是内存中的一个字节流，但只要`read()`方法返回的是有效的图像数据，就不影响读取图像的功能。
 
 ### 实例属性和类属性
 
+Python是动态语言，根据类创建的实例可以任意绑定属性。
+
+```python
+class Student(object):
+    def __init__(self, name):
+        self.name = name
+
+s = Student('Bob')
+s.score = 90
+```
+
+如果`Student`类本身需要绑定一个属性，可以直接在class中定义属性，这种属性是类属性，归classs所有，类的所有实例都可以访问。
+
+```python
+class Student(object):
+    name = 'Student'
+```
+
+```python
+>>> class Student(object):
+...     name = 'Student'
+...
+>>> s = Student() # 创建实例s
+>>> print(s.name) # 打印name属性，因为实例并没有name属性，所以会继续查找class的name属性
+Student
+>>> print(Student.name) # 打印类的name属性
+Student
+>>> s.name = 'Michael' # 给实例绑定name属性
+>>> print(s.name) # 由于实例属性优先级比类属性高，因此，它会覆盖掉类的name属性
+Michael
+>>> print(Student.name) # 但是类属性并未消失，用Student.name仍然可以访问
+Student
+>>> del s.name # 如果删除实例的name属性
+>>> print(s.name) # 再次调用s.name，由于实例的name属性没有找到，类的name属性就显示出来了
+Student
+```
+
+**练习**
+
+为了统计学生人数，给Student类增加一个类属性，每创建一个实例，该属性自动增加：
+
+```python
+class Student(object):
+    count = 0
+    def __init__(self, name):
+        self.name = name
+        Student.count += 1
+```
+
 ## 面向对象高级编程
+
+### 使用`__slots__`
+
+
+
+### 使用`@property`
+
+### 多重继承
+
+### 定制类
+
+### 使用枚举类
+
+### 使用元类
 
 ## 错误、调试和测试
 
