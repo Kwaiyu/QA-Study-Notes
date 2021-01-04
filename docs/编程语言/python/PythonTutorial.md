@@ -4388,6 +4388,49 @@ class MyTCPServer(TCPServer, CoroutineMixIn):
 
 ### 定制类
 
+类似`__xxx__`的变量或者函数名是有特殊用途的，如`__slots__`限制class的实例添加的属性，`__len__()`方法是为了能让class作用于`len()`函数。除此之外Python的class中还有许多这样有特殊用途的函数，可以帮助我们定制类。
+
+**`__str__`**
+
+定义一个`Student`类，打印实例：
+
+```python
+>>> class Student(object):
+...     def __init__(self, name):
+...         self.name = name
+...
+>>> print(Student('Michael'))
+<__main__.Student object at 0x109afb190>
+```
+
+定义`__str__()`方法，返回一个有名字的字符串：
+
+```python
+>>> class Student(object):
+...     def __init__(self, name):
+...         self.name = name
+...     def __str__(self):
+...         return 'Student object (name: %s)' % self.name
+...
+>>> print(Student('Michael'))
+Student object (name: Michael)
+```
+
+当直接调用变量不用`print`时，打印出来的实例还是`<__main__.Student object at 0x109afb310>`，这是因为直接显示变量调用的不是`__str__()`，而是`__repr__()`，`__repr__()`是为调试服务的，`__str__()`返回用户看到的字符串。解决方法就是再定义一个和`__str__()`一样的`__repr__()`：
+
+```python
+class Student(object):
+    def __init__(self, name):
+        self.name = name
+    def __str__(self):
+        return 'Student object (name=%s)' % self.name
+    __repr__ = __str__
+```
+
+**`__iter__`**
+
+
+
 
 
 ### 使用枚举类
