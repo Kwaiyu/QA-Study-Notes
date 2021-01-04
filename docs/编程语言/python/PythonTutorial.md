@@ -4098,13 +4098,297 @@ class Student(object):
 
 ### 使用`__slots__`
 
+动态语言Python定义一个class，创建class的实例后可以给该实例绑定任何属性和方法：
 
+```python
+class Student(object):
+    pass
+
+>>> s = Student()
+>>> s.name = 'Michael' # 动态给实例绑定一个属性
+>>> print(s.name)
+Michael
+>>> def set_age(self, age): # 定义一个函数作为实例方法
+...     self.age = age
+...
+>>> from types import MethodType
+>>> s.set_age = MethodType(set_age, s) # 给实例绑定一个方法
+>>> s.set_age(25) # 调用实例方法
+>>> s.age # 测试结果
+25
+# 但是对另外一个实例不起作用
+>>> s2 = Student() # 创建新的实例
+>>> s2.set_age(25) # 尝试调用方法
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'Student' object has no attribute 'set_age'
+# 给class绑定方法，所有实例均可调用：
+>>> def set_score(self, score):
+...     self.score = score
+...
+>>> Student.set_score = set_score
+>>> s.set_score(100)
+>>> s.score
+100
+>>> s2.set_score(99)
+>>> s2.score
+99
+```
+
+如果要限制实例的属性，比如只允许对Student实例添加`name`和`age`属性。Python允许在定义class的时候，定义一个特殊的`__slots__`变量，来限制该class实例能添加的属性：
+
+```python
+class Student(object):
+    __slots__ = ('name', 'age') # 用tuple定义允许绑定的属性名称
+    
+>>> s = Student() # 创建新的实例
+>>> s.name = 'Michael' # 绑定属性'name'
+>>> s.age = 25 # 绑定属性'age'
+>>> s.score = 99 # 绑定属性'score'
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'Student' object has no attribute 'score'
+```
+
+使用`__slots__`定义的属性仅对当前类实例起作用，对继承的子类是不起作用的：
+
+```python
+>>> class GraduateStudent(Student):
+...     pass
+...
+>>> g = GraduateStudent()
+>>> g.score = 9999
+```
+
+除非在子类中也定义`__slots__`，这样，子类实例允许定义的属性就是自身的`__slots__`加上父类的`__slots__`。
 
 ### 使用`@property`
 
+在绑定属性时，不能检查参数，可以随便改，不符合逻辑。为了限制属性的范围，可以通过一个`set_score()`方法来设置成绩，再通过一个`get_score()`来获取成绩，这样，在`set_score()`方法里，就可以检查参数：
+
+```python
+class Student(object):
+
+    def get_score(self):
+         return self._score
+
+    def set_score(self, value):
+        if not isinstance(value, int):
+            raise ValueError('score must be an integer!')
+        if value < 0 or value > 100:
+            raise ValueError('score must between 0 ~ 100!')
+        self._score = value
+
+>>> s = Student()
+>>> s.set_score(60) # ok!
+>>> s.get_score()
+60
+>>> s.set_score(9999)
+Traceback (most recent call last):
+  ...
+ValueError: score must between 0 ~ 100!
+```
+
+上面的方法比较复杂，通过装饰器（decorator）可以给函数动态加上功能，对于类方法内置`@property`装饰器可以把一个方法变成属性调用：
+
+```python
+class Student(object):
+
+    @property
+    def score(self):
+        return self._score
+
+    @score.setter
+    def score(self, value):
+        if not isinstance(value, int):
+            raise ValueError('score must be an integer!')
+        if value < 0 or value > 100:
+            raise ValueError('score must between 0 ~ 100!')
+        self._score = value
+
+>>> s = Student()
+>>> s.score = 60 # OK，实际转化为s.set_score(60)
+>>> s.score # OK，实际转化为s.get_score()
+60
+>>> s.score = 9999
+Traceback (most recent call last):
+  ...
+ValueError: score must between 0 ~ 100!
+```
+
+`@property`还可以定义只读属性，只定义getter方法，不定义setter方法就是一个只读属性，`age`就是一个*只读*属性，因为`age`可以根据`birth`和当前时间计算出来：
+
+```python
+class Student(object):
+
+    @property
+    def birth(self):
+        return self._birth
+
+    @birth.setter
+    def birth(self, value):
+        self._birth = value
+
+    @property
+    def age(self):
+        return 2015 - self._birth
+```
+
+**练习**
+
+请利用`@property`给一个`Screen`对象加上`width`和`height`属性，以及一个只读属性`resolution`：
+
+```python
+# -*- coding: utf-8 -*-
+class Screen(object):
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        self._width = value
+
+    @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        self._height = value
+
+    @property
+    def resolution(self):
+        return self._width * self._height
+
+# 测试:
+s = Screen()
+s.width = 1024
+s.height = 768
+print('resolution =', s.resolution)
+if s.resolution == 786432:
+    print('测试通过!')
+else:
+    print('测试失败!')
+```
+
+
+
 ### 多重继承
 
+通过继承，子类就可以扩展父类的功能。`Animal`类层次的设计，假设要实现以下4种动物：
+
+- Dog - 狗狗；
+- Bat - 蝙蝠；
+- Parrot - 鹦鹉；
+- Ostrich - 鸵鸟。
+
+按照哺乳动物和鸟类归类，也可以按照能飞和能跑归类，如果两种都包含就要更多的层次：
+
+- 哺乳类：能跑的哺乳类，能飞的哺乳类；
+- 鸟类：能跑的鸟类，能飞的鸟类。
+
+```ascii
+           │    Animal     │
+                └───────────────┘
+                        │
+           ┌────────────┴────────────┐
+           │                         │
+           ▼                         ▼
+    ┌─────────────┐           ┌─────────────┐
+    │   Mammal    │           │    Bird     │
+    └─────────────┘           └─────────────┘
+           │                         │
+     ┌─────┴──────┐            ┌─────┴──────┐
+     │            │            │            │
+     ▼            ▼            ▼            ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│  MRun   │  │  MFly   │  │  BRun   │  │  BFly   │
+└─────────┘  └─────────┘  └─────────┘  └─────────┘
+     │            │            │            │
+     │            │            │            │
+     ▼            ▼            ▼            ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│   Dog   │  │   Bat   │  │ Ostrich │  │ Parrot  │
+```
+
+如果继续增加宠物类和非宠物类，那么类的数量会呈指数增长，正确做法是采用多重继承。首先，主要的类层次仍按照哺乳类和鸟类设计：
+
+```python
+class Animal(object):
+    pass
+
+# 大类:
+class Mammal(Animal):
+    pass
+
+class Bird(Animal):
+    pass
+
+# 各种动物:
+class Dog(Mammal):
+    pass
+
+class Bat(Mammal):
+    pass
+
+class Parrot(Bird):
+    pass
+
+class Ostrich(Bird):
+    pass
+```
+
+给动物加上`Runnable`和`Flyable`的功能，定义类：
+
+```python
+class Runnable(object):
+    def run(self):
+        print('Running...')
+
+class Flyable(object):
+    def fly(self):
+        print('Flying...')
+```
+
+对于需要`Runnable`功能的动物，就多继承一个`Runnable`，例如`Dog`；对于需要`Flyable`功能的动物，就多继承一个`Flyable`，例如`Bat`。
+
+```python
+class Dog(Mammal, Runnable):
+    pass
+    
+class Bat(Bird, Flyable):
+	pass
+```
+
+**Mixln**
+
+多重继承，比如让`Ostrich`除了继承自`Bird`外，再同时继承`Runnable`。这种设计通常称之为MixIn。把`Runnable`和`Flyable`改为`RunnableMixIn`和`FlyableMixIn`，类似的还可以定义出肉食动物`CarnivorousMixIn`和植食动物`HerbivoresMixIn`，让某个动物同时拥有好几个MixIn：
+
+```python
+class Dog(Mammal, RunnableMixIn, CarnivorousMixIn):
+    pass
+```
+
+在设计类时优先考虑通过多重继承来组合多个Mixln的功能，而不是设计多层次复杂的继承关系。内置的很多库也使用了Mixln，如`TCPServer`和`UDPServer`这两类网络服务，而要同时服务多个用户就必须使用多进程或多线程模型，这两种模型由`ForkingMixIn`和`ThreadingMixIn`提供。通过组合就可以创造出合适的服务来：
+
+```python
+# 编写一个多进程模式的TCP服务
+class MyTCPServer(TCPServer, ForkingMixIn):
+    pass
+# 编写一个多线程模式的UDP服务
+class MyUDPServer(UDPServer, ThreadingMixIn):
+    pass
+# 更先进的协程模型
+class MyTCPServer(TCPServer, CoroutineMixIn):
+    pass
+```
+
+这样就不需要复杂而庞大的继承链，只要选择组合不同的类的功能就可以快速构造出所需的子类。
+
 ### 定制类
+
+
 
 ### 使用枚举类
 
