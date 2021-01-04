@@ -20,7 +20,7 @@
   - [App](/README?id=app)
   - [镜像](/README?id=镜像)
   - [Git](/README?id=git)
-  - [Gradle](/README?id=gradle)
+  - [Maven,Gradle](/README?id=maven)
   - [总结](/README?id=总结)
   
 - [<span class="iconfont icon-pinglun"></span> 留言板](https://www.lsaiah.cn/comment.html)
