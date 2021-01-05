@@ -87,6 +87,16 @@ Python的交互模式和直接运行`.py`文件有什么区别呢？
 
 用Python开发程序，完全可以一边在文本编辑器里写代码，一边开一个交互式命令窗口，在写代码的过程中，把部分代码粘到命令行去验证，事半功倍！
 
+**注释**
+
+```python
+# 这是单行注释
+def a():
+    '''这是文档注释'''
+    pass
+print(a.__doc__)
+```
+
 **直接运行py文件**
 
 在Windows上是不行的，但是，在Mac和Linux上是可以的，方法是在`.py`文件的第一行加上一个特殊的注释：
@@ -122,21 +132,21 @@ Python提供了一个`input()`，可以让用户输入字符串，并存放到�
 
 ```python
 >>> name = input()
-Michael
+Lsaiah
 ```
 
 输入完成后，不会有任何提示，Python交互式命令行又回到`>>>`状态了。那我们刚才输入的内容到哪去了？答案是存放到`name`变量里了。可以直接输入`name`查看变量内容：
 
 ```python
 >>> name
-'Michael'
+'Lsaiah'
 ```
 
 要打印出`name`变量的内容，除了直接写`name`然后按回车外，还可以用`print()`函数：
 
 ```python
 >>> print(name)
-Michael
+Lsaiah
 ```
 
 `input()`可以让你显示一个字符串来提示用户，于是我们把代码改成：
@@ -577,9 +587,9 @@ Python内置的一种数据类型列表list是一种有序的集合，可以随�
 列出班里所有同学的名字，就可以用一个list表示：
 
 ```python
->>> classmates = ['Michael', 'Bob', 'Tracy']
+>>> classmates = ['Lsaiah', 'Bob', 'Tracy']
 >>> classmates
-['Michael', 'Bob', 'Tracy']
+['Lsaiah', 'Bob', 'Tracy']
 ```
 
 变量`classmates`就是一个list。用`len()`函数可以获得list元素的个数：
@@ -593,7 +603,7 @@ Python内置的一种数据类型列表list是一种有序的集合，可以随�
 
 ```python
 >>> classmates[0]
-'Michael'
+'Lsaiah'
 >>> classmates[1]
 'Bob'
 >>> classmates[2]
@@ -619,7 +629,7 @@ IndexError: list index out of range
 >>> classmates[-2]
 'Bob'
 >>> classmates[-3]
-'Michael'
+'Lsaiah'
 >>> classmates[-4]
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
@@ -633,7 +643,7 @@ list是一个**可变**的有序表，所以，可以往list中追加元素到�
 ```python
 >>> classmates.append('Adam')
 >>> classmates
-['Michael', 'Bob', 'Tracy', 'Adam']
+['Lsaiah', 'Bob', 'Tracy', 'Adam']
 ```
 
 也可以把元素插入到指定的位置，比如索引号为`1`的位置：
@@ -641,7 +651,7 @@ list是一个**可变**的有序表，所以，可以往list中追加元素到�
 ```python
 >>> classmates.insert(1, 'Jack')
 >>> classmates
-['Michael', 'Jack', 'Bob', 'Tracy', 'Adam']
+['Lsaiah', 'Jack', 'Bob', 'Tracy', 'Adam']
 ```
 
 要删除list末尾的元素，用`pop()`方法：
@@ -650,7 +660,7 @@ list是一个**可变**的有序表，所以，可以往list中追加元素到�
 >>> classmates.pop()
 'Adam'
 >>> classmates
-['Michael', 'Jack', 'Bob', 'Tracy']
+['Lsaiah', 'Jack', 'Bob', 'Tracy']
 ```
 
 要删除指定位置的元素，用`pop(i)`方法，其中`i`是索引位置：
@@ -659,7 +669,7 @@ list是一个**可变**的有序表，所以，可以往list中追加元素到�
 >>> classmates.pop(1)
 'Jack'
 >>> classmates
-['Michael', 'Bob', 'Tracy']
+['Lsaiah', 'Bob', 'Tracy']
 ```
 
 要把某个元素替换成别的元素，可以直接赋值给对应的索引位置：
@@ -667,7 +677,7 @@ list是一个**可变**的有序表，所以，可以往list中追加元素到�
 ```python
 >>> classmates[1] = 'Sarah'
 >>> classmates
-['Michael', 'Sarah', 'Tracy']
+['Lsaiah', 'Sarah', 'Tracy']
 ```
 
 list里面的元素的数据类型也可以不同，比如：
@@ -706,7 +716,7 @@ list元素也可以是另一个list，比如：
 tuple序列表叫元组，tuple和list非常类似，但是tuple一旦初始化就不能修改。如列出同学的名字：
 
 ```python
->>> classmates = ('Michael', 'Bob', 'Tracy')
+>>> classmates = ('Lsaiah', 'Bob', 'Tracy')
 ```
 
 没有append()，insert()这样的方法。其他获取元素的方法和list是一样的，你可以正常地使用`classmates[0]`，`classmates[-1]`，但不能赋值成另外的元素。因为tuple不可变，所以代码更安全。如果可能能用tuple代替list就尽量用tuple。
@@ -842,7 +852,7 @@ else:
 Python的循环有两种，一种是for...in循环，依次把list或tuple中的每个元素迭代出来，看例子：
 
 ```python
-names = ['Michael', 'Bob', 'Tracy']
+names = ['Lsaiah', 'Bob', 'Tracy']
 for name in names:
     print(name)
 ```
@@ -945,7 +955,7 @@ Python内置了字典dict全称dictionary，在其他语言中也称为map，使
 假设要根据同学名字查找对应的成绩，如果用list实现，需要两个list：
 
 ```python
-names = ['Michael', 'Bob', 'Tracy']
+names = ['Lsaiah', 'Bob', 'Tracy']
 scores = [95, 75, 85]
 ```
 
@@ -954,8 +964,8 @@ scores = [95, 75, 85]
 如果用dict实现，只需要一个{'名字' : 成绩}对照表。直接根据名字查找成绩，无论这个表有多大，查找速度都不会变慢。
 
 ```python
->>> d = {'Michael': 95, 'Bob': 75, 'Tracy': 85}
->>> d['Michael']
+>>> d = {'Lsaiah': 95, 'Bob': 75, 'Tracy': 85}
+>>> d['Lsaiah']
 95
 ```
 
@@ -1005,7 +1015,7 @@ False
 >>> d.pop('Bob')
 75
 >>> d
-{'Michael': 95, 'Tracy': 85}
+{'Lsaiah': 95, 'Tracy': 85}
 ```
 
 list（时间换空间）：
@@ -1515,8 +1525,8 @@ def person(name, age, **kw):
 除了必选参数外还接受关键字参数`kw`。在调用时可以只传必选参数。
 
 ```python
->>> person('Michael', 30)
-name: Michael age: 30 other: {}
+>>> person('Lsaiah', 30)
+name: Lsaiah age: 30 other: {}
 ```
 
 也可传入任意个数的关键字参数：
@@ -1803,7 +1813,7 @@ def move(n, a, b, c):
 取一个list或tuple的部分元素非常常见，如取list的前3个元素：
 
 ```python
->>> L = ['Michael', 'Sarah', 'Tracy', 'Bob', 'Jack']
+>>> L = ['Lsaiah', 'Sarah', 'Tracy', 'Bob', 'Jack']
 >>> [L[0], L[1], L[2]]
 ```
 
@@ -1822,7 +1832,7 @@ def move(n, a, b, c):
 
 ```python
 >>> L[0:3]
-['Michael', 'Sarah', 'Tracy']
+['Lsaiah', 'Sarah', 'Tracy']
 ```
 
 `L[0:3]`表示，从索引`0`开始取，直到索引`3`为止，但不包括索引`3`。即索引`0`，`1`，`2`。如果第一个索引是`0`还可以省略。支持`L[-1]`取倒数第一个元素。
@@ -3340,7 +3350,7 @@ max(*args)
 
 ' a test module '
 
-__author__ = 'Michael Liao'
+__author__ = 'Lsaiah Liao'
 
 import sys
 
@@ -3443,7 +3453,7 @@ hon', 'D:\\python\\lib\\site-packages']
 通过一个例子来说明面向过程和面向对象在程序流程上的不同处，假设要处理学生的成绩表，为了表示一个学生的成绩，面向过程的程序可以用一个dict表示：
 
 ```python
-std1 = {'name': 'Michael', 'score': 98}
+std1 = {'name': 'Lsaiah', 'score': 98}
 std2 = {'name': 'Bob', 'score': 81}
 ```
 
@@ -4072,9 +4082,9 @@ class Student(object):
 Student
 >>> print(Student.name) # 打印类的name属性
 Student
->>> s.name = 'Michael' # 给实例绑定name属性
+>>> s.name = 'Lsaiah' # 给实例绑定name属性
 >>> print(s.name) # 由于实例属性优先级比类属性高，因此，它会覆盖掉类的name属性
-Michael
+Lsaiah
 >>> print(Student.name) # 但是类属性并未消失，用Student.name仍然可以访问
 Student
 >>> del s.name # 如果删除实例的name属性
@@ -4105,9 +4115,9 @@ class Student(object):
     pass
 
 >>> s = Student()
->>> s.name = 'Michael' # 动态给实例绑定一个属性
+>>> s.name = 'Lsaiah' # 动态给实例绑定一个属性
 >>> print(s.name)
-Michael
+Lsaiah
 >>> def set_age(self, age): # 定义一个函数作为实例方法
 ...     self.age = age
 ...
@@ -4142,7 +4152,7 @@ class Student(object):
     __slots__ = ('name', 'age') # 用tuple定义允许绑定的属性名称
     
 >>> s = Student() # 创建新的实例
->>> s.name = 'Michael' # 绑定属性'name'
+>>> s.name = 'Lsaiah' # 绑定属性'name'
 >>> s.age = 25 # 绑定属性'age'
 >>> s.score = 99 # 绑定属性'score'
 Traceback (most recent call last):
@@ -4399,7 +4409,7 @@ class MyTCPServer(TCPServer, CoroutineMixIn):
 ...     def __init__(self, name):
 ...         self.name = name
 ...
->>> print(Student('Michael'))
+>>> print(Student('Lsaiah'))
 <__main__.Student object at 0x109afb190>
 ```
 
@@ -4412,8 +4422,8 @@ class MyTCPServer(TCPServer, CoroutineMixIn):
 ...     def __str__(self):
 ...         return 'Student object (name: %s)' % self.name
 ...
->>> print(Student('Michael'))
-Student object (name: Michael)
+>>> print(Student('Lsaiah'))
+Student object (name: Lsaiah)
 ```
 
 当直接调用变量不用`print`时，打印出来的实例还是`<__main__.Student object at 0x109afb310>`，这是因为直接显示变量调用的不是`__str__()`，而是`__repr__()`，`__repr__()`是为调试服务的，`__str__()`返回用户看到的字符串。解决方法就是再定义一个和`__str__()`一样的`__repr__()`：
@@ -4429,13 +4439,731 @@ class Student(object):
 
 **`__iter__`**
 
+一个类被用于`for...in`循环，类似list和tuple。必须实现`__iter__()`方法，该方法返回一个迭代对象，python的for循环会不断调用该对象的`__next__()`方法拿到循环的下一个值，直到遇到`StopIteration`错误时退出循环。以斐波那契数列为例写一个Fib类可用于for循环：
 
+```python
+class Fib(object):
+    def __init__(self):
+        self.a, self.b = 0, 1 # 初始化两个计数器a，b
 
+    def __iter__(self):
+        return self # 实例本身就是迭代对象，故返回自己
 
+    def __next__(self):
+        self.a, self.b = self.b, self.a + self.b # 计算下一个值
+        if self.a > 100000: # 退出循环的条件
+            raise StopIteration()
+        return self.a # 返回下一个值
+    
+>>> for n in Fib():
+...     print(n)
+...
+1
+1
+2
+3
+5
+...
+46368
+75025
+```
+
+**`__getitem__`**
+
+Fib实例可以用作for循环，但是不能当成list使用，比如获取第5个元素：
+
+```python
+>>> Fib()[5]
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: 'Fib' object does not support indexing
+```
+
+按照下标获取元素，要实现`__getitem__()`方法：
+
+```python
+class Fib(object):
+    def __getitem__(self, n):
+        a, b = 1, 1
+        for x in range(n):
+            a, b = b, a + b
+        return a
+
+>>> f = Fib()
+>>> f[0]
+1
+>>> f[1]
+1
+>>> f[2]
+2
+>>> f[3]
+3
+>>> f[10]
+89
+>>> f[100]
+573147844013817084101
+```
+
+但是list的切片方法对于Fib报错，因为`__getitem__()`传入的参数可能是一个int，也可能是一个切片对象`slice`，所以要做判断：
+
+```python
+>>> list(range(100))[5:10]
+[5, 6, 7, 8, 9]
+
+class Fib(object):
+    def __getitem__(self, n):
+        if isinstance(n, int): # n是索引
+            a, b = 1, 1
+            for x in range(n):
+                a, b = b, a + b
+            return a
+        if isinstance(n, slice): # n是切片
+            start = n.start
+            stop = n.stop
+            if start is None:
+                start = 0
+            a, b = 1, 1
+            L = []
+            for x in range(stop):
+                if x >= start:
+                    L.append(a)
+                a, b = b, a + b
+            return L
+
+>>> f = Fib()
+>>> f[0:5]
+[1, 1, 2, 3, 5]
+>>> f[:10]
+[1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+```
+
+但是没有对step参数做处理，也没有对负数做处理，还需再实现`__getitem__()`：
+
+```python
+>>> f[:10:2]
+[1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+>>> f[-10:]
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 15, in __getitem__
+TypeError: 'NoneType' object cannot be interpreted as an integer
+```
+
+此外如果把对象看成`dict`，`__getitem__()`的参数可能是一个可以作key的object，如`str`，与之对应的是`__setitem__()`方法，把对象视为list或dict对集合赋值，还有一个`__delitem__()`方法，用于删除某个元素。通过上面的方法定义的类表现得和Python自带的list、tuple、dict没什么区别，这完全归功于动态语言的鸭子类型，不需要强制继承某个接口。
+
+**`__getattr__`**
+
+正常情况调用类的方法或属性，如果不存在就会报错：
+
+```python
+class Student(object):
+    
+    def __init__(self):
+        self.name = 'Lsaiah'
+
+>>> s = Student()
+>>> print(s.name)
+Lsaiah
+>>> print(s.score)
+Traceback (most recent call last):
+  ...
+AttributeError: 'Student' object has no attribute 'score'
+```
+
+要避免这个错误，除了可以加一个`score`属性外，还可以写一个方法`__getattr__()`动态返回一个属性：
+
+```python
+class Student(object):
+    def __init__(self):
+        self.name = 'Lsaiah'
+
+    def __getattr__(self, attr):
+        if attr=='score':
+            return 99
+
+# 也可以返回函数
+    def __getattr__(self, attr):
+        if attr=='age':
+            return lambda: 25
+
+>>> s = Student()
+>>> s.name
+'Lsaiah'
+>>> s.score
+99
+>>> s.age()
+25
+```
+
+class没有的属性才会调用`__getattr__`，如果调用没有返回的attr，如`s.abc`都会返回`None`，要让class只响应特定的几个属性，按照约定抛出`AttributeError`的错误：
+
+```python
+class Student(object):
+
+    def __getattr__(self, attr):
+        if attr=='age':
+            return lambda: 25
+        raise AttributeError('\'Student\' object has no attribute \'%s\'' % attr)
+```
+
+把一个类的所有属性和方法调用全部动态化处理的作用是可以针对完全动态的情况调用，如新浪微博、豆瓣很多网站都搞REST API，调用API的URL类似：
+
+- http://api.server/user/friends
+- http://api.server/user/timeline/list
+
+如果要写SDK，给每个URL对应的API都写一个方法，那得累死，而且API一旦改动，SDK也要改。
+
+利用完全动态的`__getattr__`可以写出一个链式调用：
+
+```python
+class Chain(object):
+
+    def __init__(self, path=''):
+        self._path = path
+
+    def __getattr__(self, path):
+        return Chain('%s/%s' % (self._path, path))
+
+    def __str__(self):
+        return self._path
+
+    __repr__ = __str__
+    
+>>> Chain().status.user.timeline.list
+'/status/user/timeline/list'
+```
+
+无论API怎么变，SDK都可以根据URL实现完全动态的调用，而且不随API的增加而改变，还有些REST API会把参数放到URL中，比如github api：
+
+```python
+GET /users/:user/repos
+# 调用时需要把:user替换成实际的用户名
+Chain().users('Lsaiah').repos
+# 输出/users/Lsaiah/repos
+class Chain(object):
+    def __init__(self, path=''):
+       self.__path = path
+
+   def __getattr__(self, path):
+       return Chain('%s/%s' % (self.__path, path))
+
+   def __call__(self, path):
+       return Chain('%s/%s' % (self.__path, path))
+
+   def __str__(self):
+       return self.__path
+
+   __repr__ = __str__
+
+   print(Chain().users('Lsaiah').repos)
+```
+
+**`__call__`**
+
+一个对象的实例可以有自己的属性和方法，用`instance.method()`可以直接在实例本身上调用，任何类只需定义一个`__call__()`方法，就可以直接对实例进行调用：
+
+```python
+class Student(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __call__(self):
+        print('My name is %s.' % self.name)
+        
+>>> s = Student('Lsaiah')
+>>> s() # self参数不要传入
+My name is Lsaiah.
+```
+
+`__call__()`还可以定义参数，对实例调用就是对函数调用，完全可以把对象看成函数，把函数看成对象。判断一个变量是对象还是函数，能被调用的对象就是一个`Callable`对象：
+
+```python
+>>> callable(Student())
+True
+>>> callable(max)
+True
+>>> callable([1, 2, 3])
+False
+>>> callable(None)
+False
+>>> callable('str')
+False
+```
 
 ### 使用枚举类
 
+Python提供`Enum`类实现枚举类型，每个常量都是class的唯一实例：
+
+```python
+# 大写变量通过整数定义，如月份
+JAN = 1
+FEB = 2
+MAR = 3
+# 枚举类型定义
+from enum import Enum
+Month = Enum('Month', ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'))
+# 直接使用Month.Jan来引用一个常量
+>>> Month.Jan
+<Month.Jan: 1>
+# 枚举所有成员
+for name, member in Month.__members__.items():
+    print(name, '=>', member, ',', member.value)
+
+Jan => Month.Jan , 1
+Feb => Month.Feb , 2
+Mar => Month.Mar , 3
+Apr => Month.Apr , 4
+May => Month.May , 5
+Jun => Month.Jun , 6
+Jul => Month.Jul , 7
+Aug => Month.Aug , 8
+Sep => Month.Sep , 9
+Oct => Month.Oct , 10
+Nov => Month.Nov , 11
+Dec => Month.Dec , 12
+```
+
+`value`属性则是自动赋给成员的`int`常量，默认从`1`开始计数。如果要更精确控制枚举类型，可以从`Enum`派生出自定义类：
+
+```python
+from enum import Enum, unique
+@unique
+class Weekday(Enum):
+    Sun = 0 # Sun的value被设定为0
+    Mon = 1
+    Tue = 2
+    Wed = 3
+    Thu = 4
+    Fri = 5
+    Sat = 6
+```
+
+`@unique`装饰器可以帮助我们检查保证没有重复值。访问这些枚举类型可以有若干种方法：
+
+```python
+>>> day1 = Weekday.Mon
+>>> print(day1)
+Weekday.Mon
+>>> print(Weekday.Tue)
+Weekday.Tue
+>>> print(Weekday['Tue'])
+Weekday.Tue
+>>> print(Weekday.Tue.value)
+2
+>>> print(day1 == Weekday.Mon)
+True
+>>> print(day1 == Weekday.Tue)
+False
+>>> print(Weekday(1))
+Weekday.Mon
+>>> print(day1 == Weekday(1))
+True
+>>> Weekday(7)
+Traceback (most recent call last):
+  ...
+ValueError: 7 is not a valid Weekday
+>>> for name, member in Weekday.__members__.items():
+...     print(name, '=>', member)
+...
+Sun => Weekday.Sun
+Mon => Weekday.Mon
+Tue => Weekday.Tue
+Wed => Weekday.Wed
+Thu => Weekday.Thu
+Fri => Weekday.Fri
+Sat => Weekday.Sat
+```
+
+**练习**
+
+把`Student`的`gender`属性改造为枚举类型，可以避免使用字符串：
+
+```python
+# -*- coding: utf-8 -*-
+from enum import Enum, unique
+class Gender(Enum):
+    Male = 0
+    Female = 1
+# Gender = Enum('Gender', {'Male': 0, 'Female': 1})
+class Student(object):
+    def __init__(self, name, gender):
+        self.name = name
+        self.gender = gender
+# 测试:
+bart = Student('Bart', Gender.Male)
+if bart.gender == Gender.Male:
+    print('测试通过!')
+else:
+    print('测试失败!')
+```
+
+
+
 ### 使用元类
+
+**type()**
+
+静态语言函数和类的定义不是编译时定义的，而是运行时动态创建的。比如要定义一个`Hello`的class，写一个`hello.py`模块：
+
+```python
+class Hello(object):
+    def hello(self, name='world'):
+        print('Hello, %s.' % name)
+# 当解释器赞如hello模块时，依次执行该模块的所有语句，执行结果就是动态创建出一个Hello的class对象
+>>> from hello import Hello
+>>> h = Hello()
+>>> h.hello()
+Hello, world.
+>>> print(type(Hello))
+<class 'type'>
+>>> print(type(h))
+<class 'hello.Hello'>
+```
+
+`type()`函数可以查看一个类型或变量的类型，`Hello`是一个class，它的类型就是`type`，而`h`是一个实例，它的类型就是class `Hello`。class的定义时运行时创建的，而class的方法就是使用`type()`函数，可以返回一个对象的类型，又可以创建出新的类型，比如通过`type()`函数创建出`Hello`类，而无需通过`class Hello(object)...`的定义：
+
+```python
+>>> def fn(self, name='world'): # 先定义函数
+...     print('Hello, %s.' % name)
+...
+>>> Hello = type('Hello', (object,), dict(hello=fn)) # 创建Hello class
+>>> h = Hello()
+>>> h.hello()
+Hello, world.
+>>> print(type(Hello))
+<class 'type'>
+>>> print(type(h))
+<class '__main__.Hello'>
+```
+
+要创建一个class对象，`type()`函数依次传入3个参数：
+
+1. class的名称；
+2. 继承的父类集合，注意Python支持多重继承，如果只有一个父类，别忘了tuple的单元素写法；
+3. class的方法名称与函数绑定，这里我们把函数`fn`绑定到方法名`hello`上。
+
+正常情况下，我们都用`class Xxx...`来定义类，但是，`type()`函数也允许我们动态创建出类来，通过`type()`函数创建的类和直接写class是完全一样的。
+
+**metaclass**
+
+除了使用`type()`动态创建类以外，要控制类的创建行为，还可以使用metaclass，直译为元类。当我们定义了类以后，就可以根据这个类创建出实例，所以先定义类，然后创建实例。但是如果要先创建出类，就必须根据metaclass创建出类，所以先定义metaclass，然后创建类，最后创建实例。metaclass允许创建类或者修改类，换句话说类是metaclass创建出来的“实例”。
+
+如使用metaclass给自定义的MyList增加一个`add`方法：
+
+```python
+# metaclass是类的模板，所以必须从`type`类型派生：
+class ListMetaclass(type):
+    def __new__(cls, name, bases, attrs):
+        attrs['add'] = lambda self, value: self.append(value)
+        return type.__new__(cls, name, bases, attrs)
+# 有了ListMetaclass，在定义类的时候还要指示使用ListMetaclass来定制类，传入关键字参数metaclass
+class MyList(list, metaclass=ListMetaclass):
+    pass
+```
+
+它指示Python解释器在创建`MyList`时，要通过`ListMetaclass.__new__()`来创建，在此可以修改类的定义，比如，加上新的方法，然后返回修改后的定义。
+
+`__new__()`方法接收到的参数依次是：
+
+1. 当前准备创建的类的对象；
+2. 类的名字；
+3. 类继承的父类集合；
+4. 类的方法集合。
+
+```python
+# MyList可以调用add()方法，而list没有add()方法
+>>> L = MyList()
+>>> L.add(1)
+>> L
+[1]
+>>> L2 = list()
+>>> L2.add(1)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'list' object has no attribute 'add'
+```
+
+一般正常情况直接在`MyList`定义中写上`add()`方法，但是也会遇到要通过metaclass修改类定义的，如ORM全称Object Relational Mapping，即对象-关系映射，就是把关系数据库的一行映射为一个对象，也就是一个类对应一个表，这样写代码更简单，不用直接操作SQL语句。编写ORM框架，第一步先把调用的接口写出来，比如使用者要定义一个`User`类操作对应的数据库表`User`，父类`Model`和属性类型`StringField`、`IntegerField`是由ORM框架提供的，剩下的魔术方法比如`save()`全部由metaclass自动完成。：
+
+```python
+class User(Model):
+    # 定义类的属性到列的映射：
+    id = IntegerField('id')
+    name = StringField('username')
+    email = StringField('email')
+    password = StringField('password')
+
+# 创建一个实例：
+u = User(id=12345, name='Lsaiah', email='test@orm.org', password='my-pwd')
+# 保存到数据库：
+u.save()
+```
+
+下面就按照上面的接口实现该ORM，定义`Field`类负责保存数据库表的字段名和字段类型：
+
+```python
+class Field(object):
+
+    def __init__(self, name, column_type):
+        self.name = name
+        self.column_type = column_type
+
+    def __str__(self):
+        return '<%s:%s>' % (self.__class__.__name__, self.name)
+```
+
+在`Field`的基础上，定义各种类型的`Field`，比如`StringField`，`IntegerField`等等：
+
+```python
+class StringField(Field):
+
+    def __init__(self, name):
+        super(StringField, self).__init__(name, 'varchar(100)')
+
+class IntegerField(Field):
+
+    def __init__(self, name):
+        super(IntegerField, self).__init__(name, 'bigint')
+```
+
+然后就编写最复杂的`ModelMetaclass`了：
+
+```python
+class ModelMetaclass(type):
+
+    def __new__(cls, name, bases, attrs):
+        if name=='Model':
+            return type.__new__(cls, name, bases, attrs)
+        print('Found model: %s' % name)
+        mappings = dict()
+        for k, v in attrs.items():
+            if isinstance(v, Field):
+                print('Found mapping: %s ==> %s' % (k, v))
+                mappings[k] = v
+        for k in mappings.keys():
+            attrs.pop(k)
+        attrs['__mappings__'] = mappings # 保存属性和列的映射关系
+        attrs['__table__'] = name # 假设表名和类名一致
+        return type.__new__(cls, name, bases, attrs)
+```
+
+以及基类：
+
+```python
+class Model(dict, metaclass=ModelMetaclass):
+
+    def __init__(self, **kw):
+        super(Model, self).__init__(**kw)
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError(r"'Model' object has no attribute '%s'" % key)
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+    def save(self):
+        fields = []
+        params = []
+        args = []
+        for k, v in self.__mappings__.items():
+            fields.append(v.name)
+            params.append('?')
+            args.append(getattr(self, k, None))
+        sql = 'insert into %s (%s) values (%s)' % (self.__table__, ','.join(fields), ','.join(params))
+        print('SQL: %s' % sql)
+        print('ARGS: %s' % str(args))
+```
+
+当用户定义`class User(Model)`时，Python解释器首先在当前类`User`的定义中查找`metaclass`，如果没有找到，就继续在父类`Model`中查找`metaclass`，找到了，就使用`Model`中定义的`metaclass`的`ModelMetaclass`来创建`User`类，也就是说，metaclass可以隐式地继承到子类，但子类自己却感觉不到。
+
+在`ModelMetaclass`中，一共做了几件事情：
+
+1. 排除掉对`Model`类的修改；
+2. 在当前类（比如`User`）中查找定义的类的所有属性，如果找到一个Field属性，就把它保存到一个`__mappings__`的dict中，同时从类属性中删除该Field属性，否则，容易造成运行时错误（实例的属性会遮盖类的同名属性）；
+3. 把表名保存到`__table__`中，这里简化为表名默认为类名。
+
+在`Model`类中，就可以定义各种操作数据库的方法，比如`save()`，`delete()`，`find()`，`update`等等。
+
+`save()`方法把一个实例保存到数据库中。因为有表名，属性到字段的映射和属性值的集合，就可以构造出`INSERT`语句：
+
+```python
+u = User(id=12345, name='Lsaiah', email='test@orm.org', password='my-pwd')
+u.save()
+
+Found model: User
+Found mapping: email ==> <StringField:email>
+Found mapping: password ==> <StringField:password>
+Found mapping: id ==> <IntegerField:uid>
+Found mapping: name ==> <StringField:username>
+SQL: insert into User (password,email,username,id) values (?,?,?,?)
+ARGS: ['my-pwd', 'test@orm.org', 'Lsaiah', 12345]
+```
+
+打印出可执行的SQL语句以及参数，只需要链接数据库执行就可以实现功能。
+
+**理解和注释**
+
+第一部分 - 数据类型Fiedl类的定义
+
+\# 定义Field类，包含两个属性，分别是字段的名称name与类型column_type
+
+```
+class Field(object):
+    # 类Fiedl的构造函数有两个属性: name, column_type
+    def __init__(self, name, column_type):
+        self.name = name
+        self.column_type = column_type
+    def __str__(self):
+        return '<%s:%s>' % (self.__class__.__name__, self.name)
+```
+
+\# 类StringField继承自类Field，同样有两个属性name与类型column_type
+
+```
+class StringField(Field):
+    # 此处仅属性name是强制属性
+    def __init__(self, name):
+        # 通过super()函数调用parent类的构造函数
+        # 其中name就直接传递给Field, column_type传递固定值'varchar(100)'
+        # 所以StringField('username').__dict__ == Field('username', 'varchar(100)').__dict__
+        super(StringField, self).__init__(name, 'varchar(100)')
+```
+
+\# 同理类IntegerField继承自类Field，同样有两个属性name与类型column_type
+
+```
+class IntegerField(Field):
+    def __init__(self, name):
+        super(IntegerField, self).__init__(name, 'bigint')
+```
+
+第二部分 - 元类ModelMetaclass的定义
+
+```
+class ModelMetaclass(type):
+    # 此处说明下__new__和__init__的区别：
+    # __new__是用来创造一个类对象的构造函数，而__init__是用来初始化一个实例对象的构造函数
+    # 类似于__init__，__new__接收的第一个参数cls（类对象）其实就是相当于__init__的self（实例对象）
+    # 在初始化__init__之前，类是通过__new__创建的，所以在__init__前一定有__new__来构造类cls，之后__init__才能初始化对象self
+    def __new__(cls, name, bases, attrs):
+        # 对于名称为Model的类不做其他操作，直接通过type()函数生成类对象Model
+        if name == 'Model':
+            return type.__new__(cls, name, bases, attrs)
+        print('Found model: %s' % name)
+        # 对于名称不是Model的类，如User类，通过下面代码过滤类对象User的属性
+        # 因为类属性以dict格式存在attrs中，所以是对dict格式的操作：
+        # 第一步，过滤出满足条件的属性
+        # 先新建一个空dict，如果对象的属性值是Field类的实例对象(如StringField('username'))，则将这些属性放入dict格式的mappings变量中
+        mappings = dict()
+        for k, v in attrs.items():
+            # 下面判断属性的值是否是Field类格式，满足Field类格式形态如下：
+            # isinstance(StringField('username'), Field)
+            # 或者isinstance(Field('name', StringField('username')), Field)
+            # 注意此处是属性的值，不是属性，如：属性name的值为StringField('username')
+            if isinstance(v, Field):
+                print('Found mapping: %s ==> %s' % (k, v))
+                # 将过滤出的dict数据写入mappings变量
+                mappings[k] = v
+        # 其实上面的这几行可以简化为一行 mappings = {k:v for k, v in attrs.items() if isinstance(v, Field)} 吧？
+
+        # 第二步，把上一步过滤出满足条件的属性从类对象User的属性dict中移除
+        for k in mappings.keys():
+            attrs.pop(k)
+
+        # 第三步，把dict格式的mappings变量添加到类对象User的属性__mapping__中
+        # 即__mapping__成为了类对象User的一个属性，该属性值为dict格式，内容为满足Field类格式的原类对象的属性值
+        attrs['__mappings__'] = mappings
+        # 到目前为止其实就是把实例对象User的一些属性（满足Field格式）移了个位置
+        # 下面再新建一个属性__table__，并且赋值为该类对象的名字，如User
+        attrs['__table__'] = name  # 假设表名和类名一致
+        # 将修改后的类对象User的属性值返回给type().__new__
+        return type.__new__(cls, name, bases, attrs)
+```
+
+其实定义好的元类ModelMetaclass，仍然是调用`type.__new__(cls, name, bases, attrs)`函数去构造类对象，可以试下如下代码
+
+不同的是`type.__new__()`构造出的类的属性就在`__dict__`下，但是ModelMetaclass将属性移到`__mappings__`下了
+
+```
+type.__new__(type, 'Model', (dict, ), {'id': IntegerField('id')}).__dict__
+ModelMetaclass('Table1', (object, ), {'name': StringField('username')}).__mappings__
+```
+
+第三部分 - 生成Model的实例对象
+
+核心在于：在运行`__init__`来生成实例对象前，调用元函数ModelMetaclass来生成类对象，用这个类对象再去生成实例对象。 根据ModelMetaclass代码可以知道，当类名称为Model时，直接返回原始的`type.__new__(cls, name, bases, attrs)`， 如：`type.__new__(type, 'Model', (dict, ), Model(id=12345, name='Michael'))`
+
+此处对于super()函数的理解还是不清楚
+
+```
+class Model(dict, metaclass=ModelMetaclass):
+    # 在运行__init__来生成实例对象前，调用元函数ModelMetaclass来生成类对象，用这个类对象再去生成实例对象
+    # 根据ModelMetaclass代码可以知道，当类名称为Model时，直接返回原始的type.__new__(cls, name, bases, attrs)
+    # 如：type.__new__(type, 'Model', (dict, ), Model(id=12345, name='Michael'))
+    # 接下来定义从类对象生成实例对象的__init__函数
+    def __init__(self, **kw):
+        # 通过super调用父类初始化函数，__init__()动态函数无需self
+        # 此处先调用dict
+        # ModelMetaclass('User', (type, ), {'id': IntegerField('id')})
+        super(Model, self).__init__(**kw)
+    # 重新定义getattr函数，可以匹配dict格式输入的{属性:属性值}
+    # 如：Model(id = IntegerField('id')).__getattr__
+    def __getattr__(self, key):
+        '''
+        重载__getattr__, __setattr__方法使子类可以像正常的类使用
+        '''
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError(r"'Model' object has no attribute '%s'" % key)
+    # 个人觉得可以不定义__setattr__，没什么影响
+    def __setattr__(self, key, value):
+        self[key] = value
+    # 定义save方法，用于动态生成SQL
+    def save(self):
+        # 定义3个数组
+        fields = []
+        params = []
+        args = []
+        # 此处引入了之前ModelMetaclass元类定义的dict格式变量__mappings__
+        # 假设__mappings__ = {'name': StringField('username')}，则'name'就是k, StringField('username')是v, 'username'是v.name
+        for k, v in self.__mappings__.items():
+            # 把__mappings__的v.name（即'username'）写入fields变量
+            fields.append(v.name)
+            params.append('?')
+            # fields变量('username')对应的数值通过重新定义的__getattr__函数获取
+            # __mappings__中的k为{'name': StringField('username')}中的'name'
+            args.append(getattr(self, k, None))
+        # __table__在之前ModelMetaclass元类定义为类对象的名称，即'User'表
+        # 通过'sep'.join(seq)函数（','.join(['id', 'username'])）生成表字段和字段值
+        sql = 'insert into %s (%s) values (%s)' % (self.__table__, ','.join(fields), ','.join(params))
+        print('SQL: %s' % sql)
+        print('ARGS: %s' % str(args))
+```
+
+第四部分 - 生成User实例对象
+
+```
+class User(Model):
+    # 因为User继承了Model，而Model继承了dict类型    # 所以dict(id=12345, name='Michael')直接转化为{'id': 12345, 'name': 'Michael'}格式    id = IntegerField('id')
+    name = StringField('username')
+    email = StringField('email')
+    password = StringField('password')
+    test = str('abc')
+```
+
+总结User实例对象的创建步骤：
+
+1. User类的创建1: User类继承了Model类，而Model类由元类ModelMetaclass定义类的生成，所以User类对象首先通过ModelMetaclass的`type.__new__()`构造生成
+
+2. User类的创建2: 在ModelMetaclass的`type.__new__()`构造函数中，name和bases已经确认，而属性attr是根据输入的属性内容，由`__new__`构造出
+
+3. User实例的创建1：User类继承了Model类，所以User通过Model的构造函数`__init__`生成属性的时候会把输入的(id=12345, name='Michael')转化为dict格式{'id': 12345, 'name': 'Michael'}
+
+4. User实例的创建2: User实例的生成中要按照元类ModelMetaclass的定义生成，即生成`__mappings__`和`__Table__`等属性
 
 ## 错误、调试和测试
 
@@ -4458,7 +5186,3 @@ class Student(object):
 ## Web开发
 
 ## 异步IO
-
-## 使用MicroPython
-
-## 实战
