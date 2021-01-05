@@ -43,7 +43,7 @@ Web开发通常是指开发服务器端的Web应用程序。
 
 浏览器发送的HTTP请求如下：
 
-```
+```http
 GET / HTTP/1.1
 Host: www.sina.com.cn
 User-Agent: Mozilla/5.0 xxx
@@ -61,7 +61,7 @@ Accept-Language: zh-CN,zh;q=0.9,en-US;q=0.8
 
 服务器的响应如下：
 
-```
+```http
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 21932
@@ -97,7 +97,7 @@ HTTP请求和响应都由HTTP Header和HTTP Body构成，浏览器读取HTTP Bod
 
 一个HTTP Server本质上是一个TCP服务器，我们先用TCP编程的多线程实现服务器端框架：
 
-```
+```java
 public class Server {
     public static void main(String[] args) throws IOException {
         ServerSocket ss = new ServerSocket(8080); // 监听指定端口
@@ -142,7 +142,7 @@ class Handler extends Thread {
 
 只需要在`handle()`方法中用Reader读取HTTP请求，用Write发送HTTP响应，即可实现一个最简单的HTTP服务器，如下：
 
-```
+```java
 private void handle(InputStream input, OutputStream output) throws IOException {
     System.out.println("Process new http request...");
     var reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
@@ -205,7 +205,7 @@ Web应用程序必须按固定结构组织并打包为`.war`文件；
 
 这些基础工作需要耗费大量的时间无法做到高效而可靠地开发，因此处理TCP连接，解析HTTP协议这些底层工作统统扔给现成的Web服务器去做，只需要把自己的应用程序跑在Web服务器上。为了实现这个目的，JavaEE提供了Servlet API，我们使用Servlet API编写自己的Servlet来处理HTTP请求，Web服务器实现Servlet API接口，实现底层功能：
 
-```
+```java
 // WebServlet注解表示这是一个Servlet，并映射到地址/:
 @WebServlet(urlPatterns = "/")
 public class HelloServlet extends HttpServlet {
@@ -227,7 +227,7 @@ public class HelloServlet extends HttpServlet {
 
 而Servlet API是一个jar包，需要通过Maven来引入它，才能正常编译。编写`pom.xml`文件如下：
 
-```
+```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -266,7 +266,7 @@ public class HelloServlet extends HttpServlet {
 
 我们还需要在工程目录下创建一个`web.xml`描述文件，放到`src/main/webapp/WEB-INF`目录下（固定目录结构，不要修改路径，注意大小写）。文件内容可以固定如下：
 
-```
+```xml
 <!DOCTYPE web-app PUBLIC
  "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
  "http://java.sun.com/dtd/web-app_2_3.dtd">
@@ -352,7 +352,7 @@ Tomcat started.
 
 启动Tomcat无非就是设置好classpath并执行Tomcat某个jar包的`main()`方法，完全可以把Tomcat的jar包全部引入进来，然后自己编写一个`main()`方法，先启动Tomcat，然后让它加载我们的webapp。新建一个`web-servlet-embedded`工程，编写`pom.xml`如下：
 
-```
+```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -393,7 +393,7 @@ Tomcat started.
 
 不必引入Servlet API，因为引入Tomcat依赖后自动引入了Servlet API。因此，我们可以正常编写Servlet如下：
 
-```
+```java
 @WebServlet(urlPatterns = "/")
 public class HelloServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -411,7 +411,7 @@ public class HelloServlet extends HttpServlet {
 
 然后编写一个`main()`方法，启动Tomcat服务器：
 
-```
+```java
 public class Main {
     public static void main(String[] args) throws Exception {
         // 启动Tomcat:
@@ -444,7 +444,7 @@ Web服务器通过多线程处理HTTP请求，一个Servlet的处理方法可以
 
 一个Web App就是由一个或多个Servlet组成，每个Servlet通过注解说明自己能处理的路径。如下`HelloServlet`能处理`/hello`这个路径的请求。
 
-```
+```java
 @WebServlet(urlPatterns = "/hello")
 public class HelloServlet extends HttpServlet {
     ...
@@ -455,7 +455,7 @@ public class HelloServlet extends HttpServlet {
 
 因为浏览器发送请求的时候，还会有请求方法HTTP Method即GET、POST、PUT等不同类型的请求。要处理GET请求要覆写`doGet()`方法：
 
-```
+```java
 @WebServlet(urlPatterns = "/hello")
 public class HelloServlet extends HttpServlet {
     @Override
@@ -487,7 +487,7 @@ public class HelloServlet extends HttpServlet {
 
 根据路径转发的功能我们一般称为Dispatch。映射到`/`的`IndexServlet`比较特殊，它实际上会接收所有未匹配的路径，相当于`/*`，因为Dispatcher的逻辑可以用伪代码实现如下：
 
-```
+```java
 String path = ...
 if (path.equals("/hello")) {
     dispatchTo(helloServlet);
@@ -556,7 +556,7 @@ if (path.equals("/hello")) {
 
 一个Servlet类在服务器中只有一个实例，但对于每个HTTP请求，Web服务器会使用多线程执行请求。因此，一个Servlet的`doGet()`、`doPost()`等处理请求的方法是多线程并发执行的。如果Servlet中定义了字段，要注意多线程并发访问的问题：
 
-```
+```java
 public class HelloServlet extends HttpServlet {
     private Map<String, String> map = new ConcurrentHashMap<>();
 
@@ -581,7 +581,7 @@ public class HelloServlet extends HttpServlet {
 
 例如，我们已经编写了一个能处理`/hello`的`HelloServlet`，如果收到的路径为`/hi`，希望能重定向到`/hello`，可以再编写一个`RedirectServlet`：
 
-```
+```java
 @WebServlet(urlPatterns = "/hi")
 public class RedirectServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -596,7 +596,7 @@ public class RedirectServlet extends HttpServlet {
 
 如果浏览器发送`GET /hi`请求，`RedirectServlet`将处理此请求。由于`RedirectServlet`在内部又发送了重定向响应，因此，浏览器会收到如下响应：
 
-```
+```http
 HTTP/1.1 302 Found
 Location: /hello
 ```
@@ -624,7 +624,7 @@ Location: /hello
 
 `HttpServletResponse`提供了快捷的`redirect()`方法实现302重定向。如果要实现301永久重定向，可以这么写：
 
-```
+```java
 resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY); // 301
 resp.setHeader("Location", "/hello");
 ```
@@ -635,7 +635,7 @@ Forward是指内部转发。当一个Servlet处理请求的时候，它可以决
 
 例如，我们已经编写了一个能处理`/hello`的`HelloServlet`，继续编写一个能处理`/morning`的`ForwardServlet`：
 
-```
+```java
 @WebServlet(urlPatterns = "/morning")
 public class ForwardServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -674,7 +674,7 @@ public class ForwardServlet extends HttpServlet {
 
 JavaEE的Servlet机制内建了对Session的支持。我们以登录为例，当一个用户登录成功后，我们就可以把这个用户的名字放入一个`HttpSession`对象，以便后续访问其他页面的时候，能直接从`HttpSession`取出用户名：
 
-```
+```java
 @WebServlet(urlPatterns = "/signin")
 public class SignInServlet extends HttpServlet {
     // 模拟一个数据库:
@@ -711,14 +711,14 @@ public class SignInServlet extends HttpServlet {
 
 上述`SignInServlet`在判断用户登录成功后，立刻将用户名放入当前`HttpSession`中：
 
-```
+```java
 HttpSession session = req.getSession();
 session.setAttribute("user", name);
 ```
 
 在`IndexServlet`中，可以从`HttpSession`取出用户名：
 
-```
+```java
 @WebServlet(urlPatterns = "/")
 public class IndexServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -743,7 +743,7 @@ public class IndexServlet extends HttpServlet {
 
 如果用户已登录，可以通过访问`/signout`登出。登出逻辑就是从`HttpSession`中移除用户相关信息：
 
-```
+```java
 @WebServlet(urlPatterns = "/signout")
 public class SignOutServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -764,7 +764,7 @@ public class SignOutServlet extends HttpServlet {
 
 由于服务器把所有用户的Session都存储在内存中，如果遇到内存不足的情况，就需要把部分不活动的Session序列化到磁盘上，这会大大降低服务器的运行效率，因此，放入Session的对象要小，通常我们放入一个简单的`User`对象就足够了：
 
-```
+```java
 public class User {
     public long id; // 唯一标识
     public String email;
@@ -786,7 +786,7 @@ public class User {
 
 如果我们想要设置一个Cookie，例如，记录用户选择的语言，可以编写一个`LanguageServlet`：
 
-```
+```java
 @WebServlet(urlPatterns = "/pref")
 public class LanguageServlet extends HttpServlet {
 
@@ -813,7 +813,7 @@ public class LanguageServlet extends HttpServlet {
 
 可在浏览器看到服务器发送的Cookie，如果要读取Cookie在`IndexServlet`中，读取名为`lang`的Cookie以获取用户设置的语言，可以写一个依靠遍历`HttpServletRequest`附带的所有Cookie的方法：
 
-```
+```java
 private String parseLanguageFromCookie(HttpServletRequest req) {
     // 获取请求附带的所有Cookie:
     Cookie[] cookies = req.getCookies();
@@ -845,7 +845,7 @@ JSP本身目前已经很少使用，我们只需要了解其基本用法即可�
 
 Servlet就是一个能处理HTTP请求，发送HTTP响应的小程序，而发送响应无非就是获取`PrintWriter`，然后输出HTML：
 
-```
+```java
 PrintWriter pw = resp.getWriter();
 pw.write("<html>");
 pw.write("<body>");
@@ -859,7 +859,7 @@ pw.flush();
 
 编写一个`hello.jsp`，内容如下：
 
-```
+```jsp
 <html>
 <head>
     <title>Hello World - JSP</title>
@@ -897,7 +897,7 @@ JSP页面内置了几个变量：
 
 JSP和Servlet有什么区别？其实它们没有任何区别，因为JSP在执行前首先被编译成一个Servlet。在Tomcat的临时目录下，可以找到一个`hello_jsp.java`的源文件，这个文件就是Tomcat把JSP自动转换成的Servlet源码：
 
-```
+```java
 package org.apache.jsp;
 import ...
 
@@ -927,7 +927,7 @@ public final class hello_jsp extends org.apache.jasper.runtime.HttpJspBase
 
 JSP的指令非常复杂，除了`<% ... %>`外，JSP页面本身可以通过`page`指令引入Java类：
 
-```
+```java
 <%@ page import="java.io.*" %>
 <%@ page import="java.util.*" %>
 ```
@@ -936,7 +936,7 @@ JSP的指令非常复杂，除了`<% ... %>`外，JSP页面本身可以通过`pa
 
 使用`include`指令可以引入另一个JSP文件：
 
-```
+```java
 <html>
 <body>
     <%@ include file="header.jsp"%>
@@ -949,7 +949,7 @@ JSP的指令非常复杂，除了`<% ... %>`外，JSP页面本身可以通过`pa
 
 JSP还允许自定义输出的tag，例如：
 
-```
+```java
 <c:out value = "${sessionScope.user.name}"/>
 ```
 
@@ -964,7 +964,7 @@ JSP Tag需要正确引入taglib的jar包，并且还需要正确声明，使用�
 
 假设已经编写了几个JavaBean：
 
-```
+```java
 public class User {
     public long id;
     public String name;
@@ -979,7 +979,7 @@ public class School {
 
 在`UserServlet`中，我们可以从数据库读取`User`、`School`等信息，然后把读取到的JavaBean先放到HttpServletRequest中，再通过`forward()`传给`user.jsp`处理：
 
-```
+```java
 @WebServlet(urlPatterns = "/user")
 public class UserServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -996,7 +996,7 @@ public class UserServlet extends HttpServlet {
 
 在`user.jsp`中，我们只负责展示相关JavaBean的信息，不需要编写访问数据库等复杂逻辑：
 
-```
+```jsp
 <%@ page import="com.itranswarp.learnjava.bean.*"%>
 <%
     User user = (User) request.getAttribute("user");
@@ -1067,7 +1067,7 @@ MVC模式广泛地应用在Web页面和传统的桌面程序中，我们在这�
 
 通过普通的Java类实现MVC的Controller？类似下面的代码：
 
-```
+```java
 public class UserController {
     @GetMapping("/signin")
     public ModelAndView signin() {
@@ -1090,7 +1090,7 @@ public class UserController {
 
 如果是GET请求，我们希望MVC框架能直接把URL参数按方法参数对应起来然后传入：
 
-```
+```java
 @GetMapping("/hello")
 public ModelAndView hello(String name) {
     ...
@@ -1099,7 +1099,7 @@ public ModelAndView hello(String name) {
 
 如果是POST请求，我们希望MVC框架能直接把Post参数变成一个JavaBean后通过方法参数传入：
 
-```
+```java
 @PostMapping("/signin")
 public ModelAndView doSignin(SignInBean bean) {
     ...
@@ -1108,7 +1108,7 @@ public ModelAndView doSignin(SignInBean bean) {
 
 为了增加灵活性，如果Controller的方法在处理请求时需要访问`HttpServletRequest`、`HttpServletResponse`、`HttpSession`这些实例时，只要方法参数有定义，就可以自动传入：
 
-```
+```java
 @GetMapping("/signout")
 public ModelAndView signout(HttpSession session) {
     ...
@@ -1121,7 +1121,7 @@ public ModelAndView signout(HttpSession session) {
 
 在上文中，我们已经定义了上层代码编写Controller的一切接口信息，并且并不要求实现特定接口，只需返回`ModelAndView`对象，该对象包含一个`View`和一个`Model`。实际上`View`就是模板的路径，而`Model`可以用一个`Map<String, Object>`表示，因此，`ModelAndView`定义非常简单：
 
-```
+```java
 public class ModelAndView {
     Map<String, Object> model;
     String view;
@@ -1154,7 +1154,7 @@ public class ModelAndView {
 
 我们来看看如何编写最复杂的`DispatcherServlet`。首先，我们需要存储请求路径到某个具体方法的映射：
 
-```
+```java
 @WebServlet(urlPatterns = "/")
 public class DispatcherServlet extends HttpServlet {
     private Map<String, GetDispatcher> getMappings = new HashMap<>();
@@ -1164,7 +1164,7 @@ public class DispatcherServlet extends HttpServlet {
 
 处理一个GET请求是通过`GetDispatcher`对象完成的，它需要如下信息：
 
-```
+```java
 class GetDispatcher {
     Object instance; // Controller实例
     Method method; // Controller方法
@@ -1175,7 +1175,7 @@ class GetDispatcher {
 
 有了以上信息，就可以定义`invoke()`来处理真正的请求：
 
-```
+```java
 class GetDispatcher {
     ...
     public ModelAndView invoke(HttpServletRequest request, HttpServletResponse response) {
@@ -1215,7 +1215,7 @@ class GetDispatcher {
 
 类似的，`PostDispatcher`需要如下信息：
 
-```
+```java
 class PostDispatcher {
     Object instance; // Controller实例
     Method method; // Controller方法
@@ -1226,7 +1226,7 @@ class PostDispatcher {
 
 和GET请求不同，POST请求严格地来说不能有URL参数，所有数据都应当从Post Body中读取。这里我们为了简化处理，*只支持*JSON格式的POST请求，这样，把Post数据转化为JavaBean就非常容易。
 
-```
+```java
 class PostDispatcher {
     ...
     public ModelAndView invoke(HttpServletRequest request, HttpServletResponse response) {
@@ -1252,7 +1252,7 @@ class PostDispatcher {
 
 最后，我们来实现整个`DispatcherServlet`的处理流程，以`doGet()`为例：
 
-```
+```java
 public class DispatcherServlet extends HttpServlet {
     ...
     @Override
@@ -1293,7 +1293,7 @@ public class DispatcherServlet extends HttpServlet {
 
 这样使得上层代码编写更灵活。例如，一个显示用户资料的请求可以这样写：
 
-```
+```java
 @GetMapping("/user/profile")
 public ModelAndView profile(HttpServletResponse response, HttpSession session) {
     User user = (User) session.getAttribute("user");
@@ -1312,7 +1312,7 @@ public ModelAndView profile(HttpServletResponse response, HttpSession session) {
 
 最后一步是在`DispatcherServlet`的`init()`方法中初始化所有Get和Post的映射，以及用于渲染的模板引擎：
 
-```
+```java
 public class DispatcherServlet extends HttpServlet {
     private Map<String, GetDispatcher> getMappings = new HashMap<>();
     private Map<String, PostDispatcher> postMappings = new HashMap<>();
@@ -1334,7 +1334,7 @@ public class DispatcherServlet extends HttpServlet {
 
 有的童鞋对如何使用模板引擎进行渲染有疑问，即如何实现上述的`ViewEngine`？其实`ViewEngine`非常简单，只需要实现一个简单的`render()`方法：
 
-```
+```java
 public class ViewEngine {
     public void render(ModelAndView mv, Writer writer) throws IOException {
         String view = mv.view;
@@ -1355,7 +1355,7 @@ Java有很多开源的模板引擎，常用的有：
 
 他们的用法都大同小异。这里我们推荐一个使用[Jinja](https://palletsprojects.com/p/jinja/)语法的模板引擎[Pebble](https://pebbletemplates.io/)，它的特点是语法简单，支持模板继承，编写出来的模板类似：
 
-```
+```jsp
 <html>
 <body>
   <ul>
@@ -1371,7 +1371,7 @@ Java有很多开源的模板引擎，常用的有：
 
 使用Pebble渲染只需要如下几行代码：
 
-```
+```java
 public class ViewEngine {
     private final PebbleEngine engine;
 
@@ -1446,7 +1446,7 @@ web-mvc
 
 我们还硬性规定模板必须放在`webapp/WEB-INF/templates`目录下，静态文件必须放在`webapp/static`目录下，因此，为了便于开发，我们还顺带实现一个`FileServlet`来处理静态文件：
 
-```
+```java
 @WebServlet(urlPatterns = { "/favicon.ico", "/static/*" })
 public class FileServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -1489,7 +1489,7 @@ public class FileServlet extends HttpServlet {
 
 为了把方法参数的名称编译到class文件中，以便处理`@GetMapping`时使用，我们需要打开编译器的一个参数，在Eclipse中勾选`Preferences`-`Java`-`Compiler`-`Store information about method parameters (usable via reflection)`；在Idea中选择`Preferences`-`Build, Execution, Deployment`-`Compiler`-`Java Compiler`-`Additional command line parameters`，填入`-parameters`；在Maven的`pom.xml`添加一段配置如下：
 
-```
+```xml
 <project ...>
     <modelVersion>4.0.0</modelVersion>
     ...
@@ -1563,7 +1563,7 @@ Filter适用于日志、登录检查、全局设置等；
 
 例如，我们编写一个最简单的EncodingFilter，它强制把输入和输出的编码设置为UTF-8：
 
-```
+```java
 @WebFilter(urlPatterns = "/*")
 public class EncodingFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -1605,7 +1605,7 @@ public class EncodingFilter implements Filter {
 
 还可以继续添加其他Filter，例如LogFilter：
 
-```
+```java
 @WebFilter("/*")
 public class LogFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -1636,7 +1636,7 @@ public class LogFilter implements Filter {
 
 注意到上述两个Filter的过滤路径都是`/*`，即它们会对所有请求进行过滤。也可以编写只对特定路径进行过滤的Filter，例如`AuthFilter`：
 
-```
+```java
 @WebFilter("/user/*")
 public class AuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -1667,7 +1667,7 @@ public class AuthFilter implements Filter {
 
 如果一个Filter在当前请求中生效，但什么都没有做：
 
-```
+```java
 @WebFilter("/*")
 public class MyFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -1691,7 +1691,7 @@ Filter可以对请求进行预处理，因此，我们可以把很多公共预�
 
 考察这样一种需求：我们在Web应用中经常需要处理用户上传文件，例如，一个UploadServlet可以简单地编写如下：
 
-```
+```java
 @WebServlet(urlPatterns = "/upload/file")
 public class UploadServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -1725,7 +1725,7 @@ public class UploadServlet extends HttpServlet {
 
 我们先写一个简单的版本，快速实现`ValidateUploadFilter`的逻辑：
 
-```
+```java
 @WebFilter("/upload/*")
 public class ValidateUploadFilter implements Filter {
 
@@ -1792,7 +1792,7 @@ public class ValidateUploadFilter implements Filter {
 
 这个`ValidateUploadFilter`的逻辑似乎没有问题，我们可以用curl命令测试：
 
-```
+```shell
 $ curl http://localhost:8080/upload/file -v -d 'test-data' \
   -H 'Signature-Method: SHA-1' \
   -H 'Signature: 7115e9890f5b5cc6914bdfa3b7c011db1cdafedb' \
@@ -1825,7 +1825,7 @@ $ curl http://localhost:8080/upload/file -v -d 'test-data' \
 
 这个时候，我们需要一个“伪造”的`HttpServletRequest`，具体做法是使用[代理模式](https://notes.lsaiah.cn/#/%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80/java/JavaTutorial?id=%e4%bb%a3%e7%90%86)，对`getInputStream()`和`getReader()`返回一个新的流：
 
-```
+```java
 class ReReadableHttpServletRequest extends HttpServletRequestWrapper {
     private byte[] body;
     private boolean open = false;
@@ -1881,7 +1881,7 @@ class ReReadableHttpServletRequest extends HttpServletRequestWrapper {
 
 然后，我们在`ValidateUploadFilter`中，把`doFilter()`调用时传给下一个处理者的`HttpServletRequest`替换为我们自己“伪造”的`ReReadableHttpServletRequest`：
 
-```
+```java
 public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
         throws IOException, ServletException {
     ...
@@ -1907,7 +1907,7 @@ public void doFilter(ServletRequest request, ServletResponse response, FilterCha
 
 假设我们编写了一个Servlet，但由于业务逻辑比较复杂，处理该请求需要耗费很长的时间：
 
-```
+```java
 @WebServlet(urlPatterns = "/slow/hello")
 public class HelloServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -1928,7 +1928,7 @@ public class HelloServlet extends HttpServlet {
 
 缓存逻辑最好不要在Servlet内部实现，因为我们希望能复用缓存逻辑，所以，编写一个`CacheFilter`最合适：
 
-```
+```java
 @WebFilter("/slow/*")
 public class CacheFilter implements Filter {
     // Path到byte[]的缓存:
@@ -1964,7 +1964,7 @@ public class CacheFilter implements Filter {
 
 这个`CachedHttpServletResponse`实现如下：
 
-```
+```java
 class CachedHttpServletResponse extends HttpServletResponseWrapper {
     private boolean open = false;
     private ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -2026,7 +2026,7 @@ class CachedHttpServletResponse extends HttpServletResponseWrapper {
 
 Listener顾名思义就是监听器，有好几种Listener，其中最常用的是`ServletContextListener`，我们编写一个实现了`ServletContextListener`接口的类如下：
 
-```
+```java
 @WebListener
 public class AppListener implements ServletContextListener {
     // 在此初始化WebApp,例如打开数据库连接池等:
@@ -2056,7 +2056,7 @@ public class AppListener implements ServletContextListener {
 
 一个Web服务器可以运行一个或多个WebApp，对于每个WebApp，Web服务器都会为其创建一个全局唯一的`ServletContext`实例，我们在`AppListener`里面编写的两个回调方法实际上对应的就是`ServletContext`实例的创建和销毁：
 
-```
+```java
 public void contextInitialized(ServletContextEvent sce) {
     System.out.println("WebApp initialized: ServletContext = " + sce.getServletContext());
 }
@@ -2100,7 +2100,7 @@ webapp
 
 我们把所有的静态资源文件放入`/static/`目录，在开发阶段，有些Web服务器会自动为我们加一个专门负责处理静态文件的Servlet，但如果`IndexServlet`映射路径为`/`，会屏蔽掉处理静态文件的Servlet映射。因此，我们需要自己编写一个处理静态文件的`FileServlet`：
 
-```
+```java
 @WebServlet(urlPatterns = "/static/*")
 public class FileServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -2154,7 +2154,7 @@ public class FileServlet extends HttpServlet {
 
 实现上述功能的Nginx配置文件如下：
 
-```
+```nginx
 server {
     listen 80;
 
@@ -2232,7 +2232,7 @@ IoC全称Inversion of Control，直译为控制反转。那么何谓IoC？在理
 
 我们假定一个在线书店，通过`BookService`获取书籍：
 
-```
+```java
 public class BookService {
     private HikariConfig config = new HikariConfig();
     private DataSource dataSource = new HikariDataSource(config);
@@ -2250,7 +2250,7 @@ public class BookService {
 
 现在，我们继续编写`UserService`获取用户：
 
-```
+```java
 public class UserService {
     private HikariConfig config = new HikariConfig();
     private DataSource dataSource = new HikariDataSource(config);
@@ -2268,7 +2268,7 @@ public class UserService {
 
 在处理用户购买的`CartServlet`中，我们需要实例化`UserService`和`BookService`：
 
-```
+```java
 public class CartServlet extends HttpServlet {
     private BookService bookService = new BookService();
     private UserService userService = new UserService();
@@ -2285,7 +2285,7 @@ public class CartServlet extends HttpServlet {
 
 类似的，在购买历史`HistoryServlet`中，也需要实例化`UserService`和`BookService`：
 
-```
+```java
 public class HistoryServlet extends HttpServlet {
     private BookService bookService = new BookService();
     private UserService userService = new UserService();
@@ -2316,7 +2316,7 @@ public class HistoryServlet extends HttpServlet {
 
 在IoC模式下，控制权发生了反转，即从应用程序转移到了IoC容器，所有组件不再由应用程序自己创建和配置，而是由IoC容器负责，这样，应用程序只需要直接使用已经创建好并且配置好的组件。为了能让组件在IoC容器中被“装配”出来，需要某种“注入”机制，例如，`BookService`自己并不会创建`DataSource`，而是等待外部通过`setDataSource()`方法来注入一个`DataSource`：
 
-```
+```java
 public class BookService {
     private DataSource dataSource;
 
@@ -2336,7 +2336,7 @@ public class BookService {
 
 因为IoC容器要负责实例化所有的组件，因此，有必要告诉容器如何创建组件，以及各组件的依赖关系。一种最简单的配置是通过XML文件来实现，例如：
 
-```
+```xml
 <beans>
     <bean id="dataSource" class="HikariDataSource" />
     <bean id="bookService" class="BookService">
@@ -2358,7 +2358,7 @@ public class BookService {
 
 很多Java类都具有带参数的构造方法，如果我们把`BookService`改造为通过构造方法注入，那么实现代码如下：
 
-```
+```java
 public class BookService {
     private DataSource dataSource;
 
@@ -2409,7 +2409,7 @@ spring-ioc-appcontext
 
 首先，我们用Maven创建工程并引入`spring-context`依赖：
 
-```
+```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -2442,7 +2442,7 @@ spring-ioc-appcontext
 
 我们先编写一个`MailService`，用于在用户登录和注册成功后发送邮件通知：
 
-```
+```java
 public class MailService {
     private ZoneId zoneId = ZoneId.systemDefault();
 
@@ -2467,7 +2467,7 @@ public class MailService {
 
 再编写一个`UserService`，实现用户注册和登录：
 
-```
+```java
 public class UserService {
     private MailService mailService;
 
@@ -2512,7 +2512,7 @@ public class UserService {
 
 然后，我们需要编写一个特定的`application.xml`配置文件，告诉Spring的IoC容器应该如何创建并组装Bean：
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -2535,7 +2535,7 @@ public class UserService {
 
 把上述XML配置文件用Java代码写出来，就像这样：
 
-```
+```java
 UserService userService = new UserService();
 MailService mailService = new MailService();
 userService.setMailService(mailService);
@@ -2545,7 +2545,7 @@ userService.setMailService(mailService);
 
 如果注入的不是Bean，而是`boolean`、`int`、`String`这样的数据类型，则通过`value`注入，例如，创建一个`HikariDataSource`：
 
-```
+```xml
 <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource">
     <property name="jdbcUrl" value="jdbc:mysql://localhost:3306/test" />
     <property name="username" value="root" />
@@ -2557,13 +2557,13 @@ userService.setMailService(mailService);
 
 最后一步，我们需要创建一个Spring的IoC容器实例，然后加载配置文件，让Spring容器为我们创建并装配好配置文件中指定的所有Bean，这只需要一行代码：
 
-```
+```java
 ApplicationContext context = new ClassPathXmlApplicationContext("application.xml");
 ```
 
 接下来，我们就可以从Spring容器中“取出”装配好的Bean然后使用它：
 
-```
+```java
 // 获取Bean:
 UserService userService = context.getBean(UserService.class);
 // 正常调用:
@@ -2572,7 +2572,7 @@ User user = userService.login("bob@example.com", "password");
 
 完整的`main()`方法如下：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         ApplicationContext context = new ClassPathXmlApplicationContext("application.xml");
@@ -2587,7 +2587,7 @@ public class Main {
 
 我们从创建Spring容器的代码：
 
-```
+```java
 ApplicationContext context = new ClassPathXmlApplicationContext("application.xml");
 ```
 
@@ -2595,13 +2595,13 @@ ApplicationContext context = new ClassPathXmlApplicationContext("application.xml
 
 获得了`ApplicationContext`的实例，就获得了IoC容器的引用。从`ApplicationContext`中我们可以根据Bean的ID获取Bean，但更多的时候我们根据Bean的类型获取Bean的引用：
 
-```
+```java
 UserService userService = context.getBean(UserService.class);
 ```
 
 Spring还提供另一种IoC容器叫`BeanFactory`，使用方式和`ApplicationContext`类似：
 
-```
+```java
 BeanFactory factory = new XmlBeanFactory(new ClassPathResource("application.xml"));
 MailService mailService = factory.getBean(MailService.class);
 ```
@@ -2626,7 +2626,7 @@ MailService mailService = factory.getBean(MailService.class);
 
 首先，我们给`MailService`添加一个`@Component`注解：
 
-```
+```java
 @Component
 public class MailService {
     ...
@@ -2637,7 +2637,7 @@ public class MailService {
 
 然后，我们给`UserService`添加一个`@Component`注解和一个`@Autowired`注解：
 
-```
+```java
 @Component
 public class UserService {
     @Autowired
@@ -2649,7 +2649,7 @@ public class UserService {
 
 使用`@Autowired`就相当于把指定类型的Bean注入到指定的字段中。和XML配置相比，`@Autowired`大幅简化了注入，因为它不但可以写在`set()`方法上，还可以直接写在字段上，甚至可以写在构造方法中：
 
-```
+```java
 @Component
 public class UserService {
     MailService mailService;
@@ -2665,7 +2665,7 @@ public class UserService {
 
 最后，编写一个`AppConfig`类启动容器：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -2680,7 +2680,7 @@ public class AppConfig {
 
 除了`main()`方法外，`AppConfig`标注了`@Configuration`，表示它是一个配置类，因为我们创建`ApplicationContext`时：
 
-```
+```java
 ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
 ```
 
@@ -2738,7 +2738,7 @@ Spring默认使用Singleton创建Bean，也可指定Scope为Prototype；
 
 还有一种Bean，我们每次调用`getBean(Class)`，容器都返回一个新的实例，这种Bean称为Prototype（原型），它的生命周期显然和Singleton不同。声明一个Prototype的Bean时，需要添加一个额外的`@Scope`注解：
 
-```
+```java
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE) // @Scope("prototype")
 public class MailSession {
@@ -2750,7 +2750,7 @@ public class MailSession {
 
 有些时候，我们会有一系列接口相同，不同实现类的Bean。例如，注册用户时，我们要对email、password和name这3个变量进行验证。为了便于扩展，我们先定义验证接口：
 
-```
+```java
 public interface Validator {
     void validate(String email, String password, String name);
 }
@@ -2758,7 +2758,7 @@ public interface Validator {
 
 然后，分别使用3个`Validator`对用户参数进行验证：
 
-```
+```java
 @Component
 public class EmailValidator implements Validator {
     public void validate(String email, String password, String name) {
@@ -2789,7 +2789,7 @@ public class NameValidator implements Validator {
 
 最后，我们通过一个`Validators`作为入口进行验证：
 
-```
+```java
 @Component
 public class Validators {
     @Autowired
@@ -2807,7 +2807,7 @@ public class Validators {
 
 因为Spring是通过扫描classpath获取到所有的Bean，而`List`是有序的，要指定`List`中Bean的顺序，可以加上`@Order`注解：
 
-```
+```java
 @Component
 @Order(1)
 public class EmailValidator implements Validator {
@@ -2833,7 +2833,7 @@ public class NameValidator implements Validator {
 
 可以给`@Autowired`增加一个`required = false`的参数：
 
-```
+```java
 @Component
 public class MailService {
     @Autowired(required = false)
@@ -2852,7 +2852,7 @@ public class MailService {
 
 答案是我们自己在`@Configuration`类中编写一个Java方法创建并返回它，注意给方法标记一个`@Bean`注解：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -2870,7 +2870,7 @@ Spring对标记为`@Bean`的方法只调用一次，因此返回的Bean仍然是
 
 有些时候，一个Bean在注入必要的依赖后，需要进行初始化（监听消息等）。在容器关闭时，有时候还需要清理资源（关闭连接池等）。我们通常会定义一个`init()`方法进行初始化，定义一个`shutdown()`方法进行清理，然后，引入JSR-250定义的Annotation：
 
-```
+```xml
 <dependency>
     <groupId>javax.annotation</groupId>
     <artifactId>javax.annotation-api</artifactId>
@@ -2880,7 +2880,7 @@ Spring对标记为`@Bean`的方法只调用一次，因此返回的Bean仍然是
 
 在Bean的初始化和清理方法上标记`@PostConstruct`和`@PreDestroy`：
 
-```
+```java
 @Component
 public class MailService {
     @Autowired(required = false)
@@ -2914,7 +2914,7 @@ Spring只根据Annotation查找*无参数*方法，对方法名不作要求。
 
 如果我们在`@Configuration`类中创建了多个同类型的Bean：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -2934,7 +2934,7 @@ Spring会报`NoUniqueBeanDefinitionException`异常，意思是出现了重复�
 
 这个时候，需要给每个Bean添加不同的名字：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -2961,7 +2961,7 @@ NoUniqueBeanDefinitionException: No qualifying bean of type 'java.time.ZoneId' a
 
 意思是期待找到唯一的`ZoneId`类型Bean，但是找到两。因此，注入时，要指定Bean的名称：
 
-```
+```java
 @Component
 public class MailService {
 	@Autowired(required = false)
@@ -2973,7 +2973,7 @@ public class MailService {
 
 还有一种方法是把其中某个Bean指定为`@Primary`：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -2994,7 +2994,7 @@ public class AppConfig {
 
 这样，在注入时，如果没有指出Bean的名字，Spring会注入标记有`@Primary`的Bean。这种方式也很常用。例如，对于主从两个数据源，通常将主数据源定义为`@Primary`：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -3020,7 +3020,7 @@ public class AppConfig {
 
 用工厂模式创建Bean需要实现`FactoryBean`接口。我们观察下面的代码：
 
-```
+```java
 @Component
 public class ZoneIdFactoryBean implements FactoryBean<ZoneId> {
 
@@ -3054,7 +3054,7 @@ Spring提供了Resource类便于注入资源文件。
 
 Spring提供了一个`org.springframework.core.io.Resource`（注意不是`javax.annotation.Resource`），它可以像`String`、`int`一样使用`@Value`注入：
 
-```
+```java
 @Component
 public class AppService {
     @Value("classpath:/logo.txt")
@@ -3076,7 +3076,7 @@ public class AppService {
 
 也可以直接指定文件的路径，例如：
 
-```
+```java
 @Value("file:/path/to/logo.txt")
 private Resource resource;
 ```
@@ -3114,7 +3114,7 @@ Spring容器可以通过`@PropertySource`自动读取配置，并以`@Value("${k
 
 Spring容器还提供了一个更简单的`@PropertySource`来自动读取配置文件。我们只需要在`@Configuration`配置类上再添加一个注解：
 
-```
+```java
 @Configuration
 @ComponentScan
 @PropertySource("app.properties") // 表示读取classpath的app.properties
@@ -3131,7 +3131,7 @@ public class AppConfig {
 
 Spring容器看到`@PropertySource("app.properties")`注解后，自动读取这个配置文件，然后，我们使用`@Value`正常注入：
 
-```
+```java
 @Value("${app.zone:Z}")
 String zoneId;
 ```
@@ -3145,7 +3145,7 @@ String zoneId;
 
 还可以把注入的注解写到方法参数中：
 
-```
+```java
 @Bean
 ZoneId createZoneId(@Value("${app.zone:Z}") String zoneId) {
     return ZoneId.of(zoneId);
@@ -3156,7 +3156,7 @@ ZoneId createZoneId(@Value("${app.zone:Z}") String zoneId) {
 
 另一种注入配置的方式是先通过一个简单的JavaBean持有所有的配置，例如，一个`SmtpConfig`：
 
-```
+```java
 @Component
 public class SmtpConfig {
     @Value("${smtp.host}")
@@ -3177,7 +3177,7 @@ public class SmtpConfig {
 
 然后，在需要读取的地方，使用`#{smtpConfig.host}`注入：
 
-```
+```java
 @Component
 public class MailService {
     @Value("#{smtpConfig.host}")
@@ -3208,7 +3208,7 @@ Spring为应用程序准备了Profile这一概念，用来表示不同的环境�
 
 创建某个Bean时，Spring容器可以根据注解`@Profile`来决定是否创建。例如，以下配置：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -3232,7 +3232,7 @@ public class AppConfig {
 
 实际上，Spring允许指定多个Profile，例如：
 
-```
+```java
 -Dspring.profiles.active=test,master
 ```
 
@@ -3240,7 +3240,7 @@ public class AppConfig {
 
 要满足多个Profile条件，可以这样写：
 
-```
+```java
 @Bean
 @Profile({ "test", "master" }) // 同时满足test和master
 ZoneId createZoneId() {
@@ -3254,7 +3254,7 @@ ZoneId createZoneId() {
 
 例如，我们对`SmtpMailService`添加如下注解：
 
-```
+```java
 @Component
 @Conditional(OnSmtpEnvCondition.class)
 public class SmtpMailService implements MailService {
@@ -3264,7 +3264,7 @@ public class SmtpMailService implements MailService {
 
 它的意思是，如果满足`OnSmtpEnvCondition`的条件，才会创建`SmtpMailService`这个Bean。`OnSmtpEnvCondition`的条件是什么呢？我们看一下代码：
 
-```
+```java
 public class OnSmtpEnvCondition implements Condition {
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
         return "true".equalsIgnoreCase(System.getenv("smtp"));
@@ -3276,7 +3276,7 @@ public class OnSmtpEnvCondition implements Condition {
 
 Spring只提供了`@Conditional`注解，具体判断逻辑还需要我们自己实现。Spring Boot提供了更多使用起来更简单的条件注解，例如，如果配置文件中存在`app.smtp=true`，则创建`MailService`：
 
-```
+```java
 @Component
 @ConditionalOnProperty(name="app.smtp", havingValue="true")
 public class MailService {
@@ -3286,7 +3286,7 @@ public class MailService {
 
 如果当前classpath中存在类`javax.mail.Transport`，则创建`MailService`：
 
-```
+```java
 @Component
 @ConditionalOnClass(name = "javax.mail.Transport")
 public class MailService {
@@ -3296,7 +3296,7 @@ public class MailService {
 
 后续我们会介绍Spring Boot的条件装配。我们以文件存储为例，假设我们需要保存用户上传的头像，并返回存储路径，在本地开发运行时，我们总是存储到文件：
 
-```
+```java
 @Component
 @ConditionalOnProperty(name = "app.storage", havingValue = "file", matchIfMissing = true)
 public class FileUploader implements Uploader {
@@ -3306,7 +3306,7 @@ public class FileUploader implements Uploader {
 
 在生产环境运行时，我们会把文件存储到类似AWS S3上：
 
-```
+```java
 @Component
 @ConditionalOnProperty(name = "app.storage", havingValue = "s3")
 public class S3Uploader implements Uploader {
@@ -3316,7 +3316,7 @@ public class S3Uploader implements Uploader {
 
 其他需要存储的服务则注入`Uploader`：
 
-```
+```java
 @Component
 public class UserImageService {
     @Autowired
@@ -3346,7 +3346,7 @@ AOP是Aspect Oriented Programming，即面向切面编程。
 
 对每个业务方法，例如，`createBook()`，除了业务逻辑，还需要安全检查、日志记录和事务处理，它的代码像这样：
 
-```
+```java
 public class BookService {
     public void createBook(Book book) {
         securityCheck();
@@ -3365,7 +3365,7 @@ public class BookService {
 
 继续编写`updateBook()`，代码如下：
 
-```
+```java
 public class BookService {
     public void updateBook(Book book) {
         securityCheck();
@@ -3388,7 +3388,7 @@ public class BookService {
 
 一种可行的方式是使用代理模式，将某个功能，例如，权限检查，放入Proxy中：
 
-```
+```java
 public class SecurityCheckBookService implements BookService {
     private final BookService target;
 
@@ -3471,7 +3471,7 @@ Spring通过CGLIB动态创建子类等方式来实现AOP代理模式，大大简
 
 首先，我们通过Maven引入Spring对AOP的支持：
 
-```
+```xml
 <dependency>
     <groupId>org.springframework</groupId>
     <artifactId>spring-aspects</artifactId>
@@ -3483,7 +3483,7 @@ Spring通过CGLIB动态创建子类等方式来实现AOP代理模式，大大简
 
 然后，我们定义一个`LoggingAspect`：
 
-```
+```java
 @Aspect
 @Component
 public class LoggingAspect {
@@ -3512,7 +3512,7 @@ public class LoggingAspect {
 
 紧接着，我们需要给`@Configuration`类加上一个`@EnableAspectJAutoProxy`注解：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableAspectJAutoProxy
@@ -3523,7 +3523,7 @@ public class AppConfig {
 
 Spring的IoC容器看到这个注解，就会自动查找带有`@Aspect`的Bean，然后根据每个方法的`@Before`、`@Around`等注解把AOP注入到特定的Bean中。执行代码，我们可以看到以下输出：
 
-```
+```shell
 [Before] do access check...
 [Around] start void com.itranswarp.learnjava.service.MailService.sendRegistrationMail(User)
 Welcome, test!
@@ -3540,7 +3540,7 @@ Hi, Bob! You are logged in at 2020-02-14T23:13:52.167996+08:00[Asia/Shanghai]
 
 其实AOP的原理非常简单。我们以`LoggingAspect.doAccessCheck()`为例，要把它注入到`UserService`的每个`public`方法中，最简单的方法是编写一个子类，并持有原始实例的引用：
 
-```
+```java
 public UserServiceAopProxy extends UserService {
     private UserService target;
     private LoggingAspect aspect;
@@ -3600,7 +3600,7 @@ Spring也提供其他方法来装配AOP，但都没有使用AspectJ注解的方�
 
 在实际项目中，这种写法其实很少使用。假设你写了一个`SecurityAspect`：
 
-```
+```java
 @Aspect
 @Component
 public class SecurityAspect {
@@ -3617,7 +3617,7 @@ public class SecurityAspect {
 
 还有的童鞋喜欢用方法名前缀进行拦截：
 
-```
+```java
 @Around("execution(public * update*(..))")
 public Object doLogging(ProceedingJoinPoint pjp) throws Throwable {
     // 对update开头的方法切换数据源:
@@ -3634,7 +3634,7 @@ public Object doLogging(ProceedingJoinPoint pjp) throws Throwable {
 
 使用AOP时，被装配的Bean最好自己能清清楚楚地知道自己被安排了。例如，Spring提供的`@Transactional`就是一个非常好的例子。如果我们自己写的Bean希望在一个数据库事务中被调用，就标注上`@Transactional`：
 
-```
+```java
 @Component
 public class UserService {
     // 有事务:
@@ -3658,7 +3658,7 @@ public class UserService {
 
 或者直接在class级别注解，表示“所有public方法都被安排了”：
 
-```
+```java
 @Component
 @Transactional
 public class UserService {
@@ -3670,7 +3670,7 @@ public class UserService {
 
 我们以一个实际例子演示如何使用注解实现AOP装配。为了监控应用程序的性能，我们定义一个性能监控的注解：
 
-```
+```java
 @Target(METHOD)
 @Retention(RUNTIME)
 public @interface MetricTime {
@@ -3680,7 +3680,7 @@ public @interface MetricTime {
 
 在需要被监控的关键方法上标注该注解：
 
-```
+```java
 @Component
 public class UserService {
     // 监控register()方法性能:
@@ -3694,7 +3694,7 @@ public class UserService {
 
 然后，我们定义`MetricAspect`：
 
-```
+```java
 @Aspect
 @Component
 public class MetricAspect {
@@ -3717,7 +3717,7 @@ public class MetricAspect {
 
 有了`@MetricTime`注解，再配合`MetricAspect`，任何Bean，只要方法标注了`@MetricTime`注解，就可以自动实现性能监控。运行代码，输出结果如下：
 
-```
+```java
 Welcome, Bob!
 [Metrics] register: 16ms
 ```
@@ -3736,7 +3736,7 @@ Welcome, Bob!
 
 假设我们定义了一个`UserService`的Bean：
 
-```
+```java
 @Component
 public class UserService {
     // 成员变量:
@@ -3762,7 +3762,7 @@ public class UserService {
 
 再写个`MailService`，并注入`UserService`：
 
-```
+```java
 @Component
 public class MailService {
     @Autowired
@@ -3778,7 +3778,7 @@ public class MailService {
 
 最后用`main()`方法测试一下：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -3792,7 +3792,7 @@ public class AppConfig {
 
 查看输出，一切正常：
 
-```
+```java
 UserService(): init...
 UserService(): zoneId = Asia/Shanghai
 Hello, it is 2020-04-12T10:23:22.917721+08:00[Asia/Shanghai]
@@ -3800,7 +3800,7 @@ Hello, it is 2020-04-12T10:23:22.917721+08:00[Asia/Shanghai]
 
 下一步，我们给`UserService`加上AOP支持，就添加一个最简单的`LoggingAspect`：
 
-```
+```java
 @Aspect
 @Component
 public class LoggingAspect {
@@ -3824,7 +3824,7 @@ Exception in thread "main" java.lang.NullPointerException: zone
 
 仔细跟踪代码，会发现`null`值出现在`MailService.sendMail()`内部的这一行代码：
 
-```
+```java
 @Component
 public class MailService {
     @Autowired
@@ -3840,7 +3840,7 @@ public class MailService {
 
 我们还故意在`UserService`中特意用`final`修饰了一下成员变量：
 
-```
+```java
 @Component
 public class UserService {
     public final ZoneId zoneId = ZoneId.systemDefault();
@@ -3858,7 +3858,7 @@ public class UserService {
 
 第二步，通过CGLIB创建一个`UserService`的子类，并引用了原始实例和`LoggingAspect`：
 
-```
+```java
 public UserService$$EnhancerBySpringCGLIB extends UserService {
     UserService target;
     LoggingAspect aspect;
@@ -3879,13 +3879,13 @@ public UserService$$EnhancerBySpringCGLIB extends UserService {
 
 一个是我们代码中定义的*原始实例*，它的成员变量已经按照我们预期的方式被初始化完成：
 
-```
+```java
 UserService original = new UserService();
 ```
 
 第二个`UserService`实例实际上类型是`UserService$$EnhancerBySpringCGLIB`，它引用了原始的`UserService`实例：
 
-```
+```java
 UserService$$EnhancerBySpringCGLIB proxy = new UserService$$EnhancerBySpringCGLIB();
 proxy.target = original;
 proxy.aspect = ...
@@ -3897,7 +3897,7 @@ proxy.aspect = ...
 
 原因在于，`UserService`成员变量的初始化：
 
-```
+```java
 public class UserService {
     public final ZoneId zoneId = ZoneId.systemDefault();
     ...
@@ -3908,7 +3908,7 @@ public class UserService {
 
 实际上，成员变量的初始化是在构造方法中完成的。这是我们看到的代码：
 
-```
+```java
 public class UserService {
     public final ZoneId zoneId = ZoneId.systemDefault();
     public UserService() {
@@ -3918,7 +3918,7 @@ public class UserService {
 
 这是编译器实际编译的代码：
 
-```
+```java
 public class UserService {
     public final ZoneId zoneId;
     public UserService() {
@@ -3938,7 +3938,7 @@ public class UserService {
 
 再考察`MailService`的代码：
 
-```
+```java
 @Component
 public class MailService {
     @Autowired
@@ -3960,7 +3960,7 @@ public class MailService {
 
 修复很简单，只需要把直接访问字段的代码，改为通过方法访问：
 
-```
+```java
 @Component
 public class MailService {
     @Autowired
@@ -3976,7 +3976,7 @@ public class MailService {
 
 无论注入的`UserService`是原始实例还是代理实例，`getZoneId()`都能正常工作，因为代理类会覆写`getZoneId()`方法，并将其委托给原始实例：
 
-```
+```java
 public UserService$$EnhancerBySpringCGLIB extends UserService {
     UserService target = ...
     ...
@@ -3989,7 +3989,7 @@ public UserService$$EnhancerBySpringCGLIB extends UserService {
 
 注意到我们还给`UserService`添加了一个`public`+`final`的方法：
 
-```
+```java
 @Component
 public class UserService {
     ...
@@ -4003,7 +4003,7 @@ public class UserService {
 
 实际上，如果我们加上日志，Spring在启动时会打印一个警告：
 
-```
+```verilog
 10:43:09.929 [main] DEBUG org.springframework.aop.framework.CglibAopProxy - Final method [public final java.time.ZoneId xxx.UserService.getFinalZoneId()] cannot get proxied via CGLIB: Calls to this method will NOT be routed to the target instance and might lead to NPEs against uninitialized fields in the proxy instance.
 ```
 
@@ -4055,7 +4055,7 @@ Spring提供了`JdbcTemplate`来简化JDBC操作；
 
 我们以实际工程为例，先创建Maven工程`spring-data-jdbc`，然后引入以下依赖：
 
-```
+```xml
 <dependencies>
     <dependency>
         <groupId>org.springframework</groupId>
@@ -4087,7 +4087,7 @@ Spring提供了`JdbcTemplate`来简化JDBC操作；
 
 在AppConfig中，我们需要创建以下几个必须的Bean：
 
-```
+```java
 @Configuration
 @ComponentScan
 @PropertySource("jdbc.properties")
@@ -4130,7 +4130,7 @@ public class AppConfig {
 
 最后，针对HSQLDB写一个配置文件`jdbc.properties`：
 
-```
+```java
 # 数据库文件名为testdb:
 jdbc.url=jdbc:hsqldb:file:testdb
 
@@ -4141,7 +4141,7 @@ jdbc.password=
 
 可以通过HSQLDB自带的工具来初始化数据库表，这里我们写一个Bean，在Spring容器启动时自动创建一个`users`表：
 
-```
+```java
 @Component
 public class DatabaseInitializer {
     @Autowired
@@ -4161,7 +4161,7 @@ public class DatabaseInitializer {
 
 现在，所有准备工作都已完毕。我们只需要在需要访问数据库的Bean中，注入`JdbcTemplate`即可：
 
-```
+```java
 @Component
 public class UserService {
     @Autowired
@@ -4178,7 +4178,7 @@ Spring提供的`JdbcTemplate`采用Template模式，提供了一系列以回调�
 
 首先我们看`T execute(ConnectionCallback<T> action)`方法，它提供了Jdbc的`Connection`供我们使用：
 
-```
+```java
 public User getUserById(long id) {
     // 注意传入的是ConnectionCallback:
     return jdbcTemplate.execute((Connection conn) -> {
@@ -4205,7 +4205,7 @@ public User getUserById(long id) {
 
 我们再看`T execute(String sql, PreparedStatementCallback<T> action)`的用法：
 
-```
+```java
 public User getUserByName(String name) {
     // 需要传入SQL语句，以及PreparedStatementCallback:
     return jdbcTemplate.execute("SELECT * FROM users WHERE name = ?", (PreparedStatement ps) -> {
@@ -4227,7 +4227,7 @@ public User getUserByName(String name) {
 
 最后，我们看`T queryForObject(String sql, Object[] args, RowMapper<T> rowMapper)`方法：
 
-```
+```java
 public User getUserByEmail(String email) {
     // 传入SQL，参数和RowMapper实例:
     return jdbcTemplate.queryForObject("SELECT * FROM users WHERE email = ?", new Object[] { email },
@@ -4246,7 +4246,7 @@ public User getUserByEmail(String email) {
 
 `RowMapper`不一定返回JavaBean，实际上它可以返回任何Java对象。例如，使用`SELECT COUNT(*)`查询时，可以返回`Long`：
 
-```
+```java
 public long getUsers() {
     return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", null, (ResultSet rs, int rowNum) -> {
         // SELECT COUNT(*)查询只有一列，取第一列数据:
@@ -4257,7 +4257,7 @@ public long getUsers() {
 
 如果我们期望返回多行记录，而不是一行，可以用`query()`方法：
 
-```
+```java
 public List<User> getUsers(int pageIndex) {
     int limit = 100;
     int offset = limit * (pageIndex - 1);
@@ -4270,7 +4270,7 @@ public List<User> getUsers(int pageIndex) {
 
 如果我们执行的不是查询，而是插入、更新和删除操作，那么需要使用`update()`方法：
 
-```
+```java
 public void updateUser(User user) {
     // 传入SQL，SQL参数，返回更新的行数:
     if (1 != jdbcTemplate.update("UPDATE user SET name = ? WHERE id=?", user.getName(), user.getId())) {
@@ -4281,7 +4281,7 @@ public void updateUser(User user) {
 
 只有一种`INSERT`操作比较特殊，那就是如果某一列是自增列（例如自增主键），通常，我们需要获取插入后的自增值。`JdbcTemplate`提供了一个`KeyHolder`来简化这一操作：
 
-```
+```java
 public User register(String email, String password, String name) {
     // 创建一个KeyHolder:
     KeyHolder holder = new GeneratedKeyHolder();
@@ -4318,7 +4318,7 @@ public User register(String email, String password, String name) {
 
 例如，表的列名是`office_address`，而JavaBean属性是`workAddress`，就需要指定别名，改写查询如下：
 
-```
+```sql
 SELECT id, email, office_address AS workAddress, name FROM users WHERE email = ?
 ```
 
@@ -4332,7 +4332,7 @@ Spring提供的声明式事务极大地方便了在数据库中使用事务，�
 
 Spring提供了一个`PlatformTransactionManager`来表示事务管理器，所有的事务都由它负责管理。而事务由`TransactionStatus`表示。如果手写事务代码，使用`try...catch`如下：
 
-```
+```java
 TransactionStatus tx = null;
 try {
     // 开启事务:
@@ -4353,7 +4353,7 @@ Spring为啥要抽象出`PlatformTransactionManager`和`TransactionStatus`？原
 
 Spring为了同时支持JDBC和JTA两种事务模型，就抽象出`PlatformTransactionManager`。因为我们的代码只需要JDBC事务，因此，在`AppConfig`中，需要再定义一个`PlatformTransactionManager`对应的Bean，它的实际类型是`DataSourceTransactionManager`：
 
-```
+```java
 @Configuration
 @ComponentScan
 @PropertySource("jdbc.properties")
@@ -4368,7 +4368,7 @@ public class AppConfig {
 
 使用编程的方式使用Spring事务仍然比较繁琐，更好的方式是通过声明式事务来实现。使用声明式事务非常简单，除了在`AppConfig`中追加一个上述定义的`PlatformTransactionManager`外，再加一个`@EnableTransactionManagement`就可以启用声明式事务：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableTransactionManagement // 启用声明式
@@ -4380,7 +4380,7 @@ public class AppConfig {
 
 然后，对需要事务支持的方法，加一个`@Transactional`注解：
 
-```
+```java
 @Component
 public class UserService {
     // 此public方法自动具有事务支持:
@@ -4393,7 +4393,7 @@ public class UserService {
 
 或者更简单一点，直接在Bean的`class`处加上，表示所有`public`方法都具有事务支持：
 
-```
+```java
 @Component
 @Transactional
 public class UserService {
@@ -4403,7 +4403,7 @@ public class UserService {
 
 Spring对一个声明式事务的方法，如何开启事务支持？原理仍然是AOP代理，即通过自动创建Bean的Proxy实现：
 
-```
+```java
 public class UserService$$EnhancerBySpringCGLIB extends UserService {
     UserService target = ...
     PlatformTransactionManager txManager = ...
@@ -4429,7 +4429,7 @@ public class UserService$$EnhancerBySpringCGLIB extends UserService {
 
 默认情况下，如果发生了`RuntimeException`，Spring的声明式事务将自动回滚。在一个事务方法中，如果程序判断需要回滚事务，只需抛出`RuntimeException`，例如：
 
-```
+```java
 @Transactional
 public buyProducts(long productId, int num) {
     ...
@@ -4443,7 +4443,7 @@ public buyProducts(long productId, int num) {
 
 如果要针对Checked Exception回滚事务，需要在`@Transactional`注解中写出来：
 
-```
+```java
 @Transactional(rollbackFor = {RuntimeException.class, IOException.class})
 public buyProducts(long productId, int num) throws IOException {
     ...
@@ -4454,7 +4454,7 @@ public buyProducts(long productId, int num) throws IOException {
 
 为了简化代码，我们强烈建议业务异常体系从`RuntimeException`派生，这样就不必声明任何特殊异常即可让Spring的声明式事务正常工作：
 
-```
+```java
 public class BusinessException extends RuntimeException {
     ...
 }
@@ -4472,7 +4472,7 @@ public class PaymentException extends BusinessException {
 
 在使用事务的时候，明确事务边界非常重要。对于声明式事务，例如，下面的`register()`方法：
 
-```
+```java
 @Component
 public class UserService {
     @Transactional
@@ -4486,7 +4486,7 @@ public class UserService {
 
 类似的，一个负责给用户增加积分的`addBonus()`方法：
 
-```
+```java
 @Component
 public class BonusService {
     @Transactional
@@ -4500,7 +4500,7 @@ public class BonusService {
 
 在现实世界中，问题总是要复杂一点点。用户注册后，能自动获得100积分，因此，实际代码如下：
 
-```
+```java
 @Component
 public class UserService {
     @Autowired
@@ -4526,7 +4526,7 @@ public class UserService {
 
 假设用户注册的入口是`RegisterController`，它本身没有事务，仅仅是调用`UserService.register()`这个事务方法：
 
-```
+```java
 @Controller
 public class RegisterController {
     @Autowired
@@ -4547,7 +4547,7 @@ public class RegisterController {
 
 我们需要关心的问题是，在`UserService.register()`这个事务方法内，调用`BonusService.addBonus()`，我们期待的事务行为是什么：
 
-```
+```java
 @Transactional
 public User register(String email, String password, String name) {
     // 事务已开启:
@@ -4578,7 +4578,7 @@ public User register(String email, String password, String name) {
 
 去掉`BonusService.addBonus()`方法的`@Transactional`，会引来另一个问题，即其他地方如果调用`BonusService.addBonus()`方法，那就没法保证事务了。例如，规定用户登录时积分+5：
 
-```
+```java
 @Controller
 public class LoginController {
     @Autowired
@@ -4612,7 +4612,7 @@ public class LoginController {
 
 定义事务的传播级别也是写在`@Transactional`注解里的：
 
-```
+```java
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 public Product createProduct() {
     ...
@@ -4623,7 +4623,7 @@ public Product createProduct() {
 
 我们在JDBC中使用事务的时候，是这么个写法：
 
-```
+```java
 Connection conn = openConnection();
 try {
     // 关闭自动提交:
@@ -4647,7 +4647,7 @@ Spring使用声明式事务，最终也是通过执行JDBC事务来实现功能�
 
 因此，事务能正确传播的前提是，方法调用是在一个线程内才行。如果像下面这样写：
 
-```
+```java
 @Transactional
 public User register(String email, String password, String name) { // BEGIN TX-A
     User user = jdbcTemplate.insert("...");
@@ -4675,7 +4675,7 @@ Spring提供了`JdbcDaoSupport`来便于我们实现DAO模式；
 
 编写数据访问层的时候，可以使用DAO模式。DAO即Data Access Object的缩写，它没有什么神秘之处，实现起来基本如下：
 
-```
+```java
 public class UserDao {
 
     @Autowired
@@ -4705,7 +4705,7 @@ public class UserDao {
 
 Spring提供了一个`JdbcDaoSupport`类，用于简化DAO的实现。这个`JdbcDaoSupport`没什么复杂的，核心代码就是持有一个`JdbcTemplate`：
 
-```
+```java
 public abstract class JdbcDaoSupport extends DaoSupport {
 
     private JdbcTemplate jdbcTemplate;
@@ -4725,7 +4725,7 @@ public abstract class JdbcDaoSupport extends DaoSupport {
 
 它的意图是子类直接从`JdbcDaoSupport`继承后，可以随时调用`getJdbcTemplate()`获得`JdbcTemplate`的实例。那么问题来了：因为`JdbcDaoSupport`的`jdbcTemplate`字段没有标记`@Autowired`，所以，子类想要注入`JdbcTemplate`，还得自己想个办法：
 
-```
+```java
 @Component
 @Transactional
 public class UserDao extends JdbcDaoSupport {
@@ -4743,7 +4743,7 @@ public class UserDao extends JdbcDaoSupport {
 
 如果使用传统的XML配置，并不需要编写`@Autowired JdbcTemplate jdbcTemplate`，但是考虑到现在基本上是使用注解的方式，我们可以编写一个`AbstractDao`，专门负责注入`JdbcTemplate`：
 
-```
+```java
 public abstract class AbstractDao extends JdbcDaoSupport {
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -4757,7 +4757,7 @@ public abstract class AbstractDao extends JdbcDaoSupport {
 
 这样，子类的代码就非常干净，可以直接调用`getJdbcTemplate()`：
 
-```
+```java
 @Component
 @Transactional
 public class UserDao extends AbstractDao {
@@ -4774,7 +4774,7 @@ public class UserDao extends AbstractDao {
 
 倘若肯再多写一点样板代码，就可以把`AbstractDao`改成泛型，并实现`getById()`，`getAll()`，`deleteById()`这样的通用方法：
 
-```
+```java
 public abstract class AbstractDao<T> extends JdbcDaoSupport {
     private String table;
     private Class<T> entityClass;
@@ -4808,7 +4808,7 @@ public abstract class AbstractDao<T> extends JdbcDaoSupport {
 
 这样，每个子类就自动获得了这些通用方法：
 
-```
+```java
 @Component
 @Transactional
 public class UserDao extends AbstractDao<User> {
@@ -4851,7 +4851,7 @@ public class BookDao extends AbstractDao<Book> {
 
 Hibernate作为ORM框架，它可以替代`JdbcTemplate`，但Hibernate仍然需要JDBC驱动，所以，我们需要引入JDBC驱动、连接池，以及Hibernate本身。在Maven中，我们加入以下依赖项：
 
-```
+```xml
 <!-- JDBC驱动，这里使用HSQLDB -->
 <dependency>
     <groupId>org.hsqldb</groupId>
@@ -4888,7 +4888,7 @@ Hibernate作为ORM框架，它可以替代`JdbcTemplate`，但Hibernate仍然需
 
 在AppConfig中，我们仍然需要创建DataSource、引入JDBC配置文件，以及启用声明式事务：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableTransactionManagement
@@ -4903,7 +4903,7 @@ public class AppConfig {
 
 为了启用Hibernate，我们需要创建一个`LocalSessionFactoryBean`：
 
-```
+```java
 public class AppConfig {
     @Bean
     LocalSessionFactoryBean createSessionFactory(@Autowired DataSource dataSource) {
@@ -4933,7 +4933,7 @@ public class AppConfig {
 
 紧接着，我们还需要创建`HibernateTemplate`以及`HibernateTransactionManager`：
 
-```
+```java
 public class AppConfig {
     @Bean
     HibernateTemplate createHibernateTemplate(@Autowired SessionFactory sessionFactory) {
@@ -4953,7 +4953,7 @@ public class AppConfig {
 
 考察如下的数据库表：
 
-```
+```java
 CREATE TABLE user
     id BIGINT NOT NULL AUTO_INCREMENT,
     email VARCHAR(100) NOT NULL,
@@ -4967,7 +4967,7 @@ CREATE TABLE user
 
 其中，`id`是自增主键，`email`、`password`、`name`是`VARCHAR`类型，`email`带唯一索引以确保唯一性，`createdAt`存储整型类型的时间戳。用JavaBean表示如下：
 
-```
+```java
 public class User {
     private Long id;
     private String email;
@@ -4982,7 +4982,7 @@ public class User {
 
 这种映射关系十分易懂，但我们需要添加一些注解来告诉Hibernate如何把`User`类映射到表记录：
 
-```
+```java
 @Entity
 public class User {
     @Id
@@ -5006,7 +5006,7 @@ public class User {
 
 如果一个JavaBean被用于映射，我们就标记一个`@Entity`。默认情况下，映射的表名是`user`，如果实际的表名不同，例如实际表名是`users`，可以追加一个`@Table(name="users")`表示：
 
-```
+```java
 @Entity
 @Table(name="users)
 public class User {
@@ -5026,7 +5026,7 @@ public class User {
 
 类似的，我们再定义一个`Book`类：
 
-```
+```java
 @Entity
 public class Book {
     @Id
@@ -5046,7 +5046,7 @@ public class Book {
 
 不必在`User`和`Book`中重复定义这些通用字段，我们可以把它们提到一个抽象类中：
 
-```
+```java
 @MappedSuperclass
 public abstract class AbstractEntity {
 
@@ -5079,7 +5079,7 @@ public abstract class AbstractEntity {
 
 有了`AbstractEntity`，我们就可以大幅简化`User`和`Book`：
 
-```
+```java
 @Entity
 public class User extends AbstractEntity {
 
@@ -5102,7 +5102,7 @@ public class User extends AbstractEntity {
 
 最后，我们来看看如果对`user`表进行增删改查。因为使用了Hibernate，因此，我们要做的，实际上是对`User`这个JavaBean进行“增删改查”。我们编写一个`UserService`，注入`HibernateTemplate`以便简化代码：
 
-```
+```java
 @Component
 @Transactional
 public class UserService {
@@ -5115,7 +5115,7 @@ public class UserService {
 
 要持久化一个`User`实例，我们只需调用`save()`方法。以`register()`方法为例，代码如下：
 
-```
+```java
 public User register(String email, String password, String name) {
     // 创建一个User对象:
     User user = new User();
@@ -5136,7 +5136,7 @@ public User register(String email, String password, String name) {
 
 删除一个`User`相当于从表中删除对应的记录。注意Hibernate总是用`id`来删除记录，因此，要正确设置`User`的`id`属性才能正常删除记录：
 
-```
+```java
 public boolean deleteUser(Long id) {
     User user = hibernateTemplate.get(User.class, id);
     if (user != null) {
@@ -5153,7 +5153,7 @@ public boolean deleteUser(Long id) {
 
 更新记录相当于先更新`User`的指定属性，然后调用`update()`方法：
 
-```
+```java
 public void updateUser(Long id, String name) {
     User user = hibernateTemplate.load(User.class, id);
     user.setName(name);
@@ -5167,7 +5167,7 @@ public void updateUser(Long id, String name) {
 
 假设我们想执行以下查询：
 
-```
+```sql
 SELECT * FROM user WHERE email = ? AND password = ?
 ```
 
@@ -5177,7 +5177,7 @@ SELECT * FROM user WHERE email = ? AND password = ?
 
 第一种方法是使用`findByExample()`，给出一个`User`实例，Hibernate把该实例所有非`null`的属性拼成`WHERE`条件：
 
-```
+```java
 public User login(String email, String password) {
     User example = new User();
     example.setEmail(email);
@@ -5197,7 +5197,7 @@ public User login(String email, String password) {
 
 第二种查询方法是使用Criteria查询，可以实现如下：
 
-```
+```java
 public User login(String email, String password) {
     DetachedCriteria criteria = DetachedCriteria.forClass(User.class);
     criteria.add(Restrictions.eq("email", email))
@@ -5209,13 +5209,13 @@ public User login(String email, String password) {
 
 `DetachedCriteria`使用链式语句来添加多个`AND`条件。和`findByExample()`相比，`findByCriteria()`可以组装出更灵活的`WHERE`条件，例如：
 
-```
+```sql
 SELECT * FROM user WHERE (email = ? OR name = ?) AND password = ?
 ```
 
 上述查询没法用`findByExample()`实现，但用Criteria查询可以实现如下：
 
-```
+```java
 DetachedCriteria criteria = DetachedCriteria.forClass(User.class);
 criteria.add(
     Restrictions.and(
@@ -5234,7 +5234,7 @@ criteria.add(
 
 最后一种常用的查询是直接编写Hibernate内置的HQL查询：
 
-```
+```java
 List<User> list = (List<User>) hibernateTemplate.find("FROM User WHERE email=? AND password=?", email, password);
 ```
 
@@ -5242,7 +5242,7 @@ List<User> list = (List<User>) hibernateTemplate.find("FROM User WHERE email=? A
 
 除了可以直接传入HQL字符串外，Hibernate还可以使用一种`NamedQuery`，它给查询起个名字，然后保存在注解中。使用`NamedQuery`时，我们要先在`User`类标注：
 
-```
+```java
 @NamedQueries(
     @NamedQuery(
         // 查询名称:
@@ -5261,7 +5261,7 @@ public class User extends AbstractEntity {
 
 使用`NamedQuery`只需要引入查询名和参数：
 
-```
+```java
 public User login(String email, String password) {
     List<User> list = (List<User>) hibernateTemplate.findByNamedQuery("login", email, password);
     return list.isEmpty() ? null : list.get(0);
@@ -5274,7 +5274,7 @@ public User login(String email, String password) {
 
 如果要使用Hibernate原生接口，但不知道怎么写，可以参考`HibernateTemplate`的源码。使用Hibernate的原生接口实际上总是从`SessionFactory`出发，它通常用全局变量存储，在`HibernateTemplate`中以成员变量被注入。有了`SessionFactory`，使用Hibernate用法如下：
 
-```
+```java
 void operation() {
     Session session = null;
     boolean isNew = false;
@@ -5323,7 +5323,7 @@ JPA就是JavaEE的一个ORM标准，它的实现其实和Hibernate没啥本质�
 
 然后，在`AppConfig`中启用声明式事务管理，创建`DataSource`：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableTransactionManagement
@@ -5336,7 +5336,7 @@ public class AppConfig {
 
 使用Hibernate时，我们需要创建一个`LocalSessionFactoryBean`，并让它再自动创建一个`SessionFactory`。使用JPA也是类似的，我们需要创建一个`LocalContainerEntityManagerFactoryBean`，并让它再自动创建一个`EntityManagerFactory`：
 
-```
+```java
 @Bean
 LocalContainerEntityManagerFactoryBean createEntityManagerFactory(@Autowired DataSource dataSource) {
     var entityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
@@ -5361,7 +5361,7 @@ LocalContainerEntityManagerFactoryBean createEntityManagerFactory(@Autowired Dat
 
 最后，我们还需要实例化一个`JpaTransactionManager`，以实现声明式事务：
 
-```
+```java
 @Bean
 PlatformTransactionManager createTxManager(@Autowired EntityManagerFactory entityManagerFactory) {
     return new JpaTransactionManager(entityManagerFactory);
@@ -5374,7 +5374,7 @@ PlatformTransactionManager createTxManager(@Autowired EntityManagerFactory entit
 
 还是以`UserService`为例，除了标注`@Component`和`@Transactional`外，我们需要注入一个`EntityManager`，但是不要使用`Autowired`，而是`@PersistenceContext`：
 
-```
+```java
 @Component
 @Transactional
 public class UserService {
@@ -5396,7 +5396,7 @@ public class UserService {
 
 实际上这里注入的并不是真正的`EntityManager`，而是一个`EntityManager`的代理类，相当于：
 
-```
+```java
 public class EntityManagerProxy implements EntityManager {
     private EntityManagerFactory emf;
 }
@@ -5408,7 +5408,7 @@ Spring遇到标注了`@PersistenceContext`的`EntityManager`会自动注入代�
 
 因此，在`UserService`的每个业务方法里，直接使用`EntityManager`就很方便。以主键查询为例：
 
-```
+```java
 public User getUserById(long id) {
     User user = this.em.find(User.class, id);
     if (user == null) {
@@ -5420,13 +5420,13 @@ public User getUserById(long id) {
 
 JPA同样支持Criteria查询，比如我们需要的查询如下：
 
-```
+```sql
 SELECT * FROM user WHERE email = ?
 ```
 
 使用Criteria查询的代码如下：
 
-```
+```java
 public User fetchUserByEmail(String email) {
     // CriteriaBuilder:
     var cb = em.getCriteriaBuilder();
@@ -5446,7 +5446,7 @@ public User fetchUserByEmail(String email) {
 
 所以，正常人还是建议写JPQL查询，它的语法和HQL基本差不多：
 
-```
+```java
 public User getUserByEmail(String email) {
     // JPQL查询:
     TypedQuery<User> query = em.createQuery("SELECT u FROM User u WHERE u.email = :e", User.class);
@@ -5461,7 +5461,7 @@ public User getUserByEmail(String email) {
 
 同样的，JPA也支持NamedQuery，即先给查询起个名字，再按名字创建查询：
 
-```
+```java
 public User login(String email, String password) {
     TypedQuery<User> query = em.createNamedQuery("login", User.class);
     query.setParameter("e", email);
@@ -5473,7 +5473,7 @@ public User login(String email, String password) {
 
 NamedQuery通过注解标注在`User`类上，它的定义和上一节的`User`类一样：
 
-```
+```java
 @NamedQueries(
     @NamedQuery(
         name = "login",
@@ -5500,7 +5500,7 @@ MyBatis是一个半自动化的ORM框架，需要手写SQL语句，没有自动�
 
 答案是使用Proxy模式，从ORM框架读取的User实例实际上并不是User类，而是代理类，代理类继承自User类，但针对每个setter方法做了覆写：
 
-```
+```java
 public class UserProxy extends User {
     boolean _isNameChanged;
 
@@ -5515,7 +5515,7 @@ public class UserProxy extends User {
 
 针对一对多或多对一关系时，代理类可以直接通过getter方法查询数据库：
 
-```
+```java
 public class UserProxy extends User {
     Session _session;
     boolean _isNameChanged;
@@ -5543,14 +5543,14 @@ public class UserProxy extends User {
 
 最后，ORM框架通常提供了缓存，并且还分为一级缓存和二级缓存。一级缓存是指在一个Session范围内的缓存，常见的情景是根据主键查询时，两次查询可以返回同一实例：
 
-```
+```java
 User user1 = session.load(User.class, 123);
 User user2 = session.load(User.class, 123);
 ```
 
 二级缓存是指跨Session的缓存，一般默认关闭，需要手动配置。二级缓存极大的增加了数据的不一致性，原因在于SQL非常灵活，常常会导致意外的更新。例如：
 
-```
+```java
 // 线程1读取:
 User user1 = session1.load(User.class, 123);
 ...
@@ -5560,7 +5560,7 @@ User user2 = session2.load(User.class, 123);
 
 当二级缓存生效的时候，两个线程读取的User实例是一样的，但是，数据库对应的行记录完全可能被修改，例如：
 
-```
+```sql
 -- 给老用户增加100积分:
 UPDATE users SET bonus = bonus + 100 WHERE createdAt <= ?
 ```
@@ -5587,7 +5587,7 @@ ORM无法判断`id=123`的用户是否受该`UPDATE`语句影响。考虑到数�
 
 和前面一样，先创建`DataSource`是必不可少的：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableTransactionManagement
@@ -5607,7 +5607,7 @@ public class AppConfig {
 
 可见，ORM的设计套路都是类似的。使用MyBatis的核心就是创建`SqlSessionFactory`，这里我们需要创建的是`SqlSessionFactoryBean`：
 
-```
+```java
 @Bean
 SqlSessionFactoryBean createSqlSessionFactoryBean(@Autowired DataSource dataSource) {
     var sqlSessionFactoryBean = new SqlSessionFactoryBean();
@@ -5618,7 +5618,7 @@ SqlSessionFactoryBean createSqlSessionFactoryBean(@Autowired DataSource dataSour
 
 因为MyBatis可以直接使用Spring管理的声明式事务，因此，创建事务管理器和使用JDBC是一样的：
 
-```
+```java
 @Bean
 PlatformTransactionManager createTxManager(@Autowired DataSource dataSource) {
     return new DataSourceTransactionManager(dataSource);
@@ -5627,7 +5627,7 @@ PlatformTransactionManager createTxManager(@Autowired DataSource dataSource) {
 
 和Hibernate不同的是，MyBatis使用Mapper来实现映射，而且Mapper必须是接口。我们以User类为例，在User类和users表之间映射的UserMapper编写如下：
 
-```
+```java
 public interface UserMapper {
 	@Select("SELECT * FROM users WHERE id = #{id}")
 	User getById(@Param("id") long id);
@@ -5638,21 +5638,21 @@ public interface UserMapper {
 
 如果有多个参数，那么每个参数命名后直接在SQL中写出对应的占位符即可：
 
-```
+```java
 @Select("SELECT * FROM users LIMIT #{offset}, #{maxResults}")
 List<User> getAll(@Param("offset") int offset, @Param("maxResults") int maxResults);
 ```
 
 注意：MyBatis执行查询后，将根据方法的返回类型自动把ResultSet的每一行转换为User实例，转换规则当然是按列名和属性名对应。如果列名和属性名不同，最简单的方式是编写SELECT语句的别名：
 
-```
+```sql
 -- 列名是created_time，属性名是createdAt:
 SELECT id, name, email, created_time AS createdAt FROM users
 ```
 
 执行INSERT语句就稍微麻烦点，因为我们希望传入User实例，因此，定义的方法接口与`@Insert`注解如下：
 
-```
+```java
 @Insert("INSERT INTO users (email, password, name, createdAt) VALUES (#{user.email}, #{user.password}, #{user.name}, #{user.createdAt})")
 void insert(@Param("user") User user);
 ```
@@ -5661,7 +5661,7 @@ void insert(@Param("user") User user);
 
 如果`users`表的id是自增主键，那么，我们在SQL中不传入id，但希望获取插入后的主键，需要再加一个`@Options`注解：
 
-```
+```java
 @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
 @Insert("INSERT INTO users (email, password, name, createdAt) VALUES (#{user.email}, #{user.password}, #{user.name}, #{user.createdAt})")
 void insert(@Param("user") User user);
@@ -5671,7 +5671,7 @@ void insert(@Param("user") User user);
 
 执行UPDATE和DELETE语句相对比较简单，我们定义方法如下：
 
-```
+```java
 @Update("UPDATE users SET name = #{user.name}, createdAt = #{user.createdAt} WHERE id = #{user.id}")
 void update(@Param("user") User user);
 
@@ -5681,7 +5681,7 @@ void deleteById(@Param("id") long id);
 
 有了`UserMapper`接口，还需要对应的实现类才能真正执行这些数据库操作的方法。虽然可以自己写实现类，但我们除了编写`UserMapper`接口外，还有`BookMapper`、`BonusMapper`……一个一个写太麻烦，因此，MyBatis提供了一个`MapperFactoryBean`来自动创建所有Mapper的实现类。可以用一个简单的注解来启用它：
 
-```
+```java
 @MapperScan("com.itranswarp.learnjava.mapper")
 ...其他注解...
 public class AppConfig {
@@ -5691,7 +5691,7 @@ public class AppConfig {
 
 有了`@MapperScan`，就可以让MyBatis自动扫描指定包的所有Mapper并创建实现类。在真正的业务逻辑中，我们可以直接注入：
 
-```
+```java
 @Component
 @Transactional
 public class UserService {
@@ -5716,7 +5716,7 @@ public class UserService {
 
 上述在Spring中集成MyBatis的方式，我们只需要用到注解，并没有任何XML配置文件。MyBatis也允许使用XML配置映射关系和SQL语句，例如，更新`User`时根据属性值构造动态SQL：
 
-```
+```xml
 <update id="updateUser">
   UPDATE users SET
   <set>
@@ -5742,7 +5742,7 @@ ORM框架就是自动映射数据库表结构到JavaBean的工具，设计并实
 
 还有一种Hibernate和JPA支持的Criteria查询，用Hibernate写出来类似：
 
-```
+```java
 DetachedCriteria criteria = DetachedCriteria.forClass(User.class);
 criteria.add(Restrictions.eq("email", email))
         .add(Restrictions.eq("password", password));
@@ -5751,7 +5751,7 @@ List<User> list = (List<User>) hibernateTemplate.findByCriteria(criteria);
 
 上述Criteria查询写法复杂，但和JPA相比，还是小巫见大巫了：
 
-```
+```java
 var cb = em.getCriteriaBuilder();
 CriteriaQuery<User> q = cb.createQuery(User.class);
 Root<User> r = q.from(User.class);
@@ -5775,7 +5775,7 @@ List<User> list = query.getResultList();
 
 以User类为例，我们设计的查询接口如下：
 
-```
+```java
 // 按主键查询: SELECT * FROM users WHERE id = ?
 User u = db.get(User.class, 123);
 
@@ -5802,7 +5802,7 @@ User u = db.select("id", "name")
 
 对于插入、更新和删除操作，就相对比较简单：
 
-```
+```java
 // 插入User:
 db.insert(user);
 
@@ -5823,7 +5823,7 @@ db.delete(User.class, 123);
 
 在`AppConfig`中，我们初始化所有Bean如下：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableTransactionManagement
@@ -5853,7 +5853,7 @@ public class AppConfig {
 
 编写业务逻辑，例如`UserService`，写出来像这样：
 
-```
+```java
 @Component
 @Transactional
 public class UserService {
@@ -5893,7 +5893,7 @@ public class UserService {
 
 上述代码给出了ORM的接口，以及如何在业务逻辑中使用ORM。下一步，就是如何实现这个`DbTemplate`。这里我们只给出框架代码，有兴趣的童鞋可以自己实现核心代码：
 
-```
+```java
 public class DbTemplate {
     private JdbcTemplate jdbcTemplate;
 
@@ -5929,7 +5929,7 @@ public class DbTemplate {
 
 实现链式API的核心代码是第一步从`DbTemplate`调用`select()`或`from()`时实例化一个`CriteriaQuery`实例，并在后续的链式调用中设置它的字段：
 
-```
+```java
 public class DbTemplate {
     ...
     public Select select(String... selectFields) {
@@ -5945,7 +5945,7 @@ public class DbTemplate {
 
 然后以此定义`Select`、`From`、`Where`、`OrderBy`、`Limit`等。在`From`中可以设置Class类型、表名等：
 
-```
+```java
 public final class From<T> extends CriteriaQuery<T> {
     From(Criteria<T> criteria, Mapper<T> mapper) {
         super(criteria);
@@ -5963,7 +5963,7 @@ public final class From<T> extends CriteriaQuery<T> {
 
 在`Where`中可以设置条件参数：
 
-```
+```java
 public final class Where<T> extends CriteriaQuery<T> {
     Where(Criteria<T> criteria, String clause, Object... params) {
         super(criteria);
@@ -6024,7 +6024,7 @@ Spring虽然都可以集成任何Web框架，但是，Spring本身也开发了�
 
 在MVC高级开发中，我们手撸了一个MVC框架，接口和Spring MVC类似。如果直接使用Spring MVC，我们写出来的代码类似：
 
-```
+```java
 @Controller
 public class UserController {
     @GetMapping("/register")
@@ -6101,7 +6101,7 @@ spring-web-mvc
 
 在`src/main/resources`目录中存放的是Java程序读取的classpath资源文件，除了JDBC的配置文件`jdbc.properties`外，我们又新增了一个`logback.xml`，这是Logback的默认查找的配置文件：
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<appender name="STDOUT"
@@ -6129,7 +6129,7 @@ spring-web-mvc
 
 和普通Spring配置一样，我们编写正常的`AppConfig`后，只需加上`@EnableWebMvc`注解，就“激活”了Spring MVC：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableWebMvc // 启用Spring MVC
@@ -6142,7 +6142,7 @@ public class AppConfig {
 
 除了创建`DataSource`、`JdbcTemplate`、`PlatformTransactionManager`外，`AppConfig`需要额外创建几个用于Spring MVC的Bean：
 
-```
+```java
 @Bean
 WebMvcConfigurer createWebMvcConfigurer() {
     return new WebMvcConfigurer() {
@@ -6158,7 +6158,7 @@ WebMvcConfigurer createWebMvcConfigurer() {
 
 另一个必须要创建的Bean是`ViewResolver`，因为Spring MVC允许集成任何模板引擎，使用哪个模板引擎，就实例化一个对应的`ViewResolver`：
 
-```
+```java
 @Bean
 ViewResolver createViewResolver(@Autowired ServletContext servletContext) {
     PebbleEngine engine = new PebbleEngine.Builder().autoEscaping(true)
@@ -6178,7 +6178,7 @@ ViewResolver createViewResolver(@Autowired ServletContext servletContext) {
 
 剩下的Bean都是普通的`@Component`，但Controller必须标记为`@Controller`，例如：
 
-```
+```java
 // Controller使用@Controller标记而不是@Component:
 @Controller
 public class UserController {
@@ -6197,7 +6197,7 @@ public class UserController {
 
 如果是普通的Java应用程序，我们通过`main()`方法可以很简单地创建一个Spring容器的实例：
 
-```
+```java
 public static void main(String[] args) {
     ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
 }
@@ -6209,7 +6209,7 @@ public static void main(String[] args) {
 
 第一步，我们在`web.xml`中配置Spring MVC提供的`DispatcherServlet`：
 
-```
+```xml
 <!DOCTYPE web-app PUBLIC
  "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
  "http://java.sun.com/dtd/web-app_2_3.dtd" >
@@ -6244,7 +6244,7 @@ public static void main(String[] args) {
 
 最后，我们在`AppConfig`中通过`main()`方法启动嵌入式Tomcat：
 
-```
+```java
 public static void main(String[] args) throws Exception {
     Tomcat tomcat = new Tomcat();
     tomcat.setPort(Integer.getInteger("port", 8080));
@@ -6267,7 +6267,7 @@ public static void main(String[] args) throws Exception {
 
 总是标记`@Controller`而不是`@Component`：
 
-```
+```java
 @Controller
 public class UserController {
     ...
@@ -6276,7 +6276,7 @@ public class UserController {
 
 一个方法对应一个HTTP请求路径，用`@GetMapping`或`@PostMapping`表示GET或POST请求：
 
-```
+```java
 @PostMapping("/signin")
 public ModelAndView doSignin(
         @RequestParam("email") String email,
@@ -6290,13 +6290,13 @@ public ModelAndView doSignin(
 
 返回的ModelAndView通常包含View的路径和一个Map作为Model，但也可以没有Model，例如：
 
-```
+```java
 return new ModelAndView("signin.html"); // 仅View，没有Model
 ```
 
 返回重定向时既可以写`new ModelAndView("redirect:/signin")`，也可以直接返回String：
 
-```
+```java
 public String index() {
     if (...) {
         return "redirect:/signin";
@@ -6308,7 +6308,7 @@ public String index() {
 
 如果在方法内部直接操作`HttpServletResponse`发送响应，返回`null`表示无需进一步处理：
 
-```
+```java
 public ModelAndView download(HttpServletResponse response) {
     byte[] data = ...
     response.setContentType("application/octet-stream");
@@ -6321,7 +6321,7 @@ public ModelAndView download(HttpServletResponse response) {
 
 对URL进行分组，每组对应一个Controller是一种很好的组织形式，并可以在Controller的class定义出添加URL前缀，例如：
 
-```
+```java
 @Controller
 @RequestMapping("/user")
 public class UserController {
@@ -6353,7 +6353,7 @@ public class UserController {
 
 直接在Controller中处理JSON是可以的，因为Spring MVC的`@GetMapping`和`@PostMapping`都支持指定输入和输出的格式。如果我们想接收JSON，输出JSON，那么可以这样写：
 
-```
+```java
 @PostMapping(value = "/rest",
              consumes = "application/json;charset=UTF-8",
              produces = "application/json;charset=UTF-8")
@@ -6369,7 +6369,7 @@ public String rest(@RequestBody User user) {
 
 使用curl命令测试一下：
 
-```
+```java
 $ curl -v -H "Content-Type: application/json" -d '{"email":"bob@example.com"}' http://localhost:8080/rest      
 > POST /rest HTTP/1.1
 > Host: localhost:8080
@@ -6390,7 +6390,7 @@ $ curl -v -H "Content-Type: application/json" -d '{"email":"bob@example.com"}' h
 
 直接用Spring的Controller配合一大堆注解写REST太麻烦了，因此，Spring还额外提供了一个`@RestController`注解，使用`@RestController`替代`@Controller`后，每个方法自动变成API接口方法。我们还是以实际代码举例，编写`ApiController`如下：
 
-```
+```java
 @RestController
 @RequestMapping("/api")
 public class ApiController {
@@ -6430,7 +6430,7 @@ public class ApiController {
 
 要测试POST请求，可以用curl命令：
 
-```
+```java
 $ curl -v -H "Content-Type: application/json" -d '{"email":"bob@example.com","password":"bob123"}' http://localhost:8080/api/signin
 > POST /api/signin HTTP/1.1
 > Host: localhost:8080
@@ -6449,7 +6449,7 @@ $ curl -v -H "Content-Type: application/json" -d '{"email":"bob@example.com","pa
 
 注意观察上述JSON的输出，`User`能被正确地序列化为JSON，但暴露了`password`属性，这是我们不期望的。要避免输出`password`属性，可以把`User`复制到另一个`UserBean`对象，该对象只持有必要的属性，但这样做比较繁琐。另一种简单的方法是直接在`User`的`password`属性定义处加上`@JsonIgnore`表示完全忽略该属性：
 
-```
+```java
 public class User {
     ...
 
@@ -6464,7 +6464,7 @@ public class User {
 
 但是这样一来，如果写一个`register(User user)`方法，那么该方法的User对象也拿不到注册时用户传入的密码了。如果要允许输入`password`，但不允许输出`password`，即在JSON序列化和反序列化时，允许写属性，禁用读属性，可以更精细地控制如下：
 
-```
+```java
 public class User {
     ...
 
@@ -6491,7 +6491,7 @@ public class User {
 
 可以自己编写一个EncodingFilter，也可以直接使用Spring MVC自带的一个`CharacterEncodingFilter`。配置Filter时，只需在`web.xml`中声明即可：
 
-```
+```xml
 <web-app>
     <filter>
         <filter-name>encodingFilter</filter-name>
@@ -6520,7 +6520,7 @@ public class User {
 
 编写一个`AuthFilter`是最简单的实现方式：
 
-```
+```java
 @Component
 public class AuthFilter implements Filter {
     @Autowired
@@ -6552,7 +6552,7 @@ public class AuthFilter implements Filter {
 
 所以，得通过一种方式，让Servlet容器实例化的Filter，间接引用Spring容器实例化的`AuthFilter`。Spring MVC提供了一个`DelegatingFilterProxy`，专门来干这个事情：
 
-```
+```xml
 <web-app>
     <filter>
         <filter-name>authFilter</filter-name>
@@ -6576,7 +6576,7 @@ public class AuthFilter implements Filter {
 
 `DelegatingFilterProxy`将请求代理给`AuthFilter`，核心代码如下：
 
-```
+```java
 public class DelegatingFilterProxy implements Filter {
     private Filter delegate;
     public void doFilter(...) throws ... {
@@ -6605,7 +6605,7 @@ public class DelegatingFilterProxy implements Filter {
 
 如果在`web.xml`中配置的Filter名字和Spring容器的Bean的名字不一致，那么需要指定Bean的名字：
 
-```
+```xml
 <filter>
     <filter-name>basicAuthFilter</filter-name>
     <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
@@ -6633,7 +6633,7 @@ Authorization: Basic dG9tJTQwZXhhbXBsZS5jb206dG9tY2F0
 
 使用如下的`curl`命令并获得响应如下：
 
-```
+```java
 $ curl -v -H 'Authorization: Basic dG9tJTQwZXhhbXBsZS5jb206dG9tY2F0' http://localhost:8080/profile
 > GET /profile HTTP/1.1
 > Host: localhost:8080
@@ -6728,7 +6728,7 @@ Spring MVC提供了Interceptor组件来拦截Controller方法，使用时要注�
 
 上图虚线框就是Interceptor的拦截范围，注意到Controller的处理方法一般都类似这样：
 
-```
+```java
 @Controller
 public class Controller1 {
     @GetMapping("/path/to/hello")
@@ -6742,7 +6742,7 @@ public class Controller1 {
 
 使用Interceptor的好处是Interceptor本身是Spring管理的Bean，因此注入任意Bean都非常简单。此外，可以应用多个Interceptor，并通过简单的`@Order`指定顺序。我们先写一个`LoggerInterceptor`：
 
-```
+```java
 @Order(1)
 @Component
 public class LoggerInterceptor implements HandlerInterceptor {
@@ -6782,7 +6782,7 @@ public class LoggerInterceptor implements HandlerInterceptor {
 
 我们再继续添加一个`AuthInterceptor`，用于替代上一节使用`AuthFilter`进行Basic认证的功能：
 
-```
+```java
 @Order(2)
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
@@ -6826,7 +6826,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
 最后，要让拦截器生效，我们在`WebMvcConfigurer`中注册所有的Interceptor：
 
-```
+```java
 @Bean
 WebMvcConfigurer createWebMvcConfigurer(@Autowired HandlerInterceptor[] interceptors) {
     return new WebMvcConfigurer() {
@@ -6846,7 +6846,7 @@ WebMvcConfigurer createWebMvcConfigurer(@Autowired HandlerInterceptor[] intercep
 
 在Controller中，Spring MVC还允许定义基于`@ExceptionHandler`注解的异常处理方法。我们来看具体的示例代码：
 
-```
+```java
 @Controller
 public class UserController {
     @ExceptionHandler(RuntimeException.class)
@@ -6894,7 +6894,7 @@ CORS可以控制指定域的页面JavaScript能否访问API。
 
 第一种方法是使用`@CrossOrigin`注解，可以在`@RestController`的class级别或方法级别定义一个`@CrossOrigin`，例如：
 
-```
+```java
 @CrossOrigin(origins = "http://local.lsaiah.cn:8080")
 @RestController
 @RequestMapping("/api")
@@ -6911,7 +6911,7 @@ public class ApiController {
 
 第二种方法是在`WebMvcConfigurer`中定义一个全局CORS配置，下面是一个示例：
 
-```
+```java
 @Bean
 WebMvcConfigurer createWebMvcConfigurer() {
     return new WebMvcConfigurer() {
@@ -6940,7 +6940,7 @@ WebMvcConfigurer createWebMvcConfigurer() {
 
 我们先用`http://localhost:8080`在Chrome浏览器中打开首页，然后打开Chrome的开发者工具，切换到Console，输入一个JavaScript语句来跨域访问API：
 
-```
+```java
 $.getJSON( "http://local.lsaiah.cn:8080/api/users", (data) => console.log(JSON.stringify(data)));
 ```
 
@@ -6952,7 +6952,7 @@ $.getJSON( "http://local.lsaiah.cn:8080/api/users", (data) => console.log(JSON.s
 
 我们再用`http://local.lsaiah.cn:8080`在Chrome浏览器中打开首页，在Console中执行JavaScript访问`localhost`：
 
-```
+```java
 $.getJSON( "http://localhost:8080/api/users", (data) => console.log(JSON.stringify(data)));
 ```
 
@@ -6974,7 +6974,7 @@ Spring MVC应用程序通过`MessageSource`和`LocaleResolver`，配合View实�
 
 在Java中，支持多语言和本地化是通过`MessageFormat`配合`Locale`实现的：
 
-```
+```java
 // MessageFormat
 import java.text.MessageFormat;
 import java.util.Locale;
@@ -7009,7 +7009,7 @@ Accept-Language: zh-CN,zh;q=0.8,en;q=0.2
 
 Spring MVC通过`LocaleResolver`来自动从`HttpServletRequest`中获取`Locale`。有多种`LocaleResolver`的实现类，其中最常用的是`CookieLocaleResolver`：
 
-```
+```java
 @Bean
 LocaleResolver createLocaleResolver() {
     var clr = new CookieLocaleResolver();
@@ -7034,7 +7034,7 @@ LocaleResolver createLocaleResolver() {
 
 每个资源文件都有相同的key，例如，默认语言是英文，文件`messages.properties`内容如下：
 
-```
+```java
 language.select=Language
 home=Home
 signin=Sign In
@@ -7043,7 +7043,7 @@ copyright=Copyright©{0,number,#}
 
 文件`messages_zh_CN.properties`内容如下：
 
-```
+```java
 language.select=语言
 home=首页
 signin=登录
@@ -7054,7 +7054,7 @@ copyright=版权所有©{0,number,#}
 
 第三步是创建一个Spring提供的`MessageSource`实例，它自动读取所有的`.properties`文件，并提供一个统一接口来实现“翻译”：
 
-```
+```java
 // code, arguments, locale:
 String text = messageSource.getMessage("signin", null, locale);
 ```
@@ -7063,7 +7063,7 @@ String text = messageSource.getMessage("signin", null, locale);
 
 创建`MessageSource`如下：
 
-```
+```java
 @Bean("i18n")
 MessageSource createMessageSource() {
     var messageSource = new ResourceBundleMessageSource();
@@ -7083,7 +7083,7 @@ MessageSource createMessageSource() {
 
 要在View中使用`MessageSource`加上`Locale`输出多语言，我们通过编写一个`MvcInterceptor`，把相关资源注入到`ModelAndView`中：
 
-```
+```java
 @Component
 public class MvcInterceptor implements HandlerInterceptor {
     @Autowired
@@ -7108,13 +7108,13 @@ public class MvcInterceptor implements HandlerInterceptor {
 
 不要忘了在`WebMvcConfigurer`中注册`MvcInterceptor`。现在，就可以在View中调用`MessageSource.getMessage()`方法来实现多语言：
 
-```
+```java
 <a href="/signin">{{ __messageSource__.getMessage('signin', null, __locale__) }}</a>
 ```
 
 上述这种写法虽然可行，但格式太复杂了。使用View时，要根据每个特定的View引擎定制国际化函数。在Pebble中，我们可以封装一个国际化函数，名称就是下划线`_`，改造一下创建`ViewResolver`的代码：
 
-```
+```java
 @Bean
 ViewResolver createViewResolver(@Autowired ServletContext servletContext, @Autowired @Qualifier("i18n") MessageSource messageSource) {
     PebbleEngine engine = new PebbleEngine.Builder()
@@ -7179,7 +7179,7 @@ private Extension createExtension(MessageSource messageSource) {
 
 最后，我们需要允许用户手动切换`Locale`，编写一个`LocaleController`来实现该功能：
 
-```
+```java
 @Controller
 public class LocaleController {
     final Logger logger = LoggerFactory.getLogger(getClass());
@@ -7225,7 +7225,7 @@ public class LocaleController {
 
 我们先来看看在Spring MVC中如何实现对请求进行异步处理的逻辑。首先建立一个Web工程，然后编辑`web.xml`文件如下：
 
-```
+```xml
 <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
@@ -7263,7 +7263,7 @@ public class LocaleController {
 
 第一种async处理方式是返回一个`Callable`，Spring MVC自动把返回的`Callable`放入线程池执行，等待结果返回后再写入响应：
 
-```
+```java
 @GetMapping("/users")
 public Callable<List<User>> users() {
     return () -> {
@@ -7279,7 +7279,7 @@ public Callable<List<User>> users() {
 
 第二种async处理方式是返回一个`DeferredResult`对象，然后在另一个线程中，设置此对象的值并写入响应：
 
-```
+```java
 @GetMapping("/users/{id}")
 public DeferredResult<User> user(@PathVariable("id") long id) {
     DeferredResult<User> result = new DeferredResult<>(3000L); // 3秒超时
@@ -7316,7 +7316,7 @@ public DeferredResult<User> user(@PathVariable("id") long id) {
 
 当我们使用async模式处理请求时，原有的Filter也可以工作，但我们必须在`web.xml`中添加`<async-supported>`并设置为`true`。我们用两个Filter：SyncFilter和AsyncFilter分别测试：
 
-```
+```xml
 <web-app ...>
     ...
     <filter>
@@ -7347,7 +7347,7 @@ public DeferredResult<User> user(@PathVariable("id") long id) {
 
 在`logback.xml`配置文件中，我们把输出格式加上`[%thread]`，可以输出当前线程的名称：
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -7408,7 +7408,7 @@ WebSocket是一种基于HTTP的长链接技术。传统的HTTP协议是一种请
 
 因为HTTP本身是基于TCP连接的，所以，WebSocket在HTTP协议的基础上做了一个简单的升级，即建立TCP连接后，浏览器发送请求时，附带几个头：
 
-```
+```http
 GET /chat HTTP/1.1
 Host: www.example.com
 Upgrade: websocket
@@ -7417,7 +7417,7 @@ Connection: Upgrade
 
 就表示客户端希望升级连接，变成长连接的WebSocket，服务器返回升级成功的响应：
 
-```
+```http
 HTTP/1.1 101 Switching Protocols
 Upgrade: websocket
 Connection: Upgrade
@@ -7436,7 +7436,7 @@ Connection: Upgrade
 
 接下来，我们需要在AppConfig中加入Spring Web对WebSocket的配置，此处我们需要创建一个`WebSocketConfigurer`实例：
 
-```
+```java
 @Bean
 WebSocketConfigurer createWebSocketConfigurer(
         @Autowired ChatHandler chatHandler,
@@ -7457,7 +7457,7 @@ WebSocketConfigurer createWebSocketConfigurer(
 
 和处理普通HTTP请求不同，没法用一个方法处理一个URL。Spring提供了`TextWebSocketHandler`和`BinaryWebSocketHandler`分别处理文本消息和二进制消息，这里我们选择文本消息作为聊天室的协议，因此，`ChatHandler`需要继承自`TextWebSocketHandler`：
 
-```
+```java
 @Component
 public class ChatHandler extends TextWebSocketHandler {
     ...
@@ -7466,7 +7466,7 @@ public class ChatHandler extends TextWebSocketHandler {
 
 当浏览器请求一个WebSocket连接后，如果成功建立连接，Spring会自动调用`afterConnectionEstablished()`方法，任何原因导致WebSocket连接中断时，Spring会自动调用`afterConnectionClosed`方法，因此，覆写这两个方法即可处理连接成功和结束后的业务逻辑：
 
-```
+```java
 @Component
 public class ChatHandler extends TextWebSocketHandler {
     // 保存所有Client的WebSocket会话实例:
@@ -7490,7 +7490,7 @@ public class ChatHandler extends TextWebSocketHandler {
 
 用实例变量`clients`持有当前所有的`WebSocketSession`是为了广播，即向所有用户推送同一消息时，可以这么写：
 
-```
+```java
 String json = ...
 TextMessage message = new TextMessage(json);
 for (String id : clients.keySet()) {
@@ -7501,7 +7501,7 @@ for (String id : clients.keySet()) {
 
 我们发送的消息是序列化后的JSON，可以用ChatMessage表示：
 
-```
+```java
 public class ChatMessage {
 	public long timestamp;
 	public String name;
@@ -7511,7 +7511,7 @@ public class ChatMessage {
 
 每收到一个用户的消息后，我们就需要广播给所有用户：
 
-```
+```java
 @Component
 public class ChatHandler extends TextWebSocketHandler {
     ...
@@ -7528,7 +7528,7 @@ public class ChatHandler extends TextWebSocketHandler {
 
 注意到我们在注册WebSocket时还传入了一个`ChatHandshakeInterceptor`，这个类实际上可以从`HttpSessionHandshakeInterceptor`继承，它的主要作用是在WebSocket建立连接后，把HttpSession的一些属性复制到WebSocketSession，例如，用户的登录信息等：
 
-```
+```java
 @Component
 public class ChatHandshakeInterceptor extends HttpSessionHandshakeInterceptor {
     public ChatHandshakeInterceptor() {
@@ -7544,7 +7544,7 @@ public class ChatHandshakeInterceptor extends HttpSessionHandshakeInterceptor {
 
 在完成了服务器端的开发后，我们还需要在页面编写一点JavaScript逻辑：
 
-```
+```java
 // 创建WebSocket连接:
 var ws = new WebSocket('ws://' + location.host + '/chat');
 // 连接成功时:
@@ -7567,7 +7567,7 @@ window.chatWs = ws;
 
 用户可以在连接成功后任何时候给服务器发送消息：
 
-```
+```java
 var inputText = 'Hello, WebSocket.';
 window.chatWs.send(JSON.stringify({text: inputText}));
 ```
@@ -7605,7 +7605,7 @@ Spring可以集成JavaMail，通过简单的封装，能简化邮件发送代码
 
 我们希望用户在注册成功后能收到注册邮件，为此，我们先定义一个`JavaMailSender`的Bean：
 
-```
+```java
 @Bean
 JavaMailSender createJavaMailSender(
         // smtp.properties:
@@ -7640,7 +7640,7 @@ JavaMailSender createJavaMailSender(
 
 另外注意到需要注入的属性是从`smtp.properties`中读取的，因此，`AppConfig`导入的就不止一个`.properties`文件，可以导入多个：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableWebMvc
@@ -7653,7 +7653,7 @@ public class AppConfig {
 
 下一步是封装一个`MailService`，并定义`sendRegistrationMail()`方法：
 
-```
+```java
 @Component
 public class MailService {
     @Value("${smtp.from}")
@@ -7685,7 +7685,7 @@ public class MailService {
 
 在MVC的某个Controller方法中，当用户注册成功后，我们就启动一个新线程来异步发送邮件：
 
-```
+```java
 User user = userService.register(email, password, name);
 logger.info("user registered: {}", user.getEmail());
 // send registration mail:
@@ -7731,7 +7731,7 @@ JMS即Java Message Service，是JavaEE的消息服务接口。JMS主要有两个
 
 Artemis有个很好的设计，就是它把程序和数据完全分离了。我们解压后的`ARTEMIS_HOME`目录是程序目录，要启动一个Artemis服务，还需要创建一个数据目录。我们把数据目录直接设定在项目`spring-integration-jms`的`jms-data`目录下。执行命令`artemis create jms-data`：
 
-```
+```java
 $ pwd
 /Users/lsaiah/workspace/spring-integration-jms
 
@@ -7827,7 +7827,7 @@ Topic则是一种一对多通道。一个Producer发出的消息，会被多个C
 
 在JMS 1.1中，发送消息的典型代码如下：
 
-```
+```java
 try {
     Connection connection = null;
     try {
@@ -7854,7 +7854,7 @@ try {
 
 JMS 2.0改进了一些API接口，发送消息变得更简单：
 
-```
+```java
 try (JMSContext context = connectionFactory.createContext()) {
     context.createProducer().send(queue, text);
 }
@@ -7873,7 +7873,7 @@ try (JMSContext context = connectionFactory.createContext()) {
 
 在AppConfig中，通过`@EnableJms`让Spring自动扫描JMS相关的Bean，并加载JMS配置文件`jms.properties`：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableWebMvc
@@ -7887,7 +7887,7 @@ public class AppConfig {
 
 首先要创建的Bean是ConnectionFactory，即连接消息服务器的连接池：
 
-```
+```java
 @Bean
 ConnectionFactory createJMSConnectionFactory(
     @Value("${jms.uri:tcp://localhost:61616}") String uri,
@@ -7902,7 +7902,7 @@ ConnectionFactory createJMSConnectionFactory(
 
 我们再创建一个`JmsTemplate`，它是Spring提供的一个工具类，和`JdbcTemplate`类似，可以简化发送消息的代码：
 
-```
+```java
 @Bean
 JmsTemplate createJmsTemplate(@Autowired ConnectionFactory connectionFactory) {
     return new JmsTemplate(connectionFactory);
@@ -7911,7 +7911,7 @@ JmsTemplate createJmsTemplate(@Autowired ConnectionFactory connectionFactory) {
 
 下一步要创建的是`JmsListenerContainerFactory`，
 
-```
+```java
 @Bean("jmsListenerContainerFactory")
 DefaultJmsListenerContainerFactory createJmsListenerContainerFactory(@Autowired ConnectionFactory connectionFactory) {
     var factory = new DefaultJmsListenerContainerFactory();
@@ -7922,7 +7922,7 @@ DefaultJmsListenerContainerFactory createJmsListenerContainerFactory(@Autowired 
 
 除了必须指定Bean的名称为`jmsListenerContainerFactory`外，这个Bean的作用是处理和Consumer相关的Bean。我们先跳过它的原理，继续编写`MessagingService`来发送消息：
 
-```
+```java
 @Component
 public class MessagingService {
     @Autowired ObjectMapper objectMapper;
@@ -7959,7 +7959,7 @@ JMS的消息类型支持以下几种：
 
 处理消息的核心代码是编写一个Bean，并在处理方法上标注`@JmsListener`：
 
-```
+```java
 @Component
 public class MailMessageListener {
     final Logger logger = LoggerFactory.getLogger(getClass());
@@ -7987,7 +7987,7 @@ public class MailMessageListener {
 
 如果我们直接调用JMS的API来处理消息，那么编写的代码大致如下：
 
-```
+```java
 // 创建JMS连接:
 Connection connection = connectionFactory.createConnection();
 // 创建会话:
@@ -8006,7 +8006,7 @@ connection.start();
 
 我们自己编写的`MailMessageListener.onMailMessageReceived()`相当于消息处理器：
 
-```
+```java
 consumer.setMessageListener(new MessageListener() { 
     public void onMessage(Message message) {
         mailMessageListener.onMailMessageReceived(message); 
@@ -8049,7 +8049,7 @@ Spring内置定时任务和Cron任务的支持，编写调度任务十分方便�
 
 我们还是以实际代码为例，建立工程`spring-integration-schedule`，无需额外的依赖，我们可以直接在`AppConfig`中加上`@EnableScheduling`就开启了定时任务的支持：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableWebMvc
@@ -8063,7 +8063,7 @@ public class AppConfig {
 
 接下来，我们可以直接在一个Bean中编写一个`public void`无参数方法，然后加上`@Scheduled`注解：
 
-```
+```java
 @Component
 public class TaskService {
     final Logger logger = LoggerFactory.getLogger(getClass());
@@ -8094,13 +8094,13 @@ public class TaskService {
 
 我们可以把定时任务的配置放到配置文件中，例如`task.properties`：
 
-```
+```java
 task.checkDiskSpace=30000
 ```
 
 这样就可以随时修改配置文件而无需动代码。但是在代码中，我们需要用`fixedDelayString`取代`fixedDelay`：
 
-```
+```java
 @Component
 public class TaskService {
     ...
@@ -8116,7 +8116,7 @@ public class TaskService {
 
 此外，`fixedDelayString`还可以使用更易读的`Duration`，例如：
 
-```
+```java
 @Scheduled(initialDelay = 30_000, fixedDelayString = "${task.checkDiskSpace:PT2M30S}")
 ```
 
@@ -8158,7 +8158,7 @@ Cron源自Unix/Linux系统自带的crond守护进程，以一个简洁的表达�
 
 在Spring中，我们定义一个每天凌晨2:15执行的任务：
 
-```
+```java
 @Component
 public class TaskService {
     ...
@@ -8245,7 +8245,7 @@ JMX把所有被管理的资源都称为MBean（Managed Bean），这些MBean全�
 
 第二步注册的过程由Spring自动完成。我们以实际工程为例，首先在`AppConfig`中加上`@EnableMBeanExport`注解，告诉Spring自动注册MBean：
 
-```
+```java
 @Configuration
 @ComponentScan
 @EnableWebMvc
@@ -8259,7 +8259,7 @@ public class AppConfig {
 
 剩下的全部工作就是编写MBean。我们以实际问题为例，假设我们希望给应用程序添加一个IP黑名单功能，凡是在黑名单中的IP禁止访问，传统的做法是定义一个配置文件，启动的时候读取：
 
-```
+```java
 # blacklist.txt
 1.2.3.4
 5.6.7.8
@@ -8275,7 +8275,7 @@ public class AppConfig {
 
 还是以IP黑名单为例，JMX的MBean通常以MBean结尾，因此我们遵循标准命名规范，首先编写一个`BlacklistMBean`：
 
-```
+```java
 public class BlacklistMBean {
     private Set<String> ips = new HashSet<>();
 
@@ -8301,7 +8301,7 @@ public class BlacklistMBean {
 
 下一步，我们要使用JMX的客户端来实时热更新这个MBean，所以要给它加上一些注解，让Spring能根据注解自动把相关方法注册到MBeanServer中：
 
-```
+```java
 @Component
 @ManagedResource(objectName = "sample:name=blacklist", description = "Blacklist of IP addresses")
 public class BlacklistMBean {
@@ -8338,7 +8338,7 @@ public class BlacklistMBean {
 
 使用MBean和普通Bean是完全一样的。例如，我们在`BlacklistInterceptor`对IP进行黑名单拦截：
 
-```
+```java
 @Order(1)
 @Component
 public class BlacklistInterceptor implements HandlerInterceptor {

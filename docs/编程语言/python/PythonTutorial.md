@@ -5010,7 +5010,7 @@ ARGS: ['my-pwd', 'test@orm.org', 'Lsaiah', 12345]
 
 \# 定义Field类，包含两个属性，分别是字段的名称name与类型column_type
 
-```
+```python
 class Field(object):
     # 类Fiedl的构造函数有两个属性: name, column_type
     def __init__(self, name, column_type):
@@ -5022,7 +5022,7 @@ class Field(object):
 
 \# 类StringField继承自类Field，同样有两个属性name与类型column_type
 
-```
+```python
 class StringField(Field):
     # 此处仅属性name是强制属性
     def __init__(self, name):
@@ -5034,7 +5034,7 @@ class StringField(Field):
 
 \# 同理类IntegerField继承自类Field，同样有两个属性name与类型column_type
 
-```
+```python
 class IntegerField(Field):
     def __init__(self, name):
         super(IntegerField, self).__init__(name, 'bigint')
@@ -5042,7 +5042,7 @@ class IntegerField(Field):
 
 第二部分 - 元类ModelMetaclass的定义
 
-```
+```python
 class ModelMetaclass(type):
     # 此处说明下__new__和__init__的区别：
     # __new__是用来创造一个类对象的构造函数，而__init__是用来初始化一个实例对象的构造函数
@@ -5087,7 +5087,7 @@ class ModelMetaclass(type):
 
 不同的是`type.__new__()`构造出的类的属性就在`__dict__`下，但是ModelMetaclass将属性移到`__mappings__`下了
 
-```
+```python
 type.__new__(type, 'Model', (dict, ), {'id': IntegerField('id')}).__dict__
 ModelMetaclass('Table1', (object, ), {'name': StringField('username')}).__mappings__
 ```
@@ -5098,7 +5098,7 @@ ModelMetaclass('Table1', (object, ), {'name': StringField('username')}).__mappin
 
 此处对于super()函数的理解还是不清楚
 
-```
+```python
 class Model(dict, metaclass=ModelMetaclass):
     # 在运行__init__来生成实例对象前，调用元函数ModelMetaclass来生成类对象，用这个类对象再去生成实例对象
     # 根据ModelMetaclass代码可以知道，当类名称为Model时，直接返回原始的type.__new__(cls, name, bases, attrs)
@@ -5146,7 +5146,7 @@ class Model(dict, metaclass=ModelMetaclass):
 
 第四部分 - 生成User实例对象
 
-```
+```python
 class User(Model):
     # 因为User继承了Model，而Model继承了dict类型    # 所以dict(id=12345, name='Michael')直接转化为{'id': 12345, 'name': 'Michael'}格式    id = IntegerField('id')
     name = StringField('username')
@@ -5166,6 +5166,109 @@ class User(Model):
 4. User实例的创建2: User实例的生成中要按照元类ModelMetaclass的定义生成，即生成`__mappings__`和`__Table__`等属性
 
 ## 错误、调试和测试
+
+### 错误处理
+
+如打开文件函数`open()`成功时返回文件描述符，出错时返回-1，用错误码表示是否出错不方便，调用者必须用大量的代码判断，一旦出错还要一级一级上报，直到某个函数可以处理该错误：
+
+```python
+def foo():
+    r = some_function()
+    if r==(-1):
+        return (-1)
+    # do something
+    return r
+
+def bar():
+    r = foo()
+    if r==(-1):
+        print('Error')
+    else:
+        pass
+```
+
+Python内置`try...except...finally...`错误处理机制：
+
+```python
+try:
+    print('try...')
+    r = 10/0
+    print('result:', r)
+except ZeroDivisionError as e:
+    print('except:', e)
+finally:
+    print('finally...')
+print('END')
+```
+
+当认为某些代码可能会出错时，就可以用`try`来运行这段代码，如果执行出错，则后续代码不会继续执行，而是直接跳转至错误处理代码，即`except`语句块，执行完`except`后，如果有`finally`语句块，则执行`finally`语句块，没有`finally`语句块则不执行。
+
+```python
+try...
+except: division by zero
+finally...
+END
+# 把除数0改成2
+try...
+result: 5
+finally...
+END
+```
+
+由于错误有很多种类，可以有多个`except`来捕获不同类型的错误，`int()`函数可能会抛出`ValueError`和`ZeroDivisionError`：
+
+```python
+try:
+    print('try...')
+    r = 10 / int('a')
+    print('result:', r)
+except ValueError as e:
+    print('ValueError:', e)
+except ZeroDivisionError as e:
+    print('ZeroDivisionError:', e)
+finally:
+    print('finally...')
+print('END')
+```
+
+此外，如果没有错误发生，也可以在`except`语句块后面加一个`else`，没有错误发生执行：
+
+```python
+try:
+    print('try...')
+    r = 10 / int('2')
+    print('result:', r)
+except ValueError as e:
+    print('ValueError:', e)
+except ZeroDivisionError as e:
+    print('ZeroDivisionError:', e)
+else:
+    print('no error!')
+finally:
+    print('finally...')
+print('END')
+```
+
+Python的错误也是class，所有的错误类型都继承自`BaseException`，所以它不但捕获该类型的错误，还会捕获子类的错误。因为`UnicodeError`是`ValueError`的子类，所以第二个`except`永远也捕获不到`UnicodeError`，如果有`UnicodeError`也被第一个`except`捕获了。
+
+```python
+try:
+    foo()
+except ValueError as e:
+    print('ValueError')
+except UnicodeError as e:
+    print('UnicodeError')
+```
+
+[常见的错误类型](https://docs.python.org/3/library/exceptions.html#exception-hierarchy)
+
+
+
+### 调试
+
+### 单元测试
+
+### 文档测试
 
 ## IO编程
 

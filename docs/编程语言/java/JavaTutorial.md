@@ -113,7 +113,7 @@ default:
 
 使用新的`switch`语法，不但不需要`break`，还可以直接返回值。把上面的代码改写如下：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         String fruit = "apple";
@@ -209,7 +209,7 @@ public class Main {
 
 `for`循环还可以缺少初始化语句、循环条件和每次循环更新语句，例如：
 
-```
+```java
 // 不设置结束条件:
 for (int i=0; ; i++) {
     ...
@@ -230,7 +230,7 @@ for (;;) {
 
 `for`循环经常用来遍历数组，因为通过计数器可以根据索引来访问数组的每个元素：
 
-```
+```java
 int[] ns = { 1, 4, 9, 16, 25 };
 for (int i=0; i<ns.length; i++) {
     System.out.println(ns[i]);
@@ -239,7 +239,7 @@ for (int i=0; i<ns.length; i++) {
 
 但是，很多时候，我们实际上真正想要访问的是数组每个元素的值。Java还提供了另一种`for each`循环，它可以更简单地遍历数组：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         int[] ns = { 1, 4, 9, 16, 25 };
@@ -271,7 +271,7 @@ public class Main {
 
 在循环过程中，可以使用`break`语句跳出所在那一层的当前循环。我们来看一个例子：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         int sum = 0;
@@ -290,7 +290,7 @@ public class Main {
 
 `break`会跳出当前循环，也就是整个循环都不会执行了。而`continue`则是提前结束本次循环，直接继续执行下次循环。我们看一个例子：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         int sum = 0;
@@ -320,7 +320,7 @@ public class Main {
 
 使用`Arrays.toString()`可以快速获取数组内容。
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         int[] ns = { 1, 4, 9, 16, 25 };
@@ -334,7 +334,7 @@ public class Main {
 
 第二种方式是使用`for each`循环，直接迭代数组的每个元素：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         int[] ns = { 1, 4, 9, 16, 25 };
@@ -348,7 +348,7 @@ public class Main {
 
 使用`for each`循环打印也很麻烦。幸好Java标准库提供了`Arrays.toString()`，可以快速打印数组内容：
 
-```
+```java
 import java.util.Arrays;
 
 public class Main {
@@ -374,7 +374,7 @@ public class Main {
 
 对数组排序会直接修改数组本身。
 
-```
+```java
 import java.util.Arrays;
 
 public class Main {
@@ -401,7 +401,7 @@ public class Main {
 
 Java的标准库已经内置了排序功能，我们只需要调用JDK提供的`Arrays.sort()`就可以排序：
 
-```
+```java
 import java.util.Arrays;
 
 public class Main {
@@ -2926,7 +2926,7 @@ Deque<String> deque = new LinkedList<>();
 > 利用Stack把一个给定的整数转换为十六进制
 
 ```java
- package com.lsaiah.java;
+package com.lsaiah.java;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -4332,7 +4332,7 @@ DSA算法签名比RSA更快，只能配合SHA使用：
 
 在Java程序中，数字证书存储在一种Java专用的key store文件中，JDK提供了一系列命令来创建和管理key store。我们用下面的命令创建一个key store，并设定口令123456：
 
-```
+```java
 keytool -storepass 123456 -genkeypair -keyalg RSA -keysize 1024 -sigalg SHA1withRSA -validity 3650 -alias mycert -keystore my.keystore -dname "CN=www.sample.com, OU=sample, O=sample, L=BJ, ST=BJ, C=CN"
 ```
 
@@ -4570,7 +4570,7 @@ public class Main {
 
 ### 线程的优先级
 
-```
+```java
 Thread.setPriority(int n); // 1-10 默认是5
 ```
 
@@ -6004,7 +6004,7 @@ SMTP协议：Simple Mail Transport Protocol，使用标准端口25，也可以�
 
 **创建Mave工程，添加JavaMail依赖**
 
-```
+```xml
 <dependencies>
     <dependency>
         <groupId>javax.mail</groupId>
@@ -6064,7 +6064,7 @@ message.setText("Hi Xiaoming...", "UTF-8");
 Transport.send(message);
 ```
 
-```
+```java
 这是JavaMail打印的调试信息:
 DEBUG: setDebug: JavaMail version 1.6.2
 DEBUG: getProvider() returning javax.mail.Provider[TRANSPORT,smtp,com.sun.mail.smtp.SMTPTransport,Oracle]
@@ -6137,7 +6137,7 @@ QUIT
 
 #### 发送HTML邮件
 
-```
+```java
 message.setText(body, "UTF-8");
 改为：
 message.setText(body, "UTF-8", "html");
@@ -6283,7 +6283,7 @@ String getBody(Part part) throws MessagingException, IOException {
 
 最后关闭`Folder`和`Store`：
 
-```
+```java
 folder.close(true); // 传入true表示删除操作会同步到服务器上（即删除服务器收件箱的邮件）
 store.close();
 ```
@@ -6304,7 +6304,7 @@ HTTP请求由HTTP Header和HTTP Body两部分组成，Header的第一行总是`�
 
 如果是`GET`请求那么该HTTP请求只有Header没有Body，参数必须附加在URL上，并以URLEncode方式编码，URL长度限制参数不能太多。如果是`POST`请求则带有Body，以一个空行分隔，通常要设置`Content-Type`表示Body的类型，`Content-Length`表示Body的长度。
 
-```
+```http
 POST /login HTTP/1.1
 Host: www.example.com
 Content-Type: application/x-www-form-urlencoded
@@ -6317,7 +6317,7 @@ username=hello&password=123456
 
 响应也是由Header和Body组成，第一行总是HTTP版本 响应代码 响应说明。HTTP/1.1协议允许在一个TCP连接中反复发送-响应，但发送一个请求后必须等待服务器响应才能发送下一个请求，HTTP/2.0允许客户端在没有收到响应的时候，发送多个HTTP请求，服务器返回响应的时候，不一定按顺序返回，只要双方能识别出哪个响应对应哪个请求，就可以做到并行发送和接收。
 
-```
+```http
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 133251
@@ -6429,7 +6429,7 @@ String s = response.body();
 
 [又拍云内容识别](https://help.upyun.com/knowledge-base/audit_nostorage/#e59bbee78987e8af86e588abe59bbee78987e58685e5aeb9)
 
-```
+```java
 package file;
 
 import java.io.File;
@@ -6636,7 +6636,7 @@ public class Client {
 
 首行必定是声明版本、编码，接着声明文档定义类型，然后是XML文档内容，有且只有一个根元素，根元素可以包含任意子元素，子元素可以包含属性且必须正确嵌套，空元素用`<tag/>`表示。
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE note SYSTEM "book.dtd">
 <book id="1">
@@ -6827,7 +6827,7 @@ class MyHandler extends DefaultHandler {
 
 **添加Maven依赖**
 
-```
+```xml
 <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml -->
 <dependency>
     <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -6846,7 +6846,7 @@ class MyHandler extends DefaultHandler {
 
 定义JavaBean通过Jackson创建`XmlMapper`调用`readValue(InputStream, Class)`解析XML返回一个JavaBean：
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8" ?>
 <book id="1">
     <name>Java核心技术</name>
@@ -6908,7 +6908,7 @@ JSON是JavaScript Object Notation的缩写，去除了JavaScript执行代码保�
 
 浏览器支持使用JavaScript对JSON进行读写：
 
-```
+```java
 // JSON string to JavaScript object:
 jsObj = JSON.parse(jsonStr);
 // JavaScript object to JSON string:
@@ -6917,7 +6917,7 @@ jsonStr = JSON.stringify(jsObj);
 
 在Java中对JSON也有标准的JSR 353 API，XML可以通过Jackson和JavaBean相互转换，JSON和JavaBean相互转换也可以通过第三方库Jackson实现，或其他第三方库Gson、Fastjson。
 
-```
+```xml
 <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
 <dependency>
     <groupId>com.fasterxml.jackson.core</groupId>
@@ -6938,13 +6938,13 @@ Book book = mapper.readValue(input, Book.clas);
 
 把JavaBean解析为JSON为序列化：
 
-```
+```java
 String json = mapper.writeValueAsString(book);
 ```
 
 要把JSON的某些值解析为特定的JAVA对象，如`LocalDate`：
 
-```
+```json
 {
     "name": "Java核心技术",
     "pubDate": "2016-09-01"
@@ -6953,7 +6953,7 @@ String json = mapper.writeValueAsString(book);
 
 解析为：
 
-```
+```java
 public class Book {
     public String name;
     public LocalDate pubDate;
@@ -6962,7 +6962,7 @@ public class Book {
 
 需要进入标准库的JSR 310关于JavaTime的数据格式定义至Maven，然后在创建`ObjectMapper`时注册一个新的`JavaTimeModule`：
 
-```
+```xml
 <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
 <dependency>
     <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -6972,7 +6972,7 @@ public class Book {
 
 ```
 
-```
+```java
 ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 ```
 
@@ -6980,7 +6980,7 @@ ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
 如`Book`类的`isbn`是一个`BigInteger`：
 
-```
+```java
 public class Book {
 	public String name;
 	public BigInteger isbn;
@@ -6989,7 +6989,7 @@ public class Book {
 
 但JSON数据并不是标准的整型格式：
 
-```
+```json
 {
     "name": "Java核心技术",
     "isbn": "978-7-111-54742-6"
@@ -7042,7 +7042,7 @@ JDBC是Java DataBase Connectivity的缩写，它是Java程序访问数据库的�
 
 在Mac或Linux上，需要编辑MySQL的配置文件，把数据库默认的编码全部改为UTF-8。MySQL的配置文件默认存放在`/etc/my.cnf`或者`/etc/mysql/my.cnf`：
 
-```
+```java
 [client]
 default-character-set = utf8
 
@@ -7114,7 +7114,7 @@ Java标准库自带的JDBC接口其实就是定义了一组接口，而某个具
 
 Java的标准库`java.sql`大部分都是接口，接口不能直接实例化而是必须实例化对应的实现类，通过JDBC驱动实现JDBC接口。当选择MySQL 5.x.x数据库要找到JDBC的驱动其实就是一个JAR包，通过Maven添加`scope`是`runtime`的依赖，只有在运行期间才使用。
 
-```
+```xml
 <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
 <dependency>
     <groupId>mysql</groupId>
@@ -7168,7 +7168,7 @@ Connection代表一个JDBC连接，它相当于Java程序到数据库的连接�
 
 URL是由数据库厂商指定的格式，例如，MySQL的URL是：
 
-```
+```java
 jdbc:mysql://<hostname>:<port>/<db>?key1=value1&key2=value2
 jdbc:mysql://localhost:3306/learnjdbc?useSSL=false&characterEncoding=utf8
 ```
@@ -7212,7 +7212,7 @@ try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PAS
 
 使用`Statement`拼字符串非常容易引发SQL注入，因为SQL参数是从方法传入的。
 
-```
+```java
 User login(String name, String pass) {
 	    ...
     stmt.executeQuery("SELECT * FROM user WHERE login='" + name + "' AND pass='" + pass + "'");
@@ -7222,7 +7222,7 @@ User login(String name, String pass) {
 
 `name`和`pass`通常是Web页面输入后由程序接收的，如果用户输入是程序期待的值就可以拼出正确的SQL。但是如果用户输入是精心构造的字符串就可以拼出意想不到的SQL。
 
-```
+```java
 SELECT * FROM user WHERE login='bob' OR pass=' AND pass=' OR pass=''
 ```
 
@@ -7370,7 +7370,7 @@ JDBC提供了事务的支持，使用Connection可以开启、提交或回滚事
 
 对应用程序来说，数据库事务非常重要，很多运行着关键任务的应用程序，都必须依赖数据库事务保证程序的结果正常。假设小明准备给小红支付100，两人在数据库中的记录主键分别是`123`和`456`，那么用两条SQL语句操作如下：
 
-```
+```sql
 UPDATE accounts SET balance = balance - 100 WHERE id=123 AND balance >= 100;
 UPDATE accounts SET balance = balance + 100 WHERE id=456;
 ```
@@ -7401,7 +7401,7 @@ try {
 
 **设定事务的隔离级别：**
 
-```
+```java
 // 设定隔离级别为READ COMMITTED:
 conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 ```
@@ -7464,7 +7464,7 @@ try (PreparedStatement ps = conn.prepareStatement("INSERT INTO students (name, g
 
 添加依赖：
 
-```
+```xml
 <!-- https://mvnrepository.com/artifact/com.zaxxer/HikariCP -->
 <dependency>
     <groupId>com.zaxxer</groupId>
@@ -7551,7 +7551,7 @@ public class Main {
 
 如果只有一行`return xxx`的代码，完全可以用更简单的写法：
 
-```
+```java
 Arrays.sort(array, (s1, s2) -> s1.compareTo(s2));
 ```
 
@@ -7655,7 +7655,7 @@ public final class String {
 
 因为实例方法有一个隐含的`this`参数，`String`类的`compareTo()`方法在实际调用的时候，第一个隐含参数总是传入`this`，相当于静态方法：
 
-```
+```java
 public static int compareTo(this, String o);
 ```
 
@@ -7746,13 +7746,13 @@ Stream API的特点是：
 
  例如要表示一个全部自然数的集合，用`List`是不可能写出来的，因为自然数是无限的，内存再大也没法放到`List`中。但是用`Stream`可以做到。
 
-```
+```java
 Stream<BigInteger> naturals = createNaturalStream();
 ```
 
 先不考虑这个方法是如何实现的，对每个自然数做一个平方：
 
-```
+```java
 Stream<BigInteger> streamNxN = naturals.map(n -> n.multiply(n));
 ```
 
@@ -7822,7 +7822,7 @@ public class Main {
 
 创建`Stream`还可以通过`Stream.generate()`方法，它需要传入一个`Supplier`对象。
 
-```
+```java
 Stream<String> s = Stream.generate(Supplier<String> sp);
 ```
 
@@ -7886,7 +7886,7 @@ LongStream ls = List.of("1", "2", "3").stream().mapToLong(Long::parseLong);
 
 `map()`方法用于将一个`Stream`的每个元素映射成另一个元素并转换成一个新的`Stream`；所谓`map`操作，就是把一种操作运算，映射到一个序列的每一个元素上。例如，对`x`计算它的平方，可以使用函数`f(x) = x * x`。我们把这个函数映射到一个序列1，2，3，4，5上，就得到了另一个序列1，4，9，16，25：
 
-```
+```java
 Stream<Integer> s = Stream.of(1, 2, 3, 4, 5);
 Stream<Integer> s2 = s.map(n -> n * n);
 ```
@@ -8093,7 +8093,7 @@ public class Main {
 
 把Stream的元素输出为数组和输出为List类似，我们只需要调用`toArray()`方法，并传入数组的“构造方法”：
 
-```
+```java
 List<String> list = List.of("Apple", "Banana", "Orange");
 String[] array = list.stream().toArray(String[]::new);
 ```
@@ -8137,7 +8137,7 @@ public class Main {
 }
 ```
 
-```
+```java
 {
     A=[Apple, Avocado, Apricots],
     B=[Banana, Blackberry],
@@ -8179,7 +8179,7 @@ public class Main {
 
 此方法要求`Stream`的每个元素必须实现`Comparable`接口。如果要自定义排序，传入指定的`Comparator`即可：
 
-```
+```java
 List<String> list = List.of("Orange", "apple", "Banana")
     .stream()
     .sorted(String::compareToIgnoreCase)
@@ -8234,7 +8234,7 @@ Stream<List<Integer>> s = Stream.of(
 
 转换为`Stream<Integer>`，就可以使用`flatMap()`：
 
-```
+```java
 Stream<Integer> i = s.flatMap(list -> list.stream());
 ```
 
@@ -8269,7 +8269,7 @@ String[] result = s.parallel() // 变成一个可以并行处理的Stream
 
 最后一个常用的方法是`forEach()`，它可以循环处理`Stream`的每个元素，我们经常传入`System.out::println`来打印`Stream`的元素：
 
-```
+```java
 Stream<String> s = ...
 s.forEach(str -> {
     System.out.println("Hello, " + str);
@@ -8296,7 +8296,7 @@ s.forEach(str -> {
 
 定义一个解析字符串到`Number`的`Factory`：
 
-```
+```java
 public interface Factory {
     Number parse(String s);
 }
@@ -8304,7 +8304,7 @@ public interface Factory {
 
 有了工厂接口再编写一个工厂的实现类：
 
-```
+```java
 public class NumberFactoryImpl implements NumberFactory {
     public Number parse(String s) {
         return new BigDecimal(s);
@@ -8314,7 +8314,7 @@ public class NumberFactoryImpl implements NumberFactory {
 
 客户端在`NumberFactory`接口中定义一个静态方法`getFactory()`来返回真正的子类：
 
-```
+```java
 public interface NumberFactory {
     // 创建方法:
     Number parse(String s);
@@ -8330,14 +8330,14 @@ public interface NumberFactory {
 
 在客户端中只需要和工厂接口`NumberFactory`以及抽象产品`Number`打交道：
 
-```
+```java
 NumberFactory factory = NumberFactory.getFactory();
 Number result = factory.parse("123.456");
 ```
 
 可以完全忽略真正的工厂`NumberFactoryImpl`和实际的产品`BigDecimal`，这样做的好处是允许创建产品的代码独立地变换，而不会影响到调用方。实际上大多数情况下我们并不需要抽象工厂，而是通过静态方法直接返回产品。
 
-```
+```java
 public class NumberFactory {
     public static Number parse(String s) {
         return new BigDecimal(s);
@@ -8347,13 +8347,13 @@ public class NumberFactory {
 
 这种简化的使用静态方法创建产品的方式称为静态工厂方法（Static Factory Method）。静态工厂方法广泛地应用在Java标准库中，例如：
 
-```
+```java
 Integer n = Integer.valueOf(100);
 ```
 
 `Integer`既是产品又是静态工厂。它提供了静态方法`valueOf()`来创建`Integer`。那么这种方式和直接写`new Integer(100)`有何区别呢？我们观察`valueOf()`方法：
 
-```
+```java
 public final class Integer {
     public static Integer valueOf(int i) {
         if (i >= IntegerCache.low && i <= IntegerCache.high)
@@ -8368,7 +8368,7 @@ public final class Integer {
 
 另一个经常使用的静态工厂方法是`List.of()`：
 
-```
+```java
 List<String> list = List.of("A", "B", "C");
 ```
 
@@ -8378,7 +8378,7 @@ List<String> list = List.of("A", "B", "C");
 
 和`List.of()`类似，我们使用`MessageDigest`时，为了创建某个摘要算法，总是使用静态工厂方法`getInstance(String)`：
 
-```
+```java
 MessageDigest md5 = MessageDigest.getInstance("MD5");
 MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
 ```
@@ -8397,7 +8397,7 @@ MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
 
 定义一个Markdown转HTML和Word的接口：
 
-```
+```java
 public interface AbstractFactory {
     // 创建Html文档:
     HtmlDocument createHtml(String md);
@@ -8408,7 +8408,7 @@ public interface AbstractFactory {
 
 `HtmlDocument`和`WordDocument`接口：
 
-```
+```java
 // Html文档接口:
 public interface HtmlDocument {
     String toHtml();
@@ -8425,7 +8425,7 @@ public interface WordDocument {
 
 FastDoc Soft实现必须要实际的产品即`FastHtmlDocument`和`FastWordDocument`：
 
-```
+```java
 public class FastHtmlDocument implements HtmlDocument {
     public String toHtml() {
         ...
@@ -8444,7 +8444,7 @@ public class FastWordDocument implements WordDocument {
 
 FastDoc Soft必须提供一个实际的工厂来生产这两种产品，即`FastFactory`：
 
-```
+```java
 public class FastFactory implements AbstractFactory {
     public HtmlDocument createHtml(String md) {
         return new FastHtmlDocument(md);
@@ -8457,7 +8457,7 @@ public class FastFactory implements AbstractFactory {
 
 这样就可以使用FastDoc Soft的服务了，客户端：
 
-```
+```java
 // 创建AbstractFactory，实际类型是FastFactory:
 AbstractFactory factory = new FastFactory();
 // 生成Html文档:
@@ -8470,7 +8470,7 @@ word.save(Paths.get(".", "fast.doc"));
 
 如果要同时使用GoodDoc Soft的服务，因为用了抽象工厂模式，只需要根据定义的抽象工厂和抽象产品接口，实现自己的实际工厂和实际产品即可：
 
-```
+```java
 // 实际工厂:
 public class GoodFactory implements AbstractFactory {
     public HtmlDocument createHtml(String md) {
@@ -8495,7 +8495,7 @@ public class GoodWordDocument implements HtmlDocument {
 
 客户端代码除了通过`new`创建了`FastFactory`或`GoodFactory`外，其余代码只引用了产品接口，并未引用任何实际产品（例如，`FastHtmlDocument`），如果把创建工厂的代码放到`AbstractFactory`中，就可以连实际工厂也屏蔽了：
 
-```
+```java
 public interface AbstractFactory {
     public static AbstractFactory createFactory(String name) {
         if (name.equalsIgnoreCase("fast")) {
@@ -8536,7 +8536,7 @@ Builder模式是为了创建一个复杂的对象，需要多个步骤完成创�
 - 如果以`---`开头，使用`HrBuilder`转换；
 - 其余使用`ParagraphBuilder`转换。
 
-```
+```java
 public class HtmlBuilder {
     private HeadingBuilder headingBuilder = new HeadingBuilder();
     private HrBuilder hrBuilder = new HrBuilder();
@@ -8563,7 +8563,7 @@ public class HtmlBuilder {
 
 这样一来，只需要针对每一种类型编写不同的Builder，如针对以`#`开头的行，需要`HeadingBuilder`：
 
-```
+```java
 public class HeadingBuilder {
     public String buildHeading(String line) {
         int n = 0;
@@ -8580,7 +8580,7 @@ public class HeadingBuilder {
 
 JavaMail的`MimeMessage`就可以看作是一个Builder模式，只不过Builder和最终产品合二为一，都是`MimeMessage`：
 
-```
+```java
 Multipart multipart = new MimeMultipart();
 // 添加text:
 BodyPart textpart = new MimeBodyPart();
@@ -8605,7 +8605,7 @@ message.setContent(multipart);
 
 很多时候可以简化Builder模式，以链式调用的方式来创建对象。
 
-```
+```java
 StringBuilder builder = new StringBuilder();
 builder.append(secure ? "https://" : "http://")
        .append("www.lsaiah.cn")
@@ -8616,7 +8616,7 @@ String url = builder.toString();
 
 由于经常需要构造URL字符串，使用Builder编写一个URLBuilder：
 
-```
+```java
 String url = URLBuilder.builder() // 创建Builder
         .setDomain("www.lsaiah.cn") // 设置domain
         .setScheme("https") // 设置scheme
@@ -8633,7 +8633,7 @@ String url = URLBuilder.builder() // 创建Builder
 
 已经有了一个`String[]`数组，想再创建一个一模一样的`String[]`数组。就是把现有数组的元素复制到新数组。如果我们把这个创建过程封装一下，就成了原型模式。
 
-```
+```java
 // 原型:
 String[] original = { "Apple", "Pear", "Banana" };
 // 新对象:
@@ -8642,7 +8642,7 @@ String[] copy = Arrays.copyOf(original, original.length);
 
 对于普通类Java的`Object`提供了一个`clone()`方法，它的意图就是复制一个新的对象出来，需要实现一个`Cloneable`接口来标识一个对象是可复制的：
 
-```
+```java
 public class Student implements Cloneable {
     private int id;
     private String name;
@@ -8661,7 +8661,7 @@ public class Student implements Cloneable {
 
 使用的时候，因为`clone()`的方法签名是定义在`Object`中，返回类型也是`Object`，所以要强制转型，比较麻烦：
 
-```
+```java
 Student std1 = new Student();
 std1.setId(123);
 std1.setName("Bob");
@@ -8675,7 +8675,7 @@ System.out.println(std1 == std2); // false
 
 实际上，使用原型模式更好的方式是定义一个`copy()`方法，返回明确的类型：
 
-```
+```java
 public class Student {
     private int id;
     private String name;
@@ -8705,7 +8705,7 @@ Singleton模式既可以严格实现，也可以以约定的方式把普通类�
 
 1. 只有`private`构造方法，确保外部无法实例化；
 
-```
+```java
 public class Singleton {
     // 静态字段引用唯一实例:
     private static final Singleton INSTANCE = new Singleton();
@@ -8720,7 +8720,7 @@ public class Singleton {
 
 2. 通过`private static`变量持有唯一实例，保证全局唯一性；
 
-```
+```java
 public class Singleton {
     // 静态字段引用唯一实例:
     private static final Singleton INSTANCE = new Singleton();
@@ -8740,7 +8740,7 @@ public class Singleton {
 
 3. 通过`public static`方法返回此唯一实例，使外部调用方能获取到实例。
 
-```
+```java
 public class Singleton {
     // 静态字段引用唯一实例:
     public static final Singleton INSTANCE = new Singleton();
@@ -8753,7 +8753,7 @@ public class Singleton {
 
 延迟加载，即在调用方第一次调用`getInstance()`时才初始化全局唯一实例：
 
-```
+```java
 public class Singleton {
     private static Singleton INSTANCE = null;
 
@@ -8771,7 +8771,7 @@ public class Singleton {
 
 在多线程中会创建多个实例，必须对整个方法加锁：
 
-```
+```java
 public synchronized static Singleton getInstance() {
     if (INSTANCE == null) {
         INSTANCE = new Singleton();
@@ -8782,7 +8782,7 @@ public synchronized static Singleton getInstance() {
 
 但加锁会影响性能，双重检查类似：
 
-```
+```java
 public static Singleton getInstance() {
     if (INSTANCE == null) {
         synchronized (Singleton.class) {
@@ -8799,7 +8799,7 @@ public static Singleton getInstance() {
 
 另一种实现Singleton的方式是利用java的`enum`，编写一个只有一个枚举的类：
 
-```
+```java
 public enum World {
     // 唯一枚举:
 	INSTANCE;
@@ -8818,7 +8818,7 @@ public enum World {
 
 枚举也完全可以像其他类那样定义自己的字段，方法。上面的`World`类在调用方可以这样用：
 
-```
+```java
 String name = World.INSTANCE.getName();
 ```
 
@@ -8826,7 +8826,7 @@ String name = World.INSTANCE.getName();
 
 实际上很多程序，尤其是Web程序，大部分服务类都应该被视作Singleton，如果全部按Singleton的写法写，会非常麻烦，所以通常是通过约定让框架（例如Spring）来实例化这些类，保证只有一个实例，调用方自觉通过框架获取实例而不是`new`操作符：
 
-```
+```java
 @Component // 表示一个单例组件
 public class MyService {
     ...
@@ -8843,7 +8843,7 @@ public class MyService {
 
 适配器模式是Adapter也称Wrapper，当一个接口需要B接口，但是待传入的是A接口。在程序设计中已有一个`Task`类，实现了`Callable`接口：
 
-```
+```java
 public class Task implements Callable<Long> {
     private long num;
     public Task(long num) {
@@ -8863,7 +8863,7 @@ public class Task implements Callable<Long> {
 
 现在想通过一个线程去执行它：
 
-```
+```java
 Callable<Long> callable = new Task(123450000L);
 Thread thread = new Thread(callable); // compile error!
 thread.start();
@@ -8875,7 +8875,7 @@ thread.start();
 
 另一个办法不用改写`Task`类，而是用一个Adapter，把这个`Callable`接口“变成”`Runnable`接口，这样，就可以正常编译：
 
-```
+```java
 Callable<Long> callable = new Task(123450000L);
 Thread thread = new Thread(new RunnableAdapter(callable));
 thread.start();
@@ -8883,7 +8883,7 @@ thread.start();
 
 这个`RunnableAdapter`类就是Adapter，它接收一个`Callable`输出一个`Runnable`。实现`RunnableAdapter`类：
 
-```
+```java
 public class RunnableAdapter implements Runnable {
     // 引用待转换接口:
     private Callable<?> callable;
@@ -8914,14 +8914,14 @@ public class RunnableAdapter implements Runnable {
 
 适配器模式在Java标准库中有广泛应用。比如我们持有数据类型是`String[]`，但是需要`List`接口时，可以用一个Adapter：
 
-```
+```java
 String[] exist = new String[] {"Good", "morning", "Bob", "and", "Alice"};
 Set<String> set = new HashSet<>(Arrays.asList(exist));
 ```
 
 假设持有一个`InputStream`，希望调用`readText(Reader)`方法，但参数是`Reader`而不是`InputStream`，使用适配器把`InputStream`变成`Reader`：
 
-```
+```java
 InputStream input = Files.newInputStream(Paths.get("/path/to/file"));
 Reader reader = new InputStreamReader(input, "UTF-8");
 readText(reader);
@@ -8931,7 +8931,7 @@ readText(reader);
 
 如果我们把`readText(Reader)`方法参数从`Reader`改为`FileReader`，因为我们需要一个`FileReader`类型，就必须把`InputStream`适配为`FileReader`：
 
-```
+```java
 FileReader reader = new InputStream(input, "utf-8");
 ```
 
@@ -8939,7 +8939,7 @@ FileReader reader = new InputStream(input, "utf-8");
 
 Adapter模式可以将一个A接口转换为B接口，使得新的对象符合B接口规范。编写Adapter实际上就是编写一个实现了B接口，并且内部持有A接口的类：
 
-```
+```java
 public BAdapter implements B {
     private A a;
     public BAdapter(A a) {
@@ -8992,7 +8992,7 @@ public BAdapter implements B {
 
 首先定义抽象类`Car`，它引用一个`Engine`：
 
-```
+```java
 public abstract class Car {
     // 引用Engine:
     protected Engine engine;
@@ -9007,7 +9007,7 @@ public abstract class Car {
 
 `Engine`的定义如下：
 
-```
+```java
 public interface Engine {
     void start();
 }
@@ -9015,7 +9015,7 @@ public interface Engine {
 
 接着在一个修正的抽象类`RefindCar`中定义一些额外操作：
 
-```
+```java
 public abstract class RefinedCar extends Car {
     public RefinedCar(Engine engine) {
         super(engine);
@@ -9032,7 +9032,7 @@ public abstract class RefinedCar extends Car {
 
 这样最终的不同品牌继承自`RefindCar`，例如`BossCar`：
 
-```
+```java
 public class BossCar extends RefinedCar {
     public BossCar(Engine engine) {
         super(engine);
@@ -9046,7 +9046,7 @@ public class BossCar extends RefinedCar {
 
 而每一种引擎继承自`Engine`，例如`HybridEngine`：
 
-```
+```java
 public class HybridEngine implements Engine {
     public void start() {
         System.out.println("Start Hybrid Engine...");
@@ -9056,7 +9056,7 @@ public class HybridEngine implements Engine {
 
 客户端通过自己选择一个品牌再配合一个引擎，得到最终的Car：
 
-```
+```java
 RefinedCar car = new BossCar(new HybridEngine());
 car.drive();
 ```
@@ -9092,7 +9092,7 @@ car.drive();
 
 组合模式经常用于树形结构，使用Composite可以把一个叶子节点与一个父节点统一处理。举个例子在XML或HTML中，从根节点开始，每个节点都可能包含任意个其他节点，这些层层嵌套的节点就构成了一颗树。要以树的结构表示XML，可以先抽象出节点类型`Node`：
 
-```
+```java
 public interface Node {
     // 添加一个节点为子节点:
     Node add(Node node);
@@ -9105,7 +9105,7 @@ public interface Node {
 
 对于一个`<abc>`这样的节点，我们可以称之为`ElementNode`，它可以作为容器包含多个子节点：
 
-```
+```java
 public class ElementNode implements Node {
     private String name;
     private List<Node> list = new ArrayList<>();
@@ -9137,7 +9137,7 @@ public class ElementNode implements Node {
 
 对于普通文本，把它看作`TextNode`，没有子节点：
 
-```
+```java
 public class TextNode implements Node {
 	private String text;
 
@@ -9161,7 +9161,7 @@ public class TextNode implements Node {
 
 还可以有注释节点：
 
-```
+```java
 public class CommentNode implements Node {
 	private String text;
 
@@ -9185,7 +9185,7 @@ public class CommentNode implements Node {
 
 通过`ElementNode`、`TextNode`和`CommentNode`，我们就可以构造出一颗树：
 
-```
+```java
 Node root = new ElementNode("school");
 root.add(new ElementNode("classA")
         .add(new TextNode("Tom"))
@@ -9199,7 +9199,7 @@ System.out.println(root.toXml());
 
 通过`root`节点输出XML如下：
 
-```
+```xml
 <school>
 <classA>
 Tom
@@ -9241,7 +9241,7 @@ Grace
 
 如：给`FileInputStream`增加缓冲和解压缩功能，用Decorator模式写出来如下。
 
-```
+```java
 // 创建原始的数据源:
 InputStream fis = new FileInputStream("test.gz");
 // 增加缓冲功能:
@@ -9252,7 +9252,7 @@ InputStream gis = new GZIPInputStream(bis);
 
 或者一次性写成：
 
-```
+```java
 InputStream input = new GZIPInputStream( // 第二层装饰
                         new BufferedInputStream( // 第一层装饰
                             new FileInputStream("test.gz") // 核心功能
@@ -9287,7 +9287,7 @@ Decorator模式它实际上把核心功能和附加功能给分开了。核心�
 
  首先定义顶层接口`TextNode`：
 
-```
+```java
 public interface TextNode {
     // 设置text:
     void setText(String text);
@@ -9298,7 +9298,7 @@ public interface TextNode {
 
 对于核心节点，例如`<span>`，需要从`TextNode`直接继承：
 
-```
+```java
 public class SpanNode implements TextNode {
     private String text;
 
@@ -9314,7 +9314,7 @@ public class SpanNode implements TextNode {
 
 为了实现Decorator模式需要有一个抽象的Decorator类：
 
-```
+```java
 public abstract class NodeDecorator implements TextNode {
     protected final TextNode target;
 
@@ -9330,7 +9330,7 @@ public abstract class NodeDecorator implements TextNode {
 
 这个`NodeDecorator`类的核心是持有一个`TextNode`，即将要把功能附加到的`TextNode`实例。接下来就可以写一个加粗功能：
 
-```
+```java
 public class BoldDecorator extends NodeDecorator {
     public BoldDecorator(TextNode target) {
         super(target);
@@ -9344,7 +9344,7 @@ public class BoldDecorator extends NodeDecorator {
 
 类似的可以继续加`ItalicDecorator`、`UnderlineDecorator`等。客户端可以自由组合这些Decorator：
 
-```
+```java
 TextNode n1 = new SpanNode();
 TextNode n2 = new BoldDecorator(new UnderlineDecorator(new SpanNode()));
 TextNode n3 = new ItalicDecorator(new BoldDecorator(new SpanNode()));
@@ -9379,7 +9379,7 @@ Facade模式是为了给客户端提供一个统一入口，并对外屏蔽内�
 
 以下是三个系统的接口：
 
-```
+```java
 // 工商注册:
 public class AdminOfIndustry {
     public Company register(String name) {
@@ -9404,7 +9404,7 @@ public class Taxation {
 
 如果子系统比较复杂，并且客户对流程不熟悉，那就把这些流程全部委托给中介：
 
-```
+```java
 public class Facade {
     public Company openCompany(String name) {
         Company c = this.admin.register(name);
@@ -9419,7 +9419,7 @@ public class Facade {
 
 这样客户端只跟Facade打交道，一次完成公司注册的所有繁琐流程：
 
-```
+```java
 Company c = facade.openCompany("Facade Software Ltd.");
 ```
 
@@ -9435,7 +9435,7 @@ Company c = facade.openCompany("Facade Software Ltd.");
 
 享元模式在Java标准库中有很多应用，包装类型如`Byte`、`Integer`都是不变类，因此，反复创建同一个值相同的包装类型是没有必要的。以`Integer`为例，如果我们通过`Integer.valueOf()`这个静态工厂方法创建`Integer`实例，当传入的`int`范围在`-128`~`+127`之间时，会直接返回缓存的`Integer`实例：
 
-```
+```java
 public class Main {
     public static void main(String[] args) throws InterruptedException {
         Integer n1 = Integer.valueOf(100);
@@ -9455,7 +9455,7 @@ public class Main {
 
 以`Student`为例，设计一个静态工厂方法，它在内部可以返回缓存的对象：
 
-```
+```java
 public class Student {
     // 持有缓存:
     private static final Map<String, Student> cache = new HashMap<>();
@@ -9500,7 +9500,7 @@ public class Student {
 
 它和Adapter模式类似，Adapter模式用于把A接口转换为B接口：
 
-```
+```java
 public BAdapter implements B {
     private A a;
     public BAdapter(A a) {
@@ -9514,7 +9514,7 @@ public BAdapter implements B {
 
 而Proxy模式不是把A接口转换为B接口，它还是转换成A接口：
 
-```
+```java
 public AProxy implements A {
     private A a;
     public AProxy(A a) {
@@ -9528,7 +9528,7 @@ public AProxy implements A {
 
 Proxy就是给A接口再包一层，在调用`a.a()`的前后，加一些额外的代码：
 
-```
+```java
 public void a() {
     if (getCurrentUser().isRoot()) {
         this.a.a();
@@ -9568,7 +9568,7 @@ Proxy还广泛应用在：
 
 我们来看一下如何应用代理模式编写一个JDBC连接池（`DataSource`）。我们首先来编写一个虚代理，即如果调用者获取到`Connection`后，并没有执行任何SQL操作，那么这个Connection Proxy实际上并不会真正打开JDBC连接。调用者代码如下：
 
-```
+```java
 DataSource lazyDataSource = new LazyDataSource(jdbcUrl, jdbcUsername, jdbcPassword);
 System.out.println("get lazy connection...");
 try (Connection conn1 = lazyDataSource.getConnection()) {
@@ -9588,7 +9588,7 @@ try (Connection conn2 = lazyDataSource.getConnection()) {
 
 现在我们来思考如何实现这个`LazyConnectionProxy`。为了简化代码，我们首先针对`Connection`接口做一个抽象的代理类：
 
-```
+```java
 public abstract class AbstractConnectionProxy implements Connection {
 
     // 抽象方法获取实际的Connection:
@@ -9611,7 +9611,7 @@ public abstract class AbstractConnectionProxy implements Connection {
 
 `LazyConnectionProxy`实现如下：
 
-```
+```java
 public class LazyConnectionProxy extends AbstractConnectionProxy {
     private Supplier<Connection> supplier;
     private Connection target = null;
@@ -9642,7 +9642,7 @@ public class LazyConnectionProxy extends AbstractConnectionProxy {
 
 最后，我们还需要编写一个`LazyDataSource`来支持这个`LazyConnecitonProxy`：
 
-```
+```java
 public class LazyDataSource implements DataSource {
     private String url;
     private String username;
@@ -9671,7 +9671,7 @@ public class LazyDataSource implements DataSource {
 
 输出如下：
 
-```
+```java
 get lazy connection...
 get lazy connection...
 Open connection: com.mysql.jdbc.JDBC4Connection@7a36aefa
@@ -9687,7 +9687,7 @@ Close connection: com.mysql.jdbc.JDBC4Connection@7a36aefa
 
 使用连接池的时候，我们更希望能重复使用连接。如果调用方编写这样的代码：
 
-```
+```java
 DataSource pooledDataSource = new PooledDataSource(jdbcUrl, jdbcUsername, jdbcPassword);
 try (Connection conn = pooledDataSource.getConnection()) {
 }
@@ -9701,7 +9701,7 @@ try (Connection conn = pooledDataSource.getConnection()) {
 
 调用方并不关心是否复用了`Connection`，但从`PooledDataSource`获取的`Connection`确实自带这个优化功能。如何实现可复用`Connection`的连接池？答案仍然是使用代理模式。
 
-```
+```java
 public class PooledConnectionProxy extends AbstractConnectionProxy {
     // 实际的Connection:
     Connection target;
@@ -9730,7 +9730,7 @@ public class PooledConnectionProxy extends AbstractConnectionProxy {
 
 空闲队列由`PooledDataSource`负责维护：
 
-```
+```java
 public class PooledDataSource implements DataSource {
     private String url;
     private String username;
@@ -9768,7 +9768,7 @@ public class PooledDataSource implements DataSource {
 
 我们执行调用方代码，输出如下：
 
-```
+```java
 Open new connection: com.mysql.jdbc.JDBC4Connection@61ca2dfa
 Fake close and released to idle queue for future reuse: com.mysql.jdbc.JDBC4Connection@61ca2dfa
 Return pooled connection: com.mysql.jdbc.JDBC4Connection@61ca2dfa
@@ -9835,7 +9835,7 @@ Proxy模式和Decorator模式有些类似。确实，这两者看起来很像，
 
 首先，我们要抽象出请求对象，它将在责任链上传递：
 
-```
+```java
 public class Request {
     private String name;
     private BigDecimal amount;
@@ -9857,7 +9857,7 @@ public class Request {
 
 其次要抽象出处理器：
 
-```
+```java
 public interface Handler {
     // 返回Boolean.TRUE = 成功
     // 返回Boolean.FALSE = 拒绝
@@ -9870,7 +9870,7 @@ public interface Handler {
 
 然后，依次编写ManagerHandler、DirectorHandler和CEOHandler。以ManagerHandler为例：
 
-```
+```java
 public class ManagerHandler implements Handler {
     public Boolean process(Request request) {
         // 如果超过1000元，处理不了，交下一个处理:
@@ -9885,7 +9885,7 @@ public class ManagerHandler implements Handler {
 
 有了不同的`Handler`后，我们还要把这些`Handler`组合起来，变成一个链，并通过一个统一入口处理：
 
-```
+```java
 public class HandlerChain {
     // 持有所有Handler:
     private List<Handler> handlers = new ArrayList<>();
@@ -9911,7 +9911,7 @@ public class HandlerChain {
 
 现在，我们就可以在客户端组装出责任链，然后用责任链来处理请求：
 
-```
+```java
 // 构造责任链:
 HandlerChain chain = new HandlerChain();
 chain.addHandler(new ManagerHandler());
@@ -9928,7 +9928,7 @@ chain.process(new Request("John", new BigDecimal("123456.78")));
 
 此外，责任链模式有很多变种。有些责任链的实现方式是通过某个`Handler`手动调用下一个`Handler`来传递`Request`，例如：
 
-```
+```java
 public class AHandler implements Handler {
     private Handler next;
     public void process(Request request) {
@@ -9951,7 +9951,7 @@ public class AHandler implements Handler {
 
 例如，JavaEE的Servlet规范定义的`Filter`就是一种责任链模式，它不但允许每个`Filter`都有机会处理请求，还允许每个`Filter`决定是否将请求“放行”给下一个`Filter`：
 
-```
+```java
 public class AuditFilter implements Filter {
     public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) throws IOException, ServletException {
         log(req);
@@ -9980,7 +9980,7 @@ public class AuditFilter implements Filter {
 
 在使用命令模式前，我们先以一个编辑器为例子，看看如何实现简单的编辑操作：
 
-```
+```java
 public class TextEditor {
     private StringBuilder buffer = new StringBuilder();
 
@@ -10013,7 +10013,7 @@ public class TextEditor {
 
 正常情况，我们像这样调用`TextEditor`：
 
-```
+```java
 TextEditor editor = new TextEditor();
 editor.add("Command pattern in text editor.\n");
 editor.copy();
@@ -10027,7 +10027,7 @@ System.out.println(editor.getState());
 
 解决方案是引入一个`Command`接口：
 
-```
+```java
 public interface Command {
     void execute();
 }
@@ -10037,7 +10037,7 @@ public interface Command {
 
 为了支持`CopyCommand`和`PasteCommand`这两个命令，我们从`Command`接口派生：
 
-```
+```java
 public class CopyCommand implements Command {
     // 持有执行者对象:
     private TextEditor receiver;
@@ -10066,7 +10066,7 @@ public class PasteCommand implements Command {
 
 最后我们把`Command`和`TextEditor`组装一下，客户端这么写：
 
-```
+```java
 TextEditor editor = new TextEditor();
 editor.add("Command pattern in text editor.\n");
 // 执行一个CopyCommand:
@@ -10100,7 +10100,7 @@ System.out.println(editor.getState());
 
 为什么搞了一大堆`Command`，多了好几个类，还不如直接这么写简单：
 
-```
+```java
 TextEditor editor = new TextEditor();
 editor.add("Command pattern in text editor.\n");
 editor.copy();
@@ -10113,7 +10113,7 @@ editor.paste();
 
 答案是视需求而定。如果`TextEditor`复杂到一定程度，并且需要支持Undo、Redo的功能时，就需要使用命令模式，因为我们可以给每个命令增加`undo()`：
 
-```
+```java
 public interface Command {
     void execute();
     void undo();
@@ -10169,7 +10169,7 @@ public interface Command {
 
 实现一个完整的正则表达式的解释器非常复杂，但是使用解释器模式却很简单：
 
-```
+```java
 String s = "+861012345678";
 System.out.println(s.matches("^\\+\\d+$"));
 ```
@@ -10184,7 +10184,7 @@ Iterator模式常用于遍历集合，它允许集合提供一个统一的`Itera
 
 迭代器模式（Iterator）实际上在Java的集合类中已经广泛使用了。我们以`List`为例，要遍历`ArrayList`，即使我们知道它的内部存储了一个`Object[]`数组，也不应该直接使用数组索引去遍历，因为这样需要了解集合内部的存储结构。如果使用`Iterator`遍历，那么，`ArrayList`和`LinkedList`都可以以一种统一的接口来遍历：
 
-```
+```java
 List<String> list = ...
 for (Iterator<String> it = list.iterator(); it.hasNext(); ) {
     String s = it.next();
@@ -10193,7 +10193,7 @@ for (Iterator<String> it = list.iterator(); it.hasNext(); ) {
 
 实际上，因为Iterator模式十分有用，因此，Java允许我们直接把任何支持`Iterator`的集合对象用`foreach`循环写出来：
 
-```
+```java
 List<String> list = ...
 for (String s : list) {
 
@@ -10204,7 +10204,7 @@ for (String s : list) {
 
 虽然我们对如何使用Iterator有了一定了解，但如何实现一个Iterator模式呢？我们以一个自定义的集合为例，通过Iterator模式实现倒序遍历：
 
-```
+```java
 public class ReverseArrayCollection<T> implements Iterable<T> {
     // 以数组形式持有集合:
     private T[] array;
@@ -10221,7 +10221,7 @@ public class ReverseArrayCollection<T> implements Iterable<T> {
 
 实现Iterator模式的关键是返回一个`Iterator`对象，该对象知道集合的内部结构，因为它可以实现倒序遍历。我们使用Java的内部类实现这个`Iterator`：
 
-```
+```java
 public class ReverseArrayCollection<T> implements Iterable<T> {
     private T[] array;
 
@@ -10325,7 +10325,7 @@ public class ReverseArrayCollection<T> implements Iterable<T> {
 
 下面我们用中介模式来实现各个UI组件的交互。首先把UI组件给画出来：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         new OrderFrame("Hanburger", "Nugget", "Chip", "Coffee");
@@ -10372,7 +10372,7 @@ class OrderFrame extends JFrame {
 
 然后，我们设计一个Mediator类，它引用4个UI组件，并负责跟它们交互：
 
-```
+```java
 public class Mediator {
     // 引用UI组件:
     private List<JCheckBox> checkBoxList;
@@ -10459,7 +10459,7 @@ Mediator模式经常用在有众多交互组件的UI上。为了简化UI程序�
 
 我们以一个文本编辑器`TextEditor`为例，它内部使用`StringBuilder`允许用户增删字符：
 
-```
+```java
 public class TextEditor {
     private StringBuilder buffer = new StringBuilder();
 
@@ -10481,7 +10481,7 @@ public class TextEditor {
 
 为了支持这个`TextEditor`能保存和恢复状态，我们增加`getState()`和`setState()`两个方法：
 
-```
+```java
 public class TextEditor {
     ...
 
@@ -10508,7 +10508,7 @@ public class TextEditor {
 
 假设一个电商网站，有多种`Product`（商品），同时，`Customer`（消费者）和`Admin`（管理员）对商品上架、价格改变都感兴趣，希望能第一时间获得通知。于是，`Store`（商场）可以这么写：
 
-```
+```java
 public class Store {
     Customer customer;
     Admin admin;
@@ -10541,7 +10541,7 @@ public class Store {
 
 要实现这一目标也很简单，`Store`不能直接引用`Customer`和`Admin`，相反，它引用一个`ProductObserver`接口，任何人想要观察`Store`，只要实现该接口，并且把自己注册到`Store`即可：
 
-```
+```java
 public class Store {
     private List<ProductObserver> observers = new ArrayList<>();
     private Map<String, Product> products = new HashMap<>();
@@ -10574,7 +10574,7 @@ public class Store {
 
 就是这么一个小小的改动，使得观察者类型就可以无限扩充，而且，观察者的定义可以放到客户端：
 
-```
+```java
 // observer:
 Admin a = new Admin();
 Customer c = new Customer();
@@ -10587,7 +10587,7 @@ store.addObserver(c);
 
 甚至可以注册匿名观察者：
 
-```
+```java
 store.addObserver(new ProductObserver() {
     public void onPublished(Product product) {
         System.out.println("[Log] on product published: " + product);
@@ -10616,7 +10616,7 @@ store.addObserver(new ProductObserver() {
 
 观察者模式也有很多变体形式。有的观察者模式把被观察者也抽象出接口：
 
-```
+```java
 public interface ProductObservable { // 注意此处拼写是Observable不是Observer!
     void addObserver(ProductObserver observer);
     void removeObserver(ProductObserver observer);
@@ -10625,7 +10625,7 @@ public interface ProductObservable { // 注意此处拼写是Observable不是Obs
 
 对应的实体被观察者就要实现该接口：
 
-```
+```java
 public class Store implements ProductObservable {
     ...
 }
@@ -10633,7 +10633,7 @@ public class Store implements ProductObservable {
 
 有些观察者模式把通知变成一个Event对象，从而不再有多种方法通知，而是统一成一种：
 
-```
+```java
 public interface ProductObserver {
     void onEvent(ProductEvent event);
 }
@@ -10665,7 +10665,7 @@ public interface ProductObserver {
 
 此外，注意到我们在编写观察者模式的时候，通知Observer是依靠语句：
 
-```
+```java
 observers.forEach(o -> o.onPublished(p));
 ```
 
@@ -10692,7 +10692,7 @@ Java标准库有个`java.util.Observable`类和一个`Observer`接口，用来�
 
 如何表示状态？我们定义一个`enum`就可以表示不同的状态。但不同的状态需要对应不同的行为，比如收到消息时：
 
-```
+```java
 if (state == ONLINE) {
     // 闪烁图标
 } else if (state == BUSY) {
@@ -10709,7 +10709,7 @@ if (state == ONLINE) {
 
 对于未连线状态，我们收到消息也不回复：
 
-```
+```java
 public class DisconnectedState implements State {
     public String init() {
         return "Bye!";
@@ -10723,7 +10723,7 @@ public class DisconnectedState implements State {
 
 对于已连线状态，我们回应收到的消息：
 
-```
+```java
 public class ConnectedState implements State {
     public String init() {
         return "Hello, I'm Bob.";
@@ -10743,7 +10743,7 @@ public class ConnectedState implements State {
 
 状态模式的关键设计思想在于状态切换，我们引入一个`BotContext`完成状态切换：
 
-```
+```java
 public class BotContext {
 	private State state = new DisconnectedState();
 
@@ -10764,7 +10764,7 @@ public class BotContext {
 
 这样，一个价值千万的AI聊天机器人就诞生了：
 
-```
+```java
 Scanner scanner = new Scanner(System.in);
 BotContext bot = new BotContext();
 for (;;) {
@@ -10777,7 +10777,7 @@ for (;;) {
 
 试试效果：
 
-```
+```java
 > hello
 < Hello, I'm Bob.
 > Nice to meet you.
@@ -10796,7 +10796,7 @@ for (;;) {
 
 策略模式在Java标准库中应用非常广泛，我们以排序为例，看看如何通过`Arrays.sort()`实现忽略大小写排序：
 
-```
+```java
 import java.util.Arrays;
 public class Main {
     public static void main(String[] args) throws InterruptedException {
@@ -10815,7 +10815,7 @@ public class Main {
 
 如果我们自己实现策略模式的排序，用冒泡法编写如下：
 
-```
+```java
 import java.util.*;
 public class Main {
     public static void main(String[] args) throws InterruptedException {
@@ -10841,7 +10841,7 @@ public class Main {
 
 一个完整的策略模式要定义策略以及使用策略的上下文。我们以购物车结算为例，假设网站针对普通会员、Prime会员有不同的折扣，同时活动期间还有一个满100减20的活动，这些就可以作为策略实现。先定义打折策略接口：
 
-```
+```java
 public interface DiscountStrategy {
     // 计算折扣额度:
     BigDecimal getDiscount(BigDecimal total);
@@ -10850,7 +10850,7 @@ public interface DiscountStrategy {
 
 接下来，就是实现各种策略。普通用户策略如下：
 
-```
+```java
 public class UserDiscountStrategy implements DiscountStrategy {
     public BigDecimal getDiscount(BigDecimal total) {
         // 普通会员打九折:
@@ -10861,7 +10861,7 @@ public class UserDiscountStrategy implements DiscountStrategy {
 
 满减策略如下：
 
-```
+```java
 public class OverDiscountStrategy implements DiscountStrategy {
     public BigDecimal getDiscount(BigDecimal total) {
         // 满100减20优惠:
@@ -10872,7 +10872,7 @@ public class OverDiscountStrategy implements DiscountStrategy {
 
 最后，要应用策略，我们需要一个`DiscountContext`：
 
-```
+```java
 public class DiscountContext {
     // 持有某个策略:
     private DiscountStrategy strategy = new UserDiscountStrategy();
@@ -10890,7 +10890,7 @@ public class DiscountContext {
 
 调用方必须首先创建一个DiscountContext，并指定一个策略（或者使用默认策略），即可获得折扣后的价格：
 
-```
+```java
 DiscountContext ctx = new DiscountContext();
 
 // 默认使用普通会员折扣:
@@ -10940,7 +10940,7 @@ System.out.println(pay3);
 
 假设我们开发了一个从数据库读取设置的类：
 
-```
+```java
 public class Setting {
     public final String getSetting(String key) {
         String value = readFromDatabase(key);
@@ -10955,7 +10955,7 @@ public class Setting {
 
 由于从数据库读取数据较慢，我们可以考虑把读取的设置缓存起来，这样下一次读取同样的key就不必再访问数据库了。但是怎么实现缓存，暂时没想好，但不妨碍我们先写出使用缓存的代码：
 
-```
+```java
 public class Setting {
     public final String getSetting(String key) {
         // 先从缓存读取:
@@ -10976,7 +10976,7 @@ public class Setting {
 
 整个流程没有问题，但是，`lookupCache(key)`和`putIntoCache(key, value)`这两个方法还根本没实现，怎么编译通过？这个不要紧，我们声明抽象方法就可以：
 
-```
+```java
 public abstract class AbstractSetting {
     public final String getSetting(String key) {
         String value = lookupCache(key);
@@ -10997,7 +10997,7 @@ public abstract class AbstractSetting {
 
 假设我们希望用一个`Map`做缓存，那么可以写一个`LocalSetting`：
 
-```
+```java
 public class LocalSetting extends AbstractSetting {
     private Map<String, String> cache = new HashMap<>();
 
@@ -11013,7 +11013,7 @@ public class LocalSetting extends AbstractSetting {
 
 如果我们要使用Redis做缓存，那么可以再写一个`RedisSetting`：
 
-```
+```java
 public class RedisSetting extends AbstractSetting {
     private RedisClient client = RedisClient.create("redis://localhost:6379");
 
@@ -11035,7 +11035,7 @@ public class RedisSetting extends AbstractSetting {
 
 客户端代码使用本地缓存的代码这么写：
 
-```
+```java
 AbstractSetting setting1 = new LocalSetting();
 System.out.println("test = " + setting1.getSetting("test"));
 System.out.println("test = " + setting1.getSetting("test"));
@@ -11043,7 +11043,7 @@ System.out.println("test = " + setting1.getSetting("test"));
 
 要改成Redis缓存，只需要把`LocalSetting`替换为`RedisSetting`：
 
-```
+```java
 AbstractSetting setting2 = new RedisSetting();
 System.out.println("autosave = " + setting2.getSetting("autosave"));
 System.out.println("autosave = " + setting2.getSetting("autosave"));
@@ -11099,7 +11099,7 @@ Java标准库也有很多模板方法的应用。在集合类中，`AbstractList
 
 这里我们只介绍简化的访问者模式。假设我们要递归遍历某个文件夹的所有子文件夹和文件，然后找出`.java`文件，正常的做法是写个递归：
 
-```
+```java
 void scan(File dir, List<File> collector) {
     for (File file : dir.listFiles()) {
         if (file.isFile() && file.getName().endsWith(".java")) {
@@ -11120,7 +11120,7 @@ void scan(File dir, List<File> collector) {
 
 首先，我们需要定义访问者接口，即该访问者能够干的事情：
 
-```
+```java
 public interface Visitor {
     // 访问文件夹:
     void visitDir(File dir);
@@ -11131,7 +11131,7 @@ public interface Visitor {
 
 紧接着，我们要定义能持有文件夹和文件的数据结构`FileStructure`：
 
-```
+```java
 public class FileStructure {
     // 根目录:
     private File path;
@@ -11143,7 +11143,7 @@ public class FileStructure {
 
 然后，我们给`FileStructure`增加一个`handle()`方法，传入一个访问者：
 
-```
+```java
 public class FileStructure {
     ...
 
@@ -11169,14 +11169,14 @@ public class FileStructure {
 
 这样，我们就把访问者的行为抽象出来了。如果我们要实现一种操作，例如，查找`.java`文件，就传入`JavaFileVisitor`：
 
-```
+```java
 FileStructure fs = new FileStructure(new File("."));
 fs.handle(new JavaFileVisitor());
 ```
 
 这个`JavaFileVisitor`实现如下：
 
-```
+```java
 public class JavaFileVisitor implements Visitor {
     public void visitDir(File dir) {
         System.out.println("Visit dir: " + dir);
@@ -11192,7 +11192,7 @@ public class JavaFileVisitor implements Visitor {
 
 类似的，如果要清理`.class`文件，可以再写一个`ClassFileClearnerVisitor`：
 
-```
+```java
 public class ClassFileCleanerVisitor implements Visitor {
 	public void visitDir(File dir) {
 	}
@@ -11209,7 +11209,7 @@ public class ClassFileCleanerVisitor implements Visitor {
 
 实际上，Java标准库提供的`Files.walkFileTree()`已经实现了一个访问者模式：
 
-```
+```java
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
