@@ -5260,19 +5260,660 @@ except UnicodeError as e:
     print('UnicodeError')
 ```
 
-[常见的错误类型](https://docs.python.org/3/library/exceptions.html#exception-hierarchy)
+[常见的错误类型和继承关系](https://docs.python.org/3/library/exceptions.html#exception-hierarchy)
+
+使用`try...except`不需要在每个可能出错的地方都去捕获，只要在合适的层次去捕获错误就可以了。比如函数`main()`调用`bar()`，`bar()`调用`foo()`，结果`foo()`出错了，这时，只要`main()`捕获到了，就可以处理：
+
+```python
+def foo(s):
+    return 10 / int(s)
+
+def bar(s):
+    return foo(s) * 2
+
+def main():
+    try:
+        bar('0')
+    except Exception as e:
+        print('Error:', e)
+    finally:
+        print('finally...')
+```
+
+如果错误没有被捕获就会一直往上抛，最后被Python解释器捕获，打印一个错误信息，然后程序退出：
+
+```python
+# err.py:
+def foo(s):
+    return 10 / int(s)
+
+def bar(s):
+    return foo(s) * 2
+
+def main():
+    bar('0')
+
+main()
+$ python3 err.py
+Traceback (most recent call last):
+  File "err.py", line 11, in <module>
+    main()
+  File "err.py", line 9, in main
+    bar('0')
+  File "err.py", line 6, in bar
+    return foo(s) * 2
+  File "err.py", line 3, in foo
+    return 10 / int(s)
+ZeroDivisionError: division by zero
+```
+
+根据错误类型`ZeroDivisionError`判断，`int(s)`本身并没有出错，但是`int(s)`返回`0`，在计算`10 / 0`时出错。
+
+**记录错误**
+
+Python内置的`logging`模块可以把捕获到的错误堆栈打印出来，同时程序不会结束，而是继续执行下去。`logging`还可以把错误记录到日志文件：
+
+```python
+# err_logging.py
+
+import logging
+
+def foo(s):
+    return 10 / int(s)
+
+def bar(s):
+    return foo(s) * 2
+
+def main():
+    try:
+        bar('0')
+    except Exception as e:
+        logging.exception(e)
+
+main()
+print('END')
+
+$ python3 err_logging.py
+ERROR:root:division by zero
+Traceback (most recent call last):
+  File "err_logging.py", line 13, in main
+    bar('0')
+  File "err_logging.py", line 9, in bar
+    return foo(s) * 2
+  File "err_logging.py", line 6, in foo
+    return 10 / int(s)
+ZeroDivisionError: division by zero
+END
+```
+
+**抛出错误**
+
+因为错误是class，捕获一个错误就是捕获该class的一个实例，因此错误是创建并抛出的，必要时可以自己定义错误，定义一个错误的class，选择好继承关系，然后，用`raise`语句抛出一个错误的实例：
+
+```python
+# err_raise.py
+class FooError(ValueError):
+    pass
+
+def foo(s):
+    n = int(s)
+    if n==0:
+        raise FooError('invalid value: %s' % s)
+    return 10 / n
+
+foo('0')
+
+$ python3 err_raise.py 
+Traceback (most recent call last):
+  File "err_throw.py", line 11, in <module>
+    foo('0')
+  File "err_throw.py", line 8, in foo
+    raise FooError('invalid value: %s' % s)
+__main__.FooError: invalid value: 0
+```
+
+另一种错误处理的方式：
+
+```python
+# err_reraise.py
+def foo(s):
+    n = int(s)
+    if n==0:
+        raise ValueError('invalid value: %s' % s)
+    return 10 / n
+
+def bar():
+    try:
+        foo('0')
+    except ValueError as e:
+        print('ValueError!')
+        raise
+bar()
+```
+
+`except`捕获错误只是记录，不知道该怎么处理该错误，所以`raise`不带参数，就会把当前错误原样抛出，让顶层调用处理。此外，在`except`中`raise`一个Error，还可以把一种类型的错误转化成另一种类型，但是不应该把一个错误转化成另一个毫不相干的错误：
+
+```python
+try:
+    10 / 0
+except ZeroDivisionError:
+    raise ValueError('input error!')
+```
+
+**练习**
+
+```python
+from functools import reduce
+
+def str2num(s):
+    try:
+        return int(s)
+    except Exception as e:
+        return float(s)
+'''
+def str2num(s):
+    if s.isdigit():
+        return int(s)
+    return float(s)
+'''
+'''
+def str2num(s):
+    if s.find('.') == -1
+        return int(s)
+    else:
+        return float(s)
+'''
+'''
+def str2num(s):
+    if '.' in s:
+        return float(s)
+    else:
+        return int(s)
+'''
+def calc(exp):
+    ss = exp.split('+')
+    ns = map(str2num, ss)
+    return reduce(lambda acc, x: acc + x, ns)
+
+def main():
+    r = calc('100 + 200 + 345')
+    print('100 + 200 + 345 =', r)
+    r = calc('99 + 88 + 7.6')
+    print('99 + 88 + 7.6 =', r)
+
+main()
+```
 
 
 
 ### 调试
 
+用`print()`把肯能有问题的变量打印出来：
+
+```python
+def foo(s):
+    n = int(s)
+    print('>>> n = %d' % n)
+    return 10 / n
+
+def main():
+    foo('0')
+
+main()
+$ python err.py
+>>> n = 0
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 2, in main
+  File "<stdin>", line 4, in foo
+ZeroDivisionError: division by zero
+```
+
+但是调试完还得删掉`print()`，否则运行结果包含大量垃圾信息。
+
+**断言**
+
+用`print()`辅助调试的地方都可以用断言assert替代：
+
+```python
+def foo(s):
+    n = int(s)
+    assert n != 0, 'n is zero!'
+    return 10 / n
+
+def main():
+    foo('0')
+    
+$ python err.py
+Traceback (most recent call last):
+  ...
+AssertionError: n is zero!
+
+$ python -O err.py
+Traceback (most recent call last):
+  ...
+ZeroDivisionError: division by zero
+```
+
+意思是表达式`n != 0`应该是`True`，否则报错，如果断言失败`assert`语句本身就会抛出`AssertionError`。启动Python解释器时可用`-O`参数关闭`assert`。
+
+**logging**
+
+使用`logging`替换`print()`，和`assert`相比，`logging`不会抛出错误，可以输出一段文本到console和文件。
+
+```python
+import logging
+logging.basicConfig(level=logging.INFO)
+s = '0'
+n = int(s)
+logging.info('n = %d' % n)
+print(10 / n)
+
+$ python err.py
+INFO:root:n = 0
+Traceback (most recent call last):
+  File "err.py", line 8, in <module>
+    print(10 / n)
+ZeroDivisionError: division by zero
+```
+
+`logging`允许记录日志信息的级别，有`deubug`，`info`，`warning`，`error`等几个级别，当指定一个级别后，其它级别就不起作用了。
+
+**pdb**
+
+使用Python调试器pdb，让程序单步运行，随时查看运行状态：
+
+```python
+# err.py
+s = '0'
+n = int(s)
+print(10 / n)
+
+# 启动
+$ python -m pdb err.py
+> /Users/michael/Github/learn-python3/samples/debug/err.py(2)<module>()
+-> s = '0'
+# -m pdb启动后定位到下一步要执行的代码，输入l查看：
+(Pdb) l
+  1     # err.py
+  2  -> s = '0'
+  3     n = int(s)
+  4     print(10 / n)
+# 输入n单步执行：
+(Pdb) n
+> c:\users\administrator.pc-20190504pboj\documents\err.py(3)<module>()
+-> n = int(s)
+(Pdb) n
+> c:\users\administrator.pc-20190504pboj\documents\err.py(4)<module>()
+-> print(10 / n)
+# 任何时候都可以输入p 变量名来查看变量:
+(Pdb) p s
+'0'
+(Pdb) p n
+0
+# 输入q结束调试
+(Pdb) q
+```
+
+如果代码有很多行，这样调试太麻烦。
+
+**pdb.set_trace()**
+
+这个方法也是用pdb，但不需要单步执行，`import pdb`在可能出错的地方加`pdb.set_trace()`就可以设置一个断点。
+
+```python
+# err.py
+import pdb
+
+s = '0'
+n = int(s)
+pdb.set_trace() # 运行到这里会自动暂停
+print(10 / n)
+
+# 可以用命令p查看变量，或者用命令c继续运行：
+C:\Users\Administrator.PC-20190504PBOJ>python C:\Users\Administrator.PC-20190504
+PBOJ\Documents\err.py
+> c:\users\administrator.pc-20190504pboj\documents\err.py(6)<module>()
+-> print(10 / n)
+(Pdb) p n
+0
+(Pdb) c
+Traceback (most recent call last):
+  File "C:\Users\Administrator.PC-20190504PBOJ\Documents\err.py", line 6, in <mo
+dule>
+    print(10 / n)
+ZeroDivisionError: division by zero
+```
+
+这种方法调试效率比单步高，但没有使用IDE调试方便。
+
+Visual Studio Code：https://code.visualstudio.com/，需要安装Python插件。
+
+PyCharm：http://www.jetbrains.com/pycharm/
+
+另外，[Eclipse](http://www.eclipse.org/)加上[pydev](http://pydev.org/)插件也可以调试Python程序。
+
 ### 单元测试
+
+测试驱动开发（TDD：Test-Driven Development）模式确保一个程序模块的行为符合设计的测试用例，单元测试是用来对一个模块，一个函数或者一个类来进行正确性检验的测试工作。
+
+比如函数`abs()`编写用例：
+
+1. 输入正数，比如`1`、`1.2`、`0.99`期望返回值与输入值相同；
+2. 输入负数，比如`-1`、`-1.2`、`-0.99`期望返回值与输入值相反；
+3. 输入`0`，期望返回`0`；
+4. 输入非数值类型，比如`None`、`[]`、`{}`，期望抛出`TypeError`。
+
+编写一个`Dict`类，行为和`dict`一致，但是可以通过属性访问：
+
+```python
+class Dict(dict):
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError(r"'Dict' object has no attribute '%s'" % key)
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+>>> d = Dict(a=1, b=2)
+>>> d['a']
+1
+>>> d.a
+1
+```
+
+编写单元测试，需要引入Python的`unittest`模块，编写一个测试类，从`unittest.TestCase`继承，以`test`开头的方法就是测试方法，不以`test`开头的方法不被认为是测试方法，测试的时候不会被执行：
+
+```python
+import unittest
+
+from mydict import Dict
+
+class TestDict(unittest.TestCase):
+
+    def test_init(self):
+        d = Dict(a=1, b='test')
+        self.assertEqual(d.a, 1)
+        self.assertEqual(d.b, 'test')
+        self.assertTrue(isinstance(d, dict))
+
+    def test_key(self):
+        d = Dict()
+        d['key'] = 'value'
+        self.assertEqual(d.key, 'value')
+
+    def test_attr(self):
+        d = Dict()
+        d.key = 'value'
+        self.assertTrue('key' in d)
+        self.assertEqual(d['key'], 'value')
+
+    def test_keyerror(self):
+        d = Dict()
+        with self.assertRaises(KeyError):
+            value = d['empty']
+
+    def test_attrerror(self):
+        d = Dict()
+        with self.assertRaises(AttributeError):
+            value = d.empty
+```
+
+`unittest.TestCase`提供了很多[内置的条件判断](https://docs.python.org/zh-cn/3/library/unittest.html?highlight=unittest#unittest.TestCase.assertEqual)，最常用`assertEqual()`，`assertRaises()`：
+
+```python
+self.assertEqual(abs(-1), 1) # 断言函数返回的结果与1相等
+# 断言期望抛出错误的指定类型
+with self.assertRaises(KeyError):
+    value = d['empty']
+with self.assertRaises(AttributeError):
+    value = d.empty
+```
+
+**运行单元测试**
+
+在`mydict_test.py`的最后加上：
+
+```python
+if __name__ == '__main__':
+    unittest.main()
+```
+
+另一种推荐方法是在命令行通过参数`-m unittest`直接批量运行单元测试：
+
+```python
+$ python -m unittest mydict_test
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.000s
+
+OK
+```
+
+**setUP和tearDown**
+
+`setUp()`和`tearDown()`方法会分别在每调用一个测试方法的前后分别被执行。比如在测试前启动数据库，可以在`setUp()`方法中连接数据库，在测试后关闭数据库，在`tearDown()`方法中关闭。这样不比在每个测试方法中重复相同的代码：
+
+```python
+class TestDict(unittest.TestCase):
+
+    def setUp(self):
+        print('setUp...')
+
+    def tearDown(self):
+        print('tearDown...')
+```
+
+**练习**
+
+对Student类编写单元测试，结果测试不通过，修改Student类让测试通过：
+
+```python
+# -*- coding: utf-8 -*-
+import unittest
+class Student(object):
+    def __init__(self, name, score):
+        self.name = name
+        self.score = score
+    def get_grade(self):
+        if self.score < 0 or self.score > 100:
+            raise ValueError
+        if self.score >= 80:
+            return 'A'
+        if self.score >= 60:
+            return 'B'
+        if self.score >= 0:
+            return 'C'
+
+class TestStudent(unittest.TestCase):
+    def test_80_to_100(self):
+        s1 = Student('Bart', 80)
+        s2 = Student('Lisa', 100)
+        self.assertEqual(s1.get_grade(), 'A')
+        self.assertEqual(s2.get_grade(), 'A')
+    def test_60_to_80(self):
+        s1 = Student('Bart', 60)
+        s2 = Student('Lisa', 79)
+        self.assertEqual(s1.get_grade(), 'B')
+        self.assertEqual(s2.get_grade(), 'B')
+    def test_0_to_60(self):
+        s1 = Student('Bart', 0)
+        s2 = Student('Lisa', 59)
+        self.assertEqual(s1.get_grade(), 'C')
+        self.assertEqual(s2.get_grade(), 'C')
+    def test_invalid(self):
+        s1 = Student('Bart', -1)
+        s2 = Student('Lisa', 101)
+        with self.assertRaises(ValueError):
+            s1.get_grade()
+        with self.assertRaises(ValueError):
+            s2.get_grade()
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+
 
 ### 文档测试
 
+Python官方文档的示例代码可以写在注释中，由一些工具自动生成文档。文档中的代码可以使用内置的文档测试（doctest）模块自动执行，严格按照Python交互式命令行的输入和输出来判断测试结果是否正确：
+
+```python
+def abs(n):
+    '''
+    Function to get absolute value of number.
+    
+    Example:
+    
+    >>> abs(1)
+    1
+    >>> abs(-1)
+    1
+    >>> abs(0)
+    0
+    '''
+    return n if n >= 0 else (-n)
+```
+
+使用doctest测试`Dict`类，可以用`...`表示中间一大段输出：
+
+```python
+# mydict2.py
+class Dict(dict):
+    '''
+    Simple dict but also support access as x.y style.
+
+    >>> d1 = Dict()
+    >>> d1['x'] = 100
+    >>> d1.x
+    100
+    >>> d1.y = 200
+    >>> d1['y']
+    200
+    >>> d2 = Dict(a=1, b=2, c='3')
+    >>> d2.c
+    '3'
+    >>> d2['empty']
+    Traceback (most recent call last):
+        ...
+    KeyError: 'empty'
+    >>> d2.empty
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'Dict' object has no attribute 'empty'
+    '''
+    def __init__(self, **kw):
+        super(Dict, self).__init__(**kw)
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError(r"'Dict' object has no attribute '%s'" % key)
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+if __name__=='__main__':
+    import doctest
+    doctest.testmod()
+```
+
+运行`python mydict2.py`什么输出也没有说明编写的doctest运行正确，如果有问题再运行就会报错，比如把`__getattr__()`方法注释掉：
+
+```python
+C:\Users\Administrator.PC-20190504PBOJ>python C:\Users\Administrator.PC-20190504
+PBOJ\Documents\mydict2.py
+**********************************************************************
+File "C:\Users\Administrator.PC-20190504PBOJ\Documents\mydict2.py", line 8, in _
+_main__.Dict
+Failed example:
+    d1.x
+Exception raised:
+    Traceback (most recent call last):
+      File "D:\python\lib\doctest.py", line 1329, in __run
+        exec(compile(example.source, filename, "single",
+      File "<doctest __main__.Dict[2]>", line 1, in <module>
+        d1.x
+    AttributeError: 'Dict' object has no attribute 'x'
+**********************************************************************
+File "C:\Users\Administrator.PC-20190504PBOJ\Documents\mydict2.py", line 14, in
+__main__.Dict
+Failed example:
+    d2.c
+Exception raised:
+    Traceback (most recent call last):
+      File "D:\python\lib\doctest.py", line 1329, in __run
+        exec(compile(example.source, filename, "single",
+      File "<doctest __main__.Dict[6]>", line 1, in <module>
+        d2.c
+    AttributeError: 'Dict' object has no attribute 'c'
+**********************************************************************
+# 不必担心doctest在非测试环境运行，模块导入不会执行，只有在命令行直接运行时才执行doctest
+1 items had failures:
+   2 of   9 in __main__.Dict
+***Test Failed*** 2 failures.
+
+```
+
+**练习**
+
+对函数`fact(n)`编写doctest并执行：
+
+```python
+def fact(n):
+    '''
+    Calculate 1*2*...*n
+    
+    >>> fact(1)
+    1
+    >>> fact(10)
+    3628800
+    >>> fact(-1)
+    Traceback (most recent call last):
+        ...
+    ValueError
+    '''
+    if n < 1:
+        raise ValueError()
+    if n == 1:
+        return 1
+    return n * fact(n - 1)
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+```
+
+
+
 ## IO编程
 
+1. 基本概念：input， output，stream
+2. 存在问题：输入和接收速度不匹配
+3. 解决方法：同步、异步(回调--好了叫我，轮询---好了没...好了没)
+4. 编程语言都会把操作系统提供的低级C接口封装起来方便使用
+
+### 文件读写
+
+
+
+### StringIO和BytesIO
+
+### 操作文件和目录
+
+### 序列化
+
 ## 进程和线程
+
+
 
 ## 常用内建模块
 
