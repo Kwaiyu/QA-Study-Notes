@@ -3076,14 +3076,14 @@ Java标准库的`java.io.File`对象表示一个文件或者目录：
 
 > 利用`File`对象列出指定目录下所有子目录和文件，并按层次打印
 
-Documents/
-&nbsp&nbsp word/
-&nbsp&nbsp&nbsp&nbsp 1.docx
-&nbsp&nbsp&nbsp&nbsp 2.docx
-&nbsp&nbsp&nbsp&nbsp work/
-&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp abc.doc
-&nbsp&nbsp ppt/
-&nbsp&nbsp other/
+> Documents/  word/
+>      1.docx
+>      2.docx
+>      work/
+>        abc.doc
+>
+>   ppt/
+>   other/
 
 ```java
 package com.lsaiah.io;
