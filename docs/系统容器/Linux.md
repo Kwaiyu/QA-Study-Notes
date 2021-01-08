@@ -4,27 +4,42 @@
 
 ### 当前会话
 
-```
+```shell
 export PATH=$PATH:/usr/local/webserver/php/bin
 ```
 
 ### 当前登录
 
-```
+```shell
 vi ~/.bash_profile
 在PATH=$PATH:$HOME/bin一行之后添加/usr/local/webserver/php/bin
 ```
 
 ### 系统用户永久
 
-```
+```shell
 vi /etc/profile
-在文件末尾添加
+# 在文件末尾添加
 PATH=$PATH:/usr/local/webserver/php/bin:/usr/local/webserver/mysql/bin
 export PATH
+# 或者连在一起写
+export PATH=$PATH:/root/node-v15.5.1-linux-x64/bin
+# 或者echo重定向
+echo 'export PATH=$PATH:/root/node-v15.5.1-linux-x64/bin' >> /etc/profile
+# 立即生效
 source /etc/profile
 echo $PATH
 ```
+
+### 软连接
+
+```shell
+创建：ln -s 源文件 目标文件
+删除：rm -rf 目标链接
+ln -s /usr/local/nodejs/bin/node /bin/node
+```
+
+
 
 ## 文件
 
@@ -32,13 +47,13 @@ echo $PATH
 
 [yum软件包管理器阿里镜像](https://mirrors.aliyun.com/repo/Centos-7.repo)
 
-```
+```shell
 mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
 ```
 
 虚拟机vm tools共享文件夹：
 
-```
+```shell
 mkdir /mnt/cdrom
 mount -t iso9660 /dev/cdrom /mnt/cdrom
 cp /mnt/cdrom/VMtools.tar.gz /root/vm.tar.gz
@@ -51,7 +66,7 @@ chmod 644
 
 配置DNS开启网卡清缓存：
 
-```
+```shell
 vi /etc/sysconfig/network-scripts/ifcfg-ens33
 ONBOOT=YES
 DNS1=223.5.5.5
@@ -93,7 +108,7 @@ yum常用命令：
 - -a 　查询所有套件。
 - -e<套件档>或--erase<套件档> 　删除指定的套件。
 
-```
+```shell
 # 安装
 rpm -hvi dejagnu-1.4.2-10.noarch.rpm
 # 查询
@@ -106,7 +121,7 @@ rpm -e --nodeps mariadb-libs
 
 Linux grep 命令用于查找文件里符合条件的字符串。查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。
 
-```
+```shell
 grep [-abcEFGhHilLnqrsvVwxy][-A<显示列数>][-B<显示列数>][-C<显示列数>][-d<进行动作>][-e<范本样式>][-f<范本文件>][--help][范本样式][文件或目录...]
 ```
 
@@ -140,7 +155,7 @@ grep [-abcEFGhHilLnqrsvVwxy][-A<显示列数>][-B<显示列数>][-C<显示列数
 
 ### paste
 
-```
+```shell
 paste file1 file2 合并两个文件或两栏的内容   
 paste -d '+' file1 file2 合并两个文件或两栏的内容，中间用"+"区分  
 ```
@@ -149,7 +164,7 @@ paste -d '+' file1 file2 合并两个文件或两栏的内容，中间用"+"区�
 
 AWK 是一种处理文本文件的语言，是一个强大的文本分析工具。
 
-```
+```shell
 awk [选项参数] 'script' var=value file(s)
 或
 awk [选项参数] -f scriptfile var=value file(s)
@@ -186,7 +201,7 @@ awk [选项参数] -f scriptfile var=value file(s)
 
 Linux sed 命令是利用脚本来处理文本文件。可依照脚本的指令来处理、编辑文本文件。主要用来自动编辑一个或多个文件、简化对文件的反复操作、编写转换程序等。
 
-```
+```shell
 sed [-hnV][-e<script>][-f<script文件>][文本文件]
 ```
 
@@ -209,7 +224,7 @@ sed [-hnV][-e<script>][-f<script文件>][文本文件]
 
 expr命令是一个手工命令行计数器，用于在UNIX/LINUX下求表达式变量的值，一般用于整数值，也可用于字符串
 
-```
+```shell
 expr 表达式
 ```
 
@@ -221,7 +236,7 @@ expr 表达式
 
 let 命令是 BASH 中用于计算的工具，用于执行一个或多个表达式，变量计算中不需要加上 $ 来表示变量。如果表达式中包含了空格或其他特殊字符，则必须引起来。
 
-```
+```shell
 let arg [arg ...]
 ```
 
@@ -231,7 +246,7 @@ arg：要执行的表达式
 
 sort命令用于将文本文件内容排序
 
-```
+```shell
 sort [-bcdfimMnr][-o<输出文件>][-t<分隔字符>][+<起始栏位>-<结束栏位>][--help][--verison][文件]
 ```
 
@@ -253,7 +268,7 @@ sort [-bcdfimMnr][-o<输出文件>][-t<分隔字符>][+<起始栏位>-<结束栏
 
 ### comm
 
-```
+```shell
 comm -1 file1 file2 比较两个文件的内容只删除 'file1' 所包含的内容   
 comm -2 file1 file2 比较两个文件的内容只删除 'file2' 所包含的内容   
 comm -3 file1 file2 比较两个文件的内容只删除两个文件共有的部分  
@@ -263,7 +278,7 @@ comm -3 file1 file2 比较两个文件的内容只删除两个文件共有的部
 
 用于检查及删除文本文件中重复出现的行列，一般与sort结合使用
 
-```
+```shell
 uniq [-cdu][-f<栏位>][-s<字符位置>][-w<字符位置>][--help][--version][输入文件][输出文件]
 ```
 
@@ -278,7 +293,7 @@ uniq [-cdu][-f<栏位>][-s<字符位置>][-w<字符位置>][--help][--version][�
 - [输入文件] 指定已排序好的文本文件。如果不指定此项，则从标准读取数据；
 - [输出文件] 指定输出的文件。如果不指定此选项，则将内容显示到标准输出设备（显示终端）。
 
-```
+```shell
 # 当重复的行不相邻时，通过sort排序后删除
 $ sort testfile | uniq
 ```
@@ -287,7 +302,7 @@ $ sort testfile | uniq
 
 用于在指定目录下查找文件
 
-```
+```shell
 find path -option [-print]   [-exec -ok command] {} \;
 ```
 
@@ -316,7 +331,7 @@ find 根据下列规则判断 path 和 expression，在命令列上第一个 - (
 
 可以使用 ( ) 将运算式分隔，并使用下列运算。
 
-```
+```shell
 exp1 -and exp2
 ! expr
 -not expr
@@ -326,7 +341,7 @@ exp1, exp2
 
 ### tar
 
-```
+```shell
 -c ：新建打包文件  
 -t ：查看打包文件的内容含有哪些文件名  
 -x ：解打包或解压缩的功能，可以搭配-C（大写）指定解压的目录，注意-c,-t,-x不能同时出现在同一条命令中  
@@ -337,7 +352,7 @@ exp1, exp2
 -C dir ：指定压缩/解压缩的目录dir  
 ```
 
-```
+```shell
 bunzip2 file1.bz2 解压一个叫做 'file1.bz2'的文件   
 bzip2 file1 压缩一个叫做 'file1' 的文件   
 gunzip file1.gz 解压一个叫做 'file1.gz'的文件   
@@ -358,7 +373,7 @@ zip -r file1.zip file1 file2 dir1 将几个文件和目录同时压缩成一个z
 
 ps命令用于显示当前进程 (process) 的状态。
 
-```
+```shell
 ps [options] [--help]
 ```
 
@@ -392,7 +407,7 @@ ps [options] [--help]
 
 ### kill
 
-```
+```shell
 -l  信号，若果不加信号的编号参数，则使用“-l”参数会列出全部的信号名称  
 -a  当处理当前进程时，不限制命令名和进程号的对应关系  
 -p  指定kill 命令只打印相关进程的进程号，而不发送任何信号  
@@ -404,7 +419,7 @@ ps [options] [--help]
 
 top命令用于实时显示 process 的动态
 
-```
+```shell
 top [-] [d delay] [q] [c] [S] [s] [i] [n] [b]
 ```
 
@@ -422,7 +437,7 @@ top [-] [d delay] [q] [c] [S] [s] [i] [n] [b]
 
 命令用于显示网络状态
 
-```
+```shell
 netstat [-acCeFghilMnNoprstuvVwx][-A<网络类型>][--ip]
 ```
 
@@ -457,52 +472,52 @@ netstat [-acCeFghilMnNoprstuvVwx][-A<网络类型>][--ip]
 
 不带任何参数curl就是发出GET请求，服务器返回内容输出到命令行。
 
-```
+```shell
 curl https://www.example.com
 ```
 
 - -A 指定客户端用户代理标头`User-Agent`
   
-  ```
+  ```shell
   curl -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36' https://google.com
   ```
   
   移除`User-Agent`标头
   
-  ```
+  ```shell
   curl -A '' https://google.com
   ```
   
   -H 直接指定标头，更改`User-Agent`
   
-  ```
+  ```shell
   curl -H 'User-Agent: php/1.0' https://google.com
   ```
 - -b 用来向服务器发送Cookie
   
-  ```
+  ```shell
   curl -b 'foo=bar' https://google.com
   ```
   
   发送多个Cookie
   
-  ```
+  ```shell
   curl -b 'foo1=bar;foo2=bar2' https://google.com
   ```
   
   读取本地`cookies.txt`
   
-  ```
+  ```shell
   curl -b cookies.txt https://www.google.com
   ```
 - -c 将服务器设置的Cookie写入文件
   
-  ```
+  ```shell
   curl -c cookies txt https://www.google.com
   ```
 - -d 发送POST请求数据体
   
-  ```
+  ```shell
   curl -d'login=emma＆password=123'-X POST https://google.com/login
   # 或者
   curl -d 'login=emma' -d 'password=123' -X POST  https://google.com/login
@@ -510,50 +525,50 @@ curl https://www.example.com
   
   读取本地文件数据，向服务器发送
   
-  ```
+  ```shell
   curl -d '@data.txt' https://google.com/login
   ```
 - --data-urlencode 等同于-d，发送POST请求，区别在于自动将发送的数据进行URL编码，如空格符。
   
-  ```
+  ```shell
   curl --data-urlencode 'comment=hello world' https://google.com/login
   ```
 - -e 用来设置HTTP的标头Referer，表示请求来源
   
-  ```
+  ```shell
   curl -e 'https://google.com?q=example' https://example.com
   ```
   
   -H 可直接添加标头Referer
   
-  ```
+  ```shell
   curl -H 'Referer: https://google.com?q=example' https://www.example.com
   ```
 - -F 向服务器上传二进制文件
   
-  ```
+  ```shell
   curl -F 'file=@photo.png' https://google.com/profile
   ```
   
   指定文件类型
   
-  ```
+  ```shell
   curl -F 'file=@photo.png;type=image/png' https://google.com/profile
   ```
   
   指定文件名
   
-  ```
+  ```shell
   curl -F 'file=@photo.png;filename=me.png' https://google.com/profile
   ```
 - -G 构造URL查询字符串，发出GET请求，实际请求地址为`https://google.com/search?q=kitties&count=20`省略-G会发出POST请求
   
-  ```
+  ```shell
   curl -G -d 'q=kitties' -d 'count=20' https://www.google.com/search
   ```
 - -H 添加HTTP请求标头
   
-  ```
+  ```shell
   curl -H 'Accept-Language: en-US' https://google.com
   curl -H 'Accept-Language: en-US' -H 'Secret-Message: xyzzy' https://google.com
   ```
@@ -568,7 +583,7 @@ curl https://www.example.com
 - -S 只输出错误信息
 - -u 设置服务器认证用户名和密码
   
-  ```
+  ```shell
   curl -u 'bob:12345' https://google.com/login
   curl https://bob:12345@google.com/login
   curl -u 'bob' https://google.com/login
@@ -576,7 +591,7 @@ curl https://www.example.com
 - -v 输出通信整个过程，用于调试，--trace调试输出二进制数据
 - -x 指定http请求的代理
   
-  ```
+  ```shell
   curl -x socks5://james:cats@myproxy.com:8080 https://www.example.com
   ```
 - -X 指定HTTP请求方法
@@ -590,7 +605,7 @@ curl https://www.example.com
 > 配置文件的快速解决方法
 > `FirewallBackend=nftables`
 >
-> ```
+> ```shell
 > FirewallBackend=iptables
 > sudo systemctl restart firewalld.service
 > ```
