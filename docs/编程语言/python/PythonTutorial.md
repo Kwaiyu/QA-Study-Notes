@@ -6211,11 +6211,17 @@ shutil.copyfile(src, dst, *, follow_symlinks=True)
 
    ```python
    import os
-   def search(x):
-       for y in os.walk(os.path.abspath('.')):
-           for z in range(len(y[2])):
-               if (y[2][z]).find(x)>=0:
-                   print(os.path.join(y[0],y[2][z]))
+   def find(path,key):
+       count_dirs = count_files = 0
+       for root, dirs, files in os.walk(path):
+           for x in files:
+               if key in x:
+                   print(os.path.join(root,x),'文件')
+                   count_files += 1
+           for y in dirs:
+               if key in y:
+                   print(os.path.join(root,y),'目录')
+                   count_dirs += 1
    #
    import os
    def main():
@@ -6241,13 +6247,13 @@ shutil.copyfile(src, dst, *, follow_symlinks=True)
            #如果是文件，打印
            if os.path.isfile(os.path.join(path,x)):
                if key in x:
-                   print(os.path.join(path,x))
+                print(os.path.join(path,x))
            #如果是目录，递归
            if os.path.isdir(os.path.join(path,x)):
                new_path = os.path.join(path,x)
                search(new_path,key)
    ```
-
+   
    
 
 ### 序列化
