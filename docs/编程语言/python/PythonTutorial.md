@@ -5541,10 +5541,10 @@ $ python -m pdb err.py
   4     print(10 / n)
 # 输入n单步执行：
 (Pdb) n
-> c:\users\administrator.pc-20190504pboj\documents\err.py(3)<module>()
+> c:\users\lsaiah\documents\err.py(3)<module>()
 -> n = int(s)
 (Pdb) n
-> c:\users\administrator.pc-20190504pboj\documents\err.py(4)<module>()
+> c:\users\lsaiah\documents\err.py(4)<module>()
 -> print(10 / n)
 # 任何时候都可以输入p 变量名来查看变量:
 (Pdb) p s
@@ -5903,11 +5903,352 @@ if __name__ == '__main__':
 
 ### 文件读写
 
+在磁盘上读写文件的功能都是由操作系统提供的，读写文件就是请求操作系统打开一个文件对象（通常称为文件描述符），通过操作系统提供的接口从这个文件对象中读取数据（读文件），或者把数据写入这个文件对象（写文件）。
+
+**读文件**
+
+使用Python内置`open()`函数，传入文件名和标识符：
+
+```python
+>>> f = open('/Users/lsaiah/test.txt', 'r')
+```
+
+如果文件不存在抛出`IOError`：
+
+```python
+>>> f=open('/Users/lsaiah/notfound.txt', 'r')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/lsaiah/notfound.txt'
+```
+
+文件打开成功，调用`read()`方法一次读取文件全部内容`str`到内存，最后调用`close()`关闭文件：
+
+```python
+>>> f.read()
+'Hello, world!'
+>>> f.close()
+```
+
+因为文件读写可能产生`IOError`，出错后不会调用`f.close()`，保证正确关闭文件，使用`try ... finally`实现：
+
+```python
+try:
+    f = open('/path/to/file', 'r')
+    print(f.read())
+finally:
+    if f:
+        f.close()
+```
+
+由于每次这么写太繁琐，引入`with`语句代码简洁且自动调用`close()`方法：
+
+```python
+with open('/path/to/file', 'r') as f:
+    print(f.read())
+```
+
+调用`read()`一次性读取文件全部内容，如果文件过大内存就爆了，保险起见可以反复调用`read(size)`，每次读取size个字节的内容。电泳`readline()`每次读取一行内容，调用`readlines()`一次读取所以内容按行返回`list`。
+
+```python
+for line in f.readlines():
+    print(line.strip()) # 把末尾的'\n'删掉
+```
+
+**file-like Object**
+
+像`open()`函数返回的这种有个`read()`方法的对象，在Python中统称为file-like Object。file还可以是内存的字节流，网络流，自定义流等等。`StringIO`就是在内存中创建的file-like Object，常用作临时缓冲。
+
+**二进制文件**
+
+默认读取UTF-8编码的文本文件，要读取二进制文件如图片，视频，用`'rb'`模式打开文件：
+
+```python
+>>> f = open('/Users/lsaiah/test.jpg', 'rb')
+>>> f.read()
+b'\xff\xd8\xff\xe1\x00\x18Exif\x00\x00...' # 十六进制表示的字节
+```
+
+**字符编码**
+
+读取非UTF-8编码文本文件，要给`open()`函数传入`encoding`参数，遇到编码不规范的文件可能会遇到`UnicodeDecodeError`，这种情况`open()`函数还接收一个`errors`参数，表示如果遇到编码错误后如何处理。最简单的方式是直接忽略：
+
+```python
+>>> f = open('/Users/lsaiah/gbk.txt', 'r', encoding='gbk')
+>>> f.read()
+'测试'
+>>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk', errors='ignore')
+```
+
+**写文件**
+
+写文件调用`open()`函数时，传入标识符`'w'`或者`'wb'`表示写文本文件或写二进制文件：
+
+```python
+>>> f = open('/Users/lsaiah/test.txt', 'w')
+>>> f.write('Hello, world!')
+>>> f.close()
+```
+
+`write()`不是立刻写入，而是先放到内存中空闲时写入，只有调用`close()`方法才能保证没有写入的数据全部写入磁盘，忘记`close()`可能造成数据丢失，所以还是用`with`语句保险：
+
+```python
+with open('/User/lsaiah/test.txt', 'w') as f:
+    f.write('Hello, world!')
+```
+
+写入特定编码文本文件给`open()`函数传入`encoding`参数。以`w`模式写入文件会直接覆盖，追加要传入参数`a`写入。
+
+| 字符  | 含义                                       |
+| :---- | :----------------------------------------- |
+| `'r'` | 打开阅读（默认）                           |
+| `'w'` | 打开进行写入，先截断文件                   |
+| `'x'` | 打开以进行独占创建，如果文件已经存在则失败 |
+| `'a'` | 打开进行写入，如果存在则追加到文件末尾     |
+| `'b'` | 二进制模式                                 |
+| `'t'` | 文字模式（默认）                           |
+| `'+'` | 开放进行更新（读写）                       |
+
+ **练习**
+
+将本地一个文本文件读为一个str并打印出来，注意文件路径不能用反斜杠“\”，在python中“\”表示转义，需要在路径前加r即保持字符原始值，或者替换为双反斜杠“\ \“，或者替换为正斜杠”/“。
+
+```python
+>>> fpath = 'C:/Users/lsaiah/test.txt'
+>>>
+>>> with open(fpath, 'r') as f:
+...     s = f.read()
+...     print(s)
+...
+hello
+```
+
 
 
 ### StringIO和BytesIO
 
+**StringIO**
+
+StringIO是在内存中读取str。把str写入StringIO，要先创建一个StringIO，然后像文件一样写入即可，`getvalue()`用于获取写入后的str：
+
+```python
+>>> from io import StringIO
+>>> f = StringIO()
+>>> f.write('hello')
+5
+>>> f.write('')
+1
+>>> f.write('world!')
+6
+>>> print(f.getvalue())
+hello world!
+```
+
+要读取StringIO，可以用一个str初始化StringIO，然后像读文件一样读取：
+
+```python
+>>> from io import StringIO
+>>> f = StringIO('Hello!\nHi!\nGoodbye!')
+>>> while True:
+...     s = f.readline()
+...     if s == '':
+...         break
+...     print(s.strip())
+...
+Hello!
+Hi!
+Goodbye!
+```
+
+**BytesIO**
+
+StringIO只能操作str，如果操作二进制需要使用BytesIo。创建一个BytesIO，然后写入一些bytes，经过UTF-8编码的bytes：
+
+```python
+>>> from io import BytesIO
+>>> f = BytesIO()
+>>> f.write('中文'.encode('utf-8'))
+6
+>>> print(f.getvalue())
+b'\xe4\xb8\xad\xe6\x96\x87'
+```
+
+要读取BytesIO和读StringIO类似，初始化，读文件：
+
+```python
+>>> from io import BytesIO
+>>> f = BytesIO(b'\xe4\xb8\xad\xe6\x96\x87')
+>>> f.read()
+b'\xe4\xb8\xad\xe6\x96\x87'
+```
+
+初始化和`write`读取区别：
+
+```python
+f=StringIO('abc')
+f.read() #返回'abc'
+f.read() #返回'' 因为使用过一次read之后指针会发生移动
+f.getvalue() #返回'abc' 因为getvalue不受指针影响
+
+f=StringIO('')
+f.write('abc')
+f.read() #返回'' 因为write已经使指针发生了移动
+f.getvalue() #返回'abc' 因为getvalue不受指针影响
+f.seek(0) #解决方法：用seek将指针归零
+f.read() #返回'abc'
+```
+
+
+
 ### 操作文件和目录
+
+Python内置的`os`模块可以直接调用操作系统提供的接口函数。`os.name`查看操作系统类型，Linux、Unix或Mac OS X是`posix`，Windows是`nt`，获取详细系统信息可以调用`os.uname()`。
+
+```python
+>>> import os
+>>> os.name
+'posix'
+>>> os.uname()
+posix.uname_result(sysname='Linux', nodename='VM-0-16-centos', release='4.18.0-193.6.3.el8_2.x86_64', version='#1 SMP Wed Jun 10 11:09:32 UTC 2020', machine='x86_64')
+```
+
+**环境变量**
+
+操作系统定义的环境变量全部保存在`os.environ`变量中，要获取某个环境变量的值，可以调用`os.environ.get('key')`：
+
+```python
+>>> os.environ
+...
+>>> os.environ.get('PATH')
+'/root/node-v15.5.1-linux-x64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin'
+>>> os.environ.get('x', 'default')
+'default'
+```
+
+**操作文件和目录**
+
+查看，创建，删除目录：
+
+```python
+# 查看当前目录的绝对路径:
+>>> os.path.abspath('.')
+'/Users/lsaiah'
+# 在某个目录下创建一个新目录，首先把新目录的完整路径表示出来:
+>>> os.path.join('/Users/lsaiah', 'testdir')
+'/Users/lsaiah/testdir'
+# 然后创建一个目录:
+>>> os.mkdir('/Users/lsaiah/testdir')
+# 删掉一个目录:
+>>> os.rmdir('/Users/lsaiah/testdir')
+```
+
+合并路径不用拼接字符串，通过`os.path.join()`函数就可以处理不同操作系统的路径分隔符：
+
+```python
+# linux
+part-1/part-2
+# windows
+part-1\part-2
+```
+
+同样拆分路径不用拆字符串，通过`os.path.split()`函数把一个路径拆分为两部分，最后一部分总是目录或文件名，`os.path.splitext()`可以直接得到文件扩展名：
+
+```python
+>>> os.path.split('/Users/lsaiah/testdir/file.txt')
+('/Users/michael/testdir', 'file.txt')
+>>> os.path.splitext('/path/to/file.txt')
+('/path/to/file', '.txt')
+```
+
+合并拆分并不要求目录或文件真实存在，只对字符串操作。操作文件使用下面的函数：
+
+```python
+# 对文件重命名
+>>> os.rename('test.txt', 'test.py')
+# 删掉文件
+>>> os.remove('test.py')
+# 复制文件非操作系统提供，可以通过读写文件复制，或者使用shutil模块提供的copyfile()函数，它是os模块的补充。
+shutil.copyfile(src, dst, *, follow_symlinks=True)
+```
+
+利用python特性过滤文件：
+
+```python
+# 如列出当前目录下的所有目录
+>>> [x for x in os.listdir('.') if os.path.isdir(x)]
+['.ssh', 'node-v15.5.1-linux-x64', '.pip', 'drone', '.forever', '.cache', 'UnblockNeteaseMusic', '.npm']
+# 要列出所有的.py文件：
+>>> [x for x in os.listdir('.') if os.path.isfile(x) and os.path.splitext(x)[1]=='.py']
+['test.py']
+```
+
+**练习**
+
+1. 利用`os`模块编写一个能实现`dir -l`输出的程序。
+
+   ```python
+   #!/usr/bin/env python3
+   # -*- coding: utf-8 -*-
+   
+   from datetime import datetime
+   import os
+   
+   pwd = os.path.abspath('.')
+   
+   print('      Size     Last Modified  Name')
+   print('------------------------------------------------------------')
+   
+   for f in os.listdir(pwd):
+       fsize = os.path.getsize(f)
+       mtime = datetime.fromtimestamp(os.path.getmtime(f)).strftime('%Y-%m-%d %H:%M')
+       flag = '/' if os.path.isdir(f) else ''
+       print('%10d  %s  %s%s' % (fsize, mtime, f, flag))
+   ```
+
+   
+
+2. 编写一个程序，能在当前目录以及当前目录的所有子目录下查找文件名包含指定字符串的文件，并打印出相对路径。
+
+   ```python
+   import os
+   def search(x):
+       for y in os.walk(os.path.abspath('.')):
+           for z in range(len(y[2])):
+               if (y[2][z]).find(x)>=0:
+                   print(os.path.join(y[0],y[2][z]))
+   #
+   import os
+   def main():
+       paths = '.'       # 具体查找路径在此更改
+       os.chdir(paths)   # 查找路径为默认路径可忽略此行
+       keyword = input('请输入要查找的关键字: ').lower()
+       search_file(paths, keyword)
+   def search_file(pat, kwd):
+       all_files = [x for x in os.listdir(pat)]
+       for file in all_files:
+           if kwd in file.lower():
+               print(os.path.join(pat, file))
+       folders = [x for x in os.listdir(pat) if os.path.isdir(x)]
+       for folder in folders:
+           new_path = os.path.join(pat, folder)
+           search_file(new_path, kwd)
+   if __name__ == '__main__':
+       main()
+   #
+   import os
+   def search(path,key):
+       for x in os.listdir(path):
+           #如果是文件，打印
+           if os.path.isfile(os.path.join(path,x)):
+               if key in x:
+                   print(os.path.join(path,x))
+           #如果是目录，递归
+           if os.path.isdir(os.path.join(path,x)):
+               new_path = os.path.join(path,x)
+               search(new_path,key)
+   ```
+
+   
 
 ### 序列化
 
