@@ -6258,6 +6258,154 @@ shutil.copyfile(src, dst, *, follow_symlinks=True)
 
 ### 序列化
 
+程序运行过程中，所有变量都在内存中，一旦程序结束变量所占用的内存就被操作系统全部回收。把变量从内存中变成可存储或可传输的过程称为序列化，在Python中叫pickling，其它语言中被称之为serialization，marshalling，flattening等。序列化之后就可以把内容写入磁盘，或者通过网络传输到别的机器上。反过来把变量内容从序列化的对象重新读到内存里称之为反序列化unpickling。
+
+Python通过`pickle`模块实现序列化，首先把一个对象序列化并写入文件，`pickle.dumps()`方法把任意对象序列化成一个`bytes`：
+
+```python
+>>> import pickle
+>>> d = dict(name = 'Bob', age = 20, score = 88)
+>>> pickle.dumps(d)
+b'\x80\x04\x95$\x00\x00\x00\x00\x00\x00\x00}\x94(\x8c\x04name\x94\x8c\x03Bob\x94
+\x8c\x03age\x94K\x14\x8c\x05score\x94KXu.'
+```
+
+或者用另一个方法`pickle.dump()`直接把对象序列化后写入一个file-like Object：
+
+```python
+>>> f = open('dump.txt', 'wb')
+>>> pickle.dump(d, f)
+>>> f.close()
+```
+
+写入的`dump.txt`文件就是Python保存的对象内部信息。当把对象从磁盘读到内存时，可以先把内容读到一个`bytes`，然后用`pickle.loads()`方法反序列化出对象，也可以直接用`pickle.load()`方法从一个`file-like Object`中直接反序列化出对象。打开另一个Python命令行来反序列化刚才保存的对象：
+
+```python
+>>> f = open('dump.txt', 'rb')
+>>> d = pickle.load(f)
+>>> f.close()
+>>> d
+{'age': 20, 'score': 88, 'name': 'Bob'}
+```
+
+这个变量和原来的变量是完全不相干的对象，只是内容相同。
+
+**JSON**
+
+如果在不同编程语言之间传递对象，就必须把对象序列化成标准格式，如XML，更好的方法是序列化成JSON，因为JSON表示出来就是一个字符串，可以被所有语言读取，也可以方便的存储或传输。JSON不但是标准格式，并且比XML更快。JSON标准规定编码是UTF-8，所以总能正确地将Python的`str`与JSON字符串转换。
+
+JSON表示的对象就是标准的JavaScript语言的对象，JSON和Python内置的数据类型对应如下：
+
+| JSON类型   | Python类型 |
+| :--------- | :--------- |
+| {}         | dict       |
+| []         | list       |
+| "string"   | str        |
+| 1234.56    | int或float |
+| true/false | True/False |
+| null       | None       |
+
+Python内置的`json`模块提供了非常完善的Python对象到JSON格式的转换。把Python对象变成一个JSON：
+
+```python
+>>> import json
+>>> d = dict(name='Bob', age=20, score=88)
+>>> json.dumps(d)
+'{"age": 20, "score": 88, "name": "Bob"}'
+```
+
+`dumps()`方法返回一个`str`，内容就是标准的JSON。类似的，`dump()`方法可以直接把JSON写入一个`file-like Object`。
+
+要把JSON反序列化为Python对象，用`loads()`把JSON字符串反序列化，或者用的`load()`方法从`file-like Object`中读取字符串并反序列化：
+
+```python
+>>> json_str = '{"age": 20, "score": 88, "name": "Bob"}'
+>>> json.loads(json_str)
+{'age': 20, 'score': 88, 'name': 'Bob'}
+```
+
+**JSON进阶**
+
+Python的`dict`对象可以直接序列化成JSON的`{}`，不过一般用`class`表示对象，比如定义`Student`类序列化：
+
+```python
+import json
+
+class Student(object):
+    def __init__(self, name, age, score):
+        self.name = name
+        self.age = age
+        self.score = score
+
+s = Student('Bob', 20, 88)
+print(json.dumps(s))
+```
+
+运行报错：
+
+```python
+>>> import json
+>>>
+>>> class Student(object):
+...     def __init__(self, name, age, score):
+...         self.name = name
+...         self.age = age
+...         self.score = score
+...
+>>> s = Student('Bob', 20, 88)
+>>> print(json.dumps(s))
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "D:\python\lib\json\__init__.py", line 231, in dumps
+    return _default_encoder.encode(obj)
+  File "D:\python\lib\json\encoder.py", line 199, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+  File "D:\python\lib\json\encoder.py", line 257, in iterencode
+    return _iterencode(o, 0)
+  File "D:\python\lib\json\encoder.py", line 179, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type Student is not JSON serializable
+```
+
+错误原因是`Student`对象不是一个可序列化为JSON的对象，查看`dumps()`[方法的参数列表](https://docs.python.org/zh-cn/3/library/json.html#json.dumps)发现除了第一个`obj`参数外，还有可选参数用来定制JSON序列化，前面报错是因为默认情况下，`dumps()`方法不知道如何将`Student`实例变为一个JSON的`{}`对象。可选参数`default`就是把任意一个对象变成一个可序列为JSON的对象，为`Student`专门写一个转换函数`student2dict`传入即可。
+
+```python
+def student2dict(std):
+    return {
+        'name': std.name,
+        'age': std.age,
+        'score': std.score
+    }
+```
+
+这样`Student`实例首先被`student2dict`函数转换为`dict`，然后再被顺利序列化为JSON。
+
+```python
+>>> print(json.dumps(s, default=student2dict))
+{"age": 20, "name": "Bob", "score": 88}
+```
+
+不过下次如果遇到一个`Teacher`类的实例，照样无法序列化成JSON。通常`class`的实例都有一个`__dict__`属性就是一个`dict`用来存储变量，也有少数例外比如定义了`__slots__`的class。所以可以这样写：
+
+```python
+print(json.dumps(s, default=lambda obj: obj.__dict__))
+```
+
+同样如果要把JSON反序列化为一个`Student`对象实例，先用`loads()`方法转换出一个`dict`对象，然后传入的`object_hook`函数负责把`dict`转换为`Student`实例：
+
+```python
+def dict2student(d):
+    return Student(d['name'], d['age'], d['score'])
+```
+
+```python
+>>> json_str = '{"age": 20, "score": 88, "name": "Bob"}'
+>>> print(json.loads(json_str, object_hook=dict2student))
+<__main__.Student object at 0x10cd3c190>
+```
+
+
+
 ## 进程和线程
 
 ## 常用内建模块

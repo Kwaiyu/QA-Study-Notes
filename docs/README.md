@@ -63,7 +63,7 @@
 # 性能测试
  * [Jmeter](/性能测试/Jmeter.md)
  * [Loadrunner](/性能测试/Loadrunner.md)
- * [Locust](/性能测试/Jmeter.md)
+ * [Locust](/性能测试/Locust.md)
  * [ApacheBench](/性能测试/ApacheBench.md)
 
 # 自动化测试
