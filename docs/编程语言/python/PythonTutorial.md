@@ -6404,9 +6404,223 @@ def dict2student(d):
 <__main__.Student object at 0x10cd3c190>
 ```
 
+**练习**
+
+对中文进行JSON序列化，`json.dumps()`提供了一个`ensure_ascii`参数。如果 *ensure_ascii* 是 true （即默认值），输出保证将所有输入的非 ASCII 字符转义。如果 *ensure_ascii* 是 false，这些字符会原样输出。
+
+```python
+import json
+obj = dict(name='小明', age=20)
+s = json.dumps(obj, ensure_ascii=True)
+```
+
 
 
 ## 进程和线程
+
+真正的并行执行多任务只能在多核CPU上实现，单核CPU交替执行速度快感觉像是同时执行。在操作系统上一个任务就启动一个进程Process，子任务就启动线程。每个进程至少有一个线程，多个线程和多进程执行方式一样交替运行。如果要执行多个任务，有三种方式：
+
+1. 多进程模式（启动多个进程，每个进程只有一个线程）
+2. 多线程模式（启动一个进程，在一个进程里启动多个线程）
+3. 多进程+多线程模式（启动多个进程，每个进程启动多个线程）
+
+同时执行多个任务，任务之间没有关联，而是需要相互通信和协调。
+
+### 多进程
+
+Python实现多进程（multiprocessing），在Unix/Linux操作系统提供了一个`fork()`系统调用，普通函数调用一次返回一次，而`fork()`调用一次返回两次，因为操作系统自动把当前进程（父进程）复制了一分（子进程），然后在父进程返回子进程ID，在子进程内返回`0`，一个父进程可以`fork()`出很多子进程，所以父进程要记下每个子进程的ID，子进程调用`getppid()`就可以拿到父进程的ID。
+
+Python的`os`模块封装了常见的系统调用其中就包含`fork()`：
+
+```python
+import os
+print('Process (%s) start...' % os.getpid())
+# Only works on Unix/Linux/Mac:
+pid = os.fork()
+if pid == 0:
+    print('I am child process (%s) and my parent is %s.' % (os.getpid(), os.getppid()))
+else:
+    print('I (%s) just created a child process (%s).' % (os.getpid(), pid))
+```
+
+```python
+Process (1007716) start...
+I (1007716) just created a child process (1007725).
+I am child process (1007725) and my parent is 1007716.
+```
+
+由于Windows没有`fork()`调用无法运行，在Unix/Linux系统中可以调用，而Mac系统是基于BSD（Unix的一种内核）所以也可以调用。常见的Apache服务器就是由父进程监听端口，当有新的http请求时就fork出子进程处理新的http请求。
+
+**multiprocessing**
+
+由于Python是跨平台的，Windows没有`fork()`调用，但可以使用`multiprocessing`模块实现跨平台多进程。`multiprocessing`模块提供了一个`Process`类来代表一个进程对象，创建一个子进程传入一个执行函数和函数的参数，用`start()`方法启动一个子进程，`join()`方法等待子进程结束再继续往下运行，用于进程间同步：
+
+### 多线程
+
+线程是操作系统直接执行的单元，Python线程是Posix Thread，标准库提供两个模块：`_thread`低级模块和`threading`高级模块，高级模块对低级模块进行了封装，启动一个线程就是把一个函数传入并创建`Thread`实例，然后调用`start()`开始执行：
+
+```python
+import time, threading
+
+# 新线程执行的代码:
+def loop():
+    print('thread %s is running...' % threading.current_thread().name)
+    n = 0
+    while n < 5:
+        n = n + 1
+        print('thread %s >>> %s' % (threading.current_thread().name, n))
+        time.sleep(1)
+    print('thread %s ended.' % threading.current_thread().name)
+
+print('thread %s is running...' % threading.current_thread().name)
+t = threading.Thread(target=loop, name='LoopThread')
+t.start()
+t.join()
+print('thread %s ended.' % threading.current_thread().name)
+```
+
+```python
+thread MainThread is running...
+thread LoopThread is running...
+thread LoopThread >>> 1
+thread LoopThread >>> 2
+thread LoopThread >>> 3
+thread LoopThread >>> 4
+thread LoopThread >>> 5
+thread LoopThread ended.
+thread MainThread ended.
+```
+
+任何进程默认启动一个线程称为主线程，主线程又可以启动新的线程，Python的`threading`模块有个`current_thread()`函数，它可以永远返回当前线程的实例，主线程实例的名字叫`MainThread`，子线程的名字在创建时指定，用`LoopThread`命名子线程。名字仅仅在打印时用来显示没有其他意义，如果不起名字Python就自动给线程命名为`Thread-1`，`Thread-2`……
+
+**Lock**
+
+多进程中同一个变量各自在各自的进程中互不影响，而在多线程中，多个线程共享变量，任何一个变量都可以被任何一个线程修改，因此多个线程改一个变量内容就乱了：
+
+```python
+import time, threading
+
+# 假定这是你的银行存款:
+balance = 0
+
+def change_it(n):
+    # 先存后取，结果应该为0:
+    global balance
+    balance = balance + n
+    balance = balance - n
+
+def run_thread(n):
+    for i in range(2000000):
+        change_it(n)
+
+t1 = threading.Thread(target=run_thread, args=(5,))
+t2 = threading.Thread(target=run_thread, args=(8,))
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+print(balance)
+```
+
+定义了一个共享变量`balance`，初始值是0，并且启动了两个线程，先存后取，理论结果应该是0。但是由于线程调度是操作系统决定的，当t1和t2交替执行时，只要循环次数足够多，结果就不一定是0。因为高级语言的一条语句在CPU执行时是若干语句，即使一个简单的语句：
+
+```python
+balance = balance + n
+```
+
+分为两步：
+
+1. 计算`balance + n`存入临时变量中
+2. 将临时变量赋值给`balance`
+
+```python
+x = balance + n
+balance = x
+```
+
+由于x是局部变量，两个线程都有各自的x，正常执行：
+
+```python
+初始值 balance = 0
+
+t1: x1 = balance + 5 # x1 = 0 + 5 = 5
+t1: balance = x1     # balance = 5
+t1: x1 = balance - 5 # x1 = 5 - 5 = 0
+t1: balance = x1     # balance = 0
+
+t2: x2 = balance + 8 # x2 = 0 + 8 = 8
+t2: balance = x2     # balance = 8
+t2: x2 = balance - 8 # x2 = 8 - 8 = 0
+t2: balance = x2     # balance = 0
+    
+结果 balance = 0
+```
+
+但是t1和t2交替运行，如果操作系统以下面的顺序执行t1、t2。修改`balance`需要多条语句，线程可能中断，从而导致多个线程把一个对象的内容改乱了，两个线程一存一取就可能造成余额不足。
+
+```python
+初始值 balance = 0
+
+t1: x1 = balance + 5  # x1 = 0 + 5 = 5
+
+t2: x2 = balance + 8  # x2 = 0 + 8 = 8
+t2: balance = x2      # balance = 8
+
+t1: balance = x1      # balance = 5
+t1: x1 = balance - 5  # x1 = 5 - 5 = 0
+t1: balance = x1      # balance = 0
+
+t2: x2 = balance - 8  # x2 = 0 - 8 = -8
+t2: balance = x2      # balance = -8
+
+结果 balance = -8
+```
+
+所以要确保一个线程修改`balance`时别的线程一定不能改。给`change_it()`上一把锁，当某个线程开始执行`change_it()`时，该线程因为获得了锁因此其它线程不能同时执行，只能等待直到锁被释放后，获得该锁以后才能改。由于锁只有一个，无论多少线程，同一时刻最多只有一个线程持有该锁，所以不会造成修改的冲突。创建一个锁就是通过`threading.Lock()`来实现：
+
+```python
+balance = 0
+lock = threading.Lock()
+def run_thread(n):
+    for i in range(100000):
+        # 先获取锁
+        lock.acquire()
+        try:
+            # 锁了之后只能有一个线程改
+            change_it(n)
+        finally：
+        	# 改完了释放锁，别的线程才能改
+        	lock.release()
+```
+
+多个线程同时执行`lock.acquire()`时，只有一个线程能成功获取锁，其它线程只能继续等待直到获取锁，所以用`try...finally`一定释放锁，避免死线程。锁的好处就是确保某段关键代码只能由一个线程执行，不会被其它线程影响。坏处就是单线程模式，不能并发，效率降低，可能存在多个锁的时候，不同线程不同锁，获取锁的时候可能造成死锁导致线程全部挂起，不能执行无法结束。
+
+**多核CPU**
+
+一个死循环线程会100%占用一个CPU，如果有两个死循环在多核CPU中可能占用200%CPU。N核CPU全部跑满，必须启动N个死循环。
+
+```python
+import threading, multiprocessing
+
+def loop():
+    x = 0
+    while True:
+        x = x ^ 1
+
+for i in range(multiprocessing.cpu_count()):
+    t = threading.Thread(target=loop)
+    t.start()
+```
+
+启动与CPU核心数量相同的N个线程死循环，在4核CPU上可以监控到CPU占用率仅有102%，也就是仅使用了一核。但是用C、C++或Java改写相同的死循环可以把全部核心跑满，4核400%占用。因为Python的解释器有GIL锁（Global Interpreter Lock），每执行100条字节码自动释放GIL锁，所以在Python中只能交替执行，即使100个线程跑在100核CPU上，也只能用到1个核。不能完全利用多核，除非写一个不带GIL的解释器。虽然不能利用多线程实现多核任务，但可以通过多进程实现多核任务，各自进程的GIL锁互不影响。
+
+### ThreadLocal
+
+
+
+### 进程和线程优缺点
+
+### 分布式进程
 
 ## 常用内建模块
 
