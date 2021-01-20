@@ -19,17 +19,17 @@
 
 ## Java
  * [Java教程](编程语言/java/JavaTutorial.md)
+ * [Java正则表达式](编程语言/java/JavaRegularExpression.md)
  * [Java练习](编程语言/java/Exercise.md)
  * [Java数据结构与算法](编程语言/java/JavaDataStructure.md)
- * [Java正则表达式](编程语言/java/JavaRegularExpression.md)
  * [JavaSpring](编程语言/java/JavaSpring.md)
 
 ## Python
- * [Python教程](编程语言/python/PythonTutorial.md)
- * [Python练习](编程语言/python/Exercise.md)
- * [MicroPython](编程语言/python/MicroPython.md)
+ * [Python基础教程](编程语言/python/PythonTutorial01.md)
+ * [Python进阶教程](编程语言/python/PythonTutorial02.md)
  * [Python正则表达式](编程语言/python/PythonRegularExpression.md)
- * [Pycharm](编程语言/python/Pycharm.md)
+ * [MicroPython](编程语言/python/MicroPython.md)
+ * [Python练习](编程语言/python/Exercise.md)
 
 ## Shell
  * [Shell教程](编程语言/Shell.md)
