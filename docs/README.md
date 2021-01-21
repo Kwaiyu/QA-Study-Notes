@@ -30,6 +30,7 @@
  * [Python正则表达式](编程语言/python/PythonRegularExpression.md)
  * [MicroPython](编程语言/python/MicroPython.md)
  * [Python练习](编程语言/python/Exercise.md)
+ * [PyCharm](编程语言/python/Pycharm.md)
 
 ## Shell
  * [Shell教程](编程语言/Shell.md)
