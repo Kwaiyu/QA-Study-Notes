@@ -357,7 +357,7 @@ user=bob
 
 `Counter`是一个简单的计数器，实际上也是`dict`的一个子类，例如统计字符出现的个数（次数）：
 
-```
+```python
 >>> from collections import Counter
 >>> c = Counter()
 >>> for ch in 'programming':
@@ -370,17 +370,487 @@ Counter({'g': 2, 'm': 2, 'r': 2, 'a': 1, 'i': 1, 'o': 1, 'n': 1, 'p': 1})
 Counter({'r': 2, 'o': 2, 'g': 2, 'm': 2, 'l': 2, 'p': 1, 'a': 1, 'i': 1, 'n': 1, 'h': 1, 'e': 1})
 ```
 
-
-
 ### base64
+
+Base64是一种用64个字符来表示任意二进制数据的方法。原理是先准备一个包含64个字符的数组，对二进制数据进行处理，每3个字节一组，一共是3×8=24 bit，划为4组就是64bit。
+
+![](https://qwq.lsaiah.cn/picgo/949444125467040.png)
+
+得到4个数字作为索引，查表获得相应4个字符就是编码后的字符串。所以Base64编码会把3字节的二进制数据编码为4字节的文本数据，长度增加33%。如果二进制数据不是3的倍数最后剩下1或2个字节，用`\x00`字节在末尾补足后在编码末尾加上1个或2个`=`号，表示补了多少字节，解码的时候会自动去掉。
+
+Python内置的`base64`可以直接进行base64的编解码：
+
+```python
+>>> import base64
+>>> base64.b64encode(b'binary\x00string')
+b'YmluYXJ5AHN0cmluZw=='
+>>> base64.b64decode(b'YmluYXJ5AHN0cmluZw==')
+b'binary\x00string'
+```
+
+由于Base64编码后可能出现字符`+`和`/`，在URL中不能直接作为参数，所以还有一种url safe的Base64编码，把`+`和`/`分别变成`-`和`_`：
+
+```python
+>>> base64.b64encode(b'i\xb7\x1d\xfb\xef\xff')
+b'abcd++//'
+>>> base64.urlsafe_b64encode(b'i\xb7\x1d\xfb\xef\xff')
+b'abcd--__'
+>>> base64.urlsafe_b64decode('abcd--__')
+b'i\xb7\x1d\xfb\xef\xff'
+```
+
+Base64是一种通过查表的编码方法，不能用于加密。适用于小段内容的编码，比如数字证书签名、Cookie的内容等。由于`=`字符也可能出现在Base64编码中，在URL、Cookie里面会造成歧义，所以很多Base64编码后会把`=`去掉：
+
+```python
+# 标准Base64:
+'abcd' -> 'YWJjZA=='
+# 自动去掉=:
+'abcd' -> 'YWJjZA'
+```
+
+Base64是把3个字节变为4个字节，所以Base64编码的长度永远是4的倍数，因此需要加上`=`把Base64字符串的长度变为4的倍数，就可以正常解码了。
+
+**练习**
+
+写一个能处理去掉`=`的base64解码函数：
+
+```python
+# -*- coding: utf-8 -*-
+import base64
+def safe_base64_decode(s):
+    # 判断是否是4的整数，不够的在末尾加等号
+    if len(s) % 4 != 0:
+        s = s + bytes('=', encoding='utf-8') * (4 - len(s) % 4)
+    # 解决字符串和bytes类型
+    if not isinstance(s, bytes):
+        s = bytes(s, encoding='utf-8')
+    # 解码 
+    base64_str = base64.urlsafe_b64decode(s)
+    return base64_str
+# 测试:
+assert b'abcd' == safe_base64_decode(b'YWJjZA=='), safe_base64_decode('YWJjZA==')
+assert b'abcd' == safe_base64_decode(b'YWJjZA'), safe_base64_decode('YWJjZA')
+print('ok')
+```
 
 ### struct
 
+在C语言中可以用struct、union来处理字节，以及字节和int，float的转换。在Python中由于`b'str'`可以表示字节，所以字节数组＝二进制str。
+
+要把一个32位无符号整数变成字节（4个长度的`bytes`），配合位运算符这样写：
+
+```python
+>>> n = 10240099
+>>> b1 = (n & 0xff000000) >> 24
+>>> b2 = (n & 0xff0000) >> 16
+>>> b3 = (n & 0xff00) >> 8
+>>> b4 = n & 0xff
+>>> bs = bytes([b1, b2, b3, b4])
+>>> bs
+b'\x00\x9c@c'
+```
+
+非常麻烦，而且不能是浮点数。Python提供了一个`struct`模块来解决`bytes`和其他二进制数据类型的转换。`struct`的`pack`函数把任意数据类型变成`bytes`：
+
+```python
+>>> import struct
+>>> struct.pack('>I', 10240099)
+b'\x00\x9c@c'
+```
+
+第一个参数`'>I'`是处理指令，`>`表示字节顺序是big-endian，也就是网络序，`I`表示4字节无符号整数。后面的参数个数要和处理指令一致。
+
+`unpack`把`bytes`变成相应的数据类型：
+
+```python
+>>> struct.unpack('>IH', b'\xf0\xf0\xf0\xf0\x80\x80')
+(4042322160, 32896)
+```
+
+参数`>IH`表示后面的`bytes`依次变为`I`：4字节无符号整数和`H`：2字节无符号整数。性能要求不高的地方利用`struct`更方便，[数据类型参考文档](https://docs.python.org/zh-cn/3/library/struct.html#format-characters)。
+
+Windows的位图文件（.bmp），用`struct`分析下，读取前30个字节来分析：
+
+```python
+f = open("123.bmp", 'rb')
+s = f.read(0x1e)
+>>> s = b'\x42\x4d\x38\x8c\x0a\x00\x00\x00\x00\x00\x36\x00\x00\x00\x28\x00\x00\x00\x80\x02\x00\x00\x68\x01\x00\x00\x01\x00\x18\x00'
+```
+
+文件头的结构顺序：两个字节：`'BM'`表示Windows位图，`'BA'`表示OS/2位图； 一个4字节整数：表示位图大小； 一个4字节整数：保留位，始终为0； 一个4字节整数：实际图像的偏移量； 一个4字节整数：Header的字节数； 一个4字节整数：图像宽度； 一个4字节整数：图像高度； 一个2字节整数：始终为1； 一个2字节整数：颜色数。
+
+组合起来用`unpack`读取显示`b'B'`、`b'M'`说明是Windows位图，位图大小为640x360，颜色数为24：
+
+```python
+>>> struct.unpack('<ccIIIIIIHH', s)
+(b'B', b'M', 691256, 0, 54, 40, 640, 360, 1, 24)
+```
+
+**练习**
+
+编写一个`bmpinfo.py`，可以检查任意文件是否是位图文件，如果是，打印出图片大小和颜色数。
+
+```python
+# -*- coding: utf-8 -*-
+import base64, struct
+bmp_data = base64.b64decode('Qk1oAgAAAAAAADYAAAAoAAAAHAAAAAoAAAABABAAAAAAADICAAASCwAAEgsAA' +
+'AAAAAAAAAAA/3//f/9//3//f/9//3//f/9//3//f/9//3//f/9//3//f/9//3//f/9//3/' +
+'/f/9//3//f/9//3//f/9/AHwAfAB8AHwAfAB8AHwAfP9//3//fwB8AHwAfAB8/3//f/9/A' +
+'HwAfAB8AHz/f/9//3//f/9//38AfAB8AHwAfAB8AHwAfAB8AHz/f/9//38AfAB8/3//f/9' +
+'//3//fwB8AHz/f/9//3//f/9//3//f/9/AHwAfP9//3//f/9/AHwAfP9//3//fwB8AHz/f' +
+'/9//3//f/9/AHwAfP9//3//f/9//3//f/9//38AfAB8AHwAfAB8AHwAfP9//3//f/9/AHw' +
+'AfP9//3//f/9//38AfAB8/3//f/9//3//f/9//3//fwB8AHwAfAB8AHwAfAB8/3//f/9//' +
+'38AfAB8/3//f/9//3//fwB8AHz/f/9//3//f/9//3//f/9/AHwAfP9//3//f/9/AHwAfP9' +
+'//3//fwB8AHz/f/9/AHz/f/9/AHwAfP9//38AfP9//3//f/9/AHwAfAB8AHwAfAB8AHwAf' +
+'AB8/3//f/9/AHwAfP9//38AfAB8AHwAfAB8AHwAfAB8/3//f/9//38AfAB8AHwAfAB8AHw' +
+'AfAB8/3//f/9/AHwAfAB8AHz/fwB8AHwAfAB8AHwAfAB8AHz/f/9//3//f/9//3//f/9//' +
+'3//f/9//3//f/9//3//f/9//3//f/9//3//f/9//3//f/9//3//f/9//38AAA==')
+def bmp_info(data):
+    result = struct.unpack('<ccIIIIIIHH', bmp_data[:30])
+    if result[0:2] == (b'B', b'M'):
+        return {'width': result[6], 'height': result[7], 'color': result[9]}
+    print('This is not a bmp file!')
+# 测试
+bi = bmp_info(bmp_data)
+assert bi['width'] == 28
+assert bi['height'] == 10
+assert bi['color'] == 16
+print('ok')
+```
+
 ### hashlib
+
+Python的hashlib提供了常见的摘要算法（又称哈希算法，散列算法。通过一个函数把任意长度的数据转换为一个长度固定的数据串，通常用16进制的字符串表示）如MD5，SHA1等。
+
+通过函数`f()`对任意长度的数据`data`计算出固定长度的摘要`digest`，通过`digest`反推`data`非常困难，用于检查原始数据是否被人篡改过。
+
+计算出一个字符串的MD5值：
+
+```python
+import hashlib
+md5 = hashlib.md5()
+md5.update('how to use md5 in python hashlib?'.encode('utf-8'))
+print(md5.hexdigest())
+d26a53750bc40b38b65a520292f69306
+```
+
+如果数据量很大，可以分块多次调用`update()`，计算的结果是一样的：
+
+```python
+import hashlib
+md5 = hashlib.md5()
+md5.update('how to use md5 in '.encode('utf-8'))
+md5.update('python hashlib?'.encode('utf-8'))
+print(md5.hexdigest())
+d26a53750bc40b38b65a520292f69306
+```
+
+MD5是最常见的摘要算法，速度很快，生成128bit字节，通常用32位的16进制字符串表示。另一种SHA1摘要算法：
+
+```python
+import hashlib
+sha1 = hashlib.sha1()
+sha1.update('how to use sha1 in '.encode('utf-8'))
+sha1.update('python hashlib?'.encode('utf-8'))
+print(sha1.hexdigest())
+2c76b57293ce30acef38d98f6046927161b46a44
+```
+
+SHA1的结果是160 bit字节，通常用一个40位的16进制字符串表示。比SHA1更安全的算法是SHA256和SHA512，越安全越慢长度越长。
+
+**摘要算法应用**
+
+用户登录密码在数据库中是以MD5摘要存储的，用户登录时先计算用户输入的明文密码MD5然后和数据库MD5密码对比，如果一致说明密码正确。
+
+**练习**
+
+根据用户输入的口令，计算出存储在数据库中的MD5口令：
+
+```python
+import hashlib
+def calc_md5(password):
+    md5 = hashlib.md5()
+    md5.update(password.encode('utf-8'))
+    return md5.hexdigest()
+```
+
+设计一个验证用户登录的函数，根据用户输入的口令是否正确，返回True或False：
+
+```python
+db = {
+    'lsaiah': 'e10adc3949ba59abbe56e057f20f883e',
+    'bob': '878ef96e86145580c38c87f0410ad153',
+    'alice': '99b1c2188db85afee403b1536010c2c9'
+}
+def login(user, password):
+    md5_password = calc_md5(password)
+    if db[user] == md5_password:
+        return True
+    else:
+        return False
+    
+if __name__ == '__main__':
+    print('主程序开始运行')
+    username = input('请输入您的用户名：')
+    password = input('请输入您的密码')
+    print('您的账号为：'+username)
+    print('您的密码口令为：'+calc_md5(password))
+
+# 测试:
+assert login('lsaiah', '123456')
+assert login('bob', 'abc999')
+assert login('alice', 'alice2008')
+assert not login('lsaiah', '1234567')
+assert not login('bob', '123456')
+assert not login('alice', 'Alice2008')
+print('ok')
+```
+
+对于简单口令可以得到反推表：
+
+```python
+'e10adc3949ba59abbe56e057f20f883e': '123456'
+'21218cca77804d2ba1922c33e0151105': '888888'
+'5f4dcc3b5aa765d61d8327deb882cf99': 'password'
+```
+
+为了加强保护确保存储口令不在彩虹表，通过对原始口令加盐实现：
+
+```python
+def calc_md5(password):
+    return get_md5(password + 'the-Salt')
+```
+
+但是如果用户使用了相同的口令，通过把登录名作为Salt的一部分来计算MD5实现不同用户相同口令得到不同MD5。
+
+**练习**
+
+根据用户输入的登录名和口令模拟用户注册，计算更安全的MD5：
+
+```python
+db = {}
+
+def register(username, password):
+    db[username] = get_md5(password + username + 'the-Salt')
+```
+
+然后根据修改后的MD5算法实现用户登录的验证：
+
+```python
+import hashlib, random
+
+def get_md5(s):
+    return hashlib.md5(s.encode('utf-8')).hexdigest()
+
+class User(object):
+    def __init__(self, username, password):
+        self.username = username
+        self.salt = ''.join([chr(random.randint(48, 122)) for i in range(20)])
+        self.password = get_md5(password + self.salt)
+        
+db = {
+    'lsaiah': User('lsaiah', '123456'),
+    'bob': User('bob', 'abc999'),
+    'alice': User('alice', 'alice2008')
+}
+
+def login(username, password):
+    user = db[username]
+    if user.password == get_md5(password + user.salt)
+    	return True
+    else:
+        return False
+
+# 测试:
+assert login('lsaiah', '123456')
+assert login('bob', 'abc999')
+assert login('alice', 'alice2008')
+assert not login('lsaiah', '1234567')
+assert not login('bob', '123456')
+assert not login('alice', 'Alice2008')
+print('ok')
+```
 
 ### hmac
 
+Hmac算法：Keyed-Hashing for Message Authentication通过一个标准算法，在计算哈希的过程中，把key混入计算。和自定义的加salt算法不同，Hmac算法针对所有哈希算法都通用，无论是MD5还是SHA-1。采用Hmac替代自定义的salt算法，可以使程序算法更标准化也更安全。
+
+Python自带的hmac模块实现了标准的Hmac算法。首先需要准备待计算的原始消息message，随机key，哈希算法，采用MD5：
+
+```python
+>>> import hmac
+>>> message = b'Hello, world!'
+>>> key = b'secret'
+>>> h = hmac.new(key, message, digestmod='MD5')
+>>> # 如果消息很长，可以多次调用h.update(msg)
+>>> h.hexdigest()
+'fa4ee7d173f2d97ee79022d1a7355bcf'
+```
+
+传入的key和message都是`bytes`类型，`str`类型需要首先编码为`bytes`。
+
+**练习**
+
+将上一节的salt改为标准的hmac算法验证用户口令：
+
+```python
+import hmac, random
+
+def hmac_md5(key, s):
+    return hmac.new(key.encode('utf-8'), s.encode('utf-8'), 'MD5').hexdigest()
+
+class User(object):
+    def __init__(self, username, password):
+        self.username = username
+        self.key = ''.join([chr(random.randint(48, 122)) for i in range(20)])
+        self.password = hmac_md5(self.key, password)
+
+db = {
+    'michael': User('michael', '123456'),
+    'bob': User('bob', 'abc999'),
+    'alice': User('alice', 'alice2008')
+}
+
+def login(username, password):
+    user = db[username]
+    if user.password == hmac_md5(user.key, password)
+    	return True
+    else:
+        return False
+
+# 测试:
+assert login('michael', '123456')
+assert login('bob', 'abc999')
+assert login('alice', 'alice2008')
+assert not login('michael', '1234567')
+assert not login('bob', '123456')
+assert not login('alice', 'Alice2008')
+print('ok')
+```
+
 ### itertools
+
+Python内建模块`itertools`提供了非常有用的用于操作迭代对象的函数。`itertools`模块提供的函数返回值不是list，而是`Iterator`，只有用`for`循环迭代的时候才计算。
+
+无限迭代器`count()`：
+
+```python
+>>> import itertools
+>>> natuals = itertools.count(1)
+>>> for n in natuals:
+...    	print(n)
+...
+1
+2
+3
+...
+```
+
+`cycle()`会把传入的一个序列无限重复：
+
+```python
+>>> import itertools
+>>> cs = itertools.cycle('ABC') # 注意字符串也是序列的一种
+>>> for c in cs:
+...     print(c)
+...
+'A'
+'B'
+'C'
+'A'
+'B'
+'C'
+...
+```
+
+`repeat()`负责把一个元素无限重复下去，如果提供第二个参数就可以限定重复次数：
+
+```python
+>>> ns = itertools.repeat('A', 3)
+>>> for n in ns:
+...     print(n)
+...
+A
+A
+A
+```
+
+无限序列虽然可以无限迭代下去，但是通常通过`takewhile()`等函数根据条件判断来截取出一个有限的序列：
+
+```python
+>>> natuals = itertools.count(1)
+>>> ns = itertools.takewhile(lambda x: x <= 10, natuals)
+>>> list(ns)
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+```
+
+`itertools`提供的几个迭代器操作函数更加有用：
+
+**chain()**
+
+把一组迭代对象串联起来，形成一个更大的迭代器：
+
+```python
+>>> for c in itertools.chain('ABC', 'XYZ'):
+...     print(c)
+# 迭代效果：'A' 'B' 'C' 'X' 'Y' 'Z'
+```
+
+**groupby()**
+
+把迭代器中相邻的重复元素挑出来放在一起：
+
+```python
+>>> for key, group in itertools.groupby('AAABBBCCAAA'):
+...     print(key, list(group))
+...
+A ['A', 'A', 'A']
+B ['B', 'B', 'B']
+C ['C', 'C']
+A ['A', 'A', 'A']
+```
+
+实际上挑选规则是通过函数完成的，只要作用于函数的两个元素返回的值相等，这两个元素就被认为是在一组的，而函数返回值作为组的key。如果我们要忽略大小写分组，就可以让元素`'A'`和`'a'`都返回相同的key：
+
+```python
+>>> for key, group in itertools.groupby('AaaBBbcCAAa', lambda c: c.upper()):
+...     print(key, list(group))
+...
+A ['A', 'a', 'a']
+B ['B', 'B', 'b']
+C ['c', 'C']
+A ['A', 'A', 'a']
+```
+
+**练习**
+
+利用Python提供的itertools模块，来计算圆周率这个序列的前N项和：
+
+```python
+import itertools
+def pi(N):
+    ' 计算pi的值 '
+    # step 1: 创建一个奇数序列: 1, 3, 5, 7, 9, ...
+	odd = itertools.count(start=1,step=2)
+    # step 2: 取该序列的前N项: 1, 3, 5, 7, 9, ..., 2*N-1.
+	odd_n = itertools.takewhile(lambda x:x<=2*N-1,odd)
+    # step 3: 添加正负符号并用4除: 4/1, -4/3, 4/5, -4/7, 4/9, ...
+	tmp = map(lambda x: 4 / x if x % 4 == 1 else -4 / x, odd_n)
+    # step 4: 求和:
+    return sum(tmp)
+# 测试:
+print(pi(10))
+print(pi(100))
+print(pi(1000))
+print(pi(10000))
+assert 3.04 < pi(10) < 3.05
+assert 3.13 < pi(100) < 3.14
+assert 3.140 < pi(1000) < 3.141
+assert 3.1414 < pi(10000) < 3.1415
+print('ok')
+```
+
+
 
 ### contextlib
 
