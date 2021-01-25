@@ -850,17 +850,615 @@ assert 3.1414 < pi(10000) < 3.1415
 print('ok')
 ```
 
-
-
 ### contextlib
+
+在Python中，读写文件资源要注意使用完毕后关闭它，使用`try...finally`：
+
+```python
+try:
+    f = open('/path/to/file', 'r')
+    f.read()
+finally:
+    if f:
+        f.close()
+```
+
+Python的`with`语句可以在使用完毕后自动关闭资源：
+
+```python
+with open('/path/to/file', 'r') as f:
+    f.read()
+```
+
+并不是只有`open()`函数返回的fp对象才能使用`with`语句，任何对象只要正确实现了上下文管理就可以使用。实现上下文管理是通过`__enter__`和`__exit__`这两个方法实现的。例如：
+
+```python
+class Query(object):
+    def __init__(self, name):
+        self.name = name
+    def __enter__(self):
+        print('Begin')
+        return self    
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            print('Error')
+        else:
+            print('End')    
+    def query(self):
+        print('Query info about %s...' % self.name)
+```
+
+这样就可以把自己写的资源对象用于`with`语句：
+
+```python
+with Query('Bob') as q:
+    q.query()
+```
+
+**@contextmanager**
+
+编写`__enter__`和`__exit__`仍然很繁琐，因此Python的标准库`contextlib`提供了更简单的写法，上面的代码可以改写如下：
+
+```python
+from contextlib import contextmanager
+
+class Query(object):
+    def __init__(self, name):
+        self.name = name
+    def query(self):
+        print('Query info about %s...' % self.name)
+
+@contextmanager
+def create_query(name):
+    print('Begin')
+    q = Query(name)
+    yield q
+    print('End')
+```
+
+`@contextmanager`这个装饰器decorator接受一个生成器generator，用`yield`语句把`with ... as var`把变量输出出去，`with`语句就可以正常地工作了：
+
+```python
+with create_query('Bob') as q:
+    q.query()
+```
+
+很多时候要在某段代码执行前后自动执行特定代码，也可以用`@contextmanager`实现：
+
+```python
+@contextmanager
+def tag(name):
+    print("<%s>" % name)
+    yield
+    print("</%s>" % name)
+
+with tag("h1"):
+    print("hello")
+    print("world")
+    
+<h1>
+hello
+world
+</h1>
+```
+
+执行顺序是：
+
+1. `with`语句首先执行`yield`之前的语句，因此打印出`<h1>`；
+2. `yield`调用会执行`with`语句内部的所有语句，因此打印出`hello`和`world`；
+3. 最后执行`yield`之后的语句，打印出`</h1>`。
+
+**@closing**
+
+如果一个对象没有实现上下文就不能用于`with`语句，用`closing()`把该对象变为上下文对象。例如用`with`语句使用`urlopen()`：
+
+```python
+from contextlib import closing
+from urllib.request import urlopen
+
+with closing(urlopen('https://www.python.org')) as page:
+    for line in page:
+        print(line)
+```
+
+`closing`也是一个经过`@contextmanager`装饰的生成器generator：
+
+```python
+@contextmanager
+def closing(thing):
+    try:
+        yield thing
+    finally:
+        thing.close()
+```
+
+[IBM参考文献](https://developer.ibm.com/zh/articles/os-cn-pythonwith/)
+
+[文献2](https://www.cnblogs.com/nnnkkk/p/4309275.html)
 
 ### urllib
 
+urllib提供了一系列用于操作url的功能。
+
+**Get**
+
+urllib的`request`模块可以非常方便地抓取URL内容，发送一个GET请求到指定的页面，然后返回HTTP的响应：
+
+```python
+from urllib import request
+
+with request.urlopen('https://www.v2ex.com/api/nodes/show.json?name=python') as f:
+    data = f.read()
+    print('Status:', f.status, f.reason)
+    for k, v in f.getheaders():
+        print('%s: %s' % (k, v))
+    print('Data:', data.decode('utf-8'))
+```
+
+可以看到HTTP响应头和JSON数据：
+
+```http
+Status: 200 OK
+Date: Mon, 25 Jan 2021 05:14:28 GMT
+Content-Type: application/json;charset=UTF-8
+Transfer-Encoding: chunked
+Connection: close
+Set-Cookie: __cfduid=d65b072104474c970efb9a54ab908afc01611551668; expires=Wed, 2
+4-Feb-21 05:14:28 GMT; path=/; domain=.v2ex.com; HttpOnly; SameSite=Lax; Secure
+Vary: Accept-Encoding
+X-Rate-Limit-Remaining: 119
+Etag: W/"aacef407589604583b33be37acde2201ab191176"
+X-Rate-Limit-Reset: 1611543600
+Cache-Control: public, max-age=3600
+X-Rate-Limit-Limit: 120
+Google: XY
+X-Frame-Options: sameorigin
+CF-Cache-Status: HIT
+Age: 2568
+cf-request-id: 07d99010920000eb853e243000000001
+Expect-CT: max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi
+/beacon/expect-ct"
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Server: cloudflare
+CF-RAY: 616f82c74c3ceb85-LAX
+Data: {"avatar_large": "https://cdn.v2ex.com/navatar/8613/985e/90_large.png?m=16
+10084956", "name": "python", "avatar_normal": "https://cdn.v2ex.com/navatar/8613
+/985e/90_normal.png?m=1610084956", "title": "Python", "url": "https://www.v2ex.c
+om/go/python", "topics": 14019, "footer": "", "header": "\u8fd9\u91cc\u8ba8\u8bb
+a\u5404\u79cd Python \u8bed\u8a00\u7f16\u7a0b\u8bdd\u9898\uff0c\u4e5f\u5305\u62e
+c Django\uff0cTornado \u7b49\u6846\u67b6\u7684\u8ba8\u8bba\u3002\u8fd9\u91cc\u66
+2f\u4e00\u4e2a\u80fd\u591f\u5e2e\u52a9\u4f60\u89e3\u51b3\u5b9e\u9645\u95ee\u9898
+\u7684\u5730\u65b9\u3002", "title_alternative": "Python", "avatar_mini": "https:
+//cdn.v2ex.com/navatar/8613/985e/90_mini.png?m=1610084956", "stars": 9436, "alia
+ses": [], "root": false, "id": 90, "parent_node_name": "programming"}
+```
+
+如果模拟浏览器发送GET请求，要使用`Request`对象添加HTTP头，例如模拟iphone6浏览器请求V2EX首页：
+
+```python
+from urllib import request
+
+req = request.Request('https://www.v2ex.com/')
+req.add_header('User-Agent', 'Mozilla/6.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/8.0 Mobile/10A5376e Safari/8536.25')
+with request.urlopen(req) as f:
+    print('Status:', f.status, f.reason)
+    for k, v in f.getheaders():
+        print('%s: %s' % (k, v))
+    print('Data:', f.read().decode('utf-8'))
+```
+
+这样会返回适合iPhone的移动版网页：
+
+```http
+Status: 200 OK
+Date: Mon, 25 Jan 2021 05:37:31 GMT
+Content-Type: text/html; charset=UTF-8
+Transfer-Encoding: chunked
+Connection: close
+Set-Cookie: __cfduid=d1258f26a17af8c2200b24bf2e8bf20391611553051; expires=Wed, 24-Feb-21 05:37:31 GMT; path=/; domain=.v2ex.com; HttpOnly; SameSite=Lax; Secure
+Vary: Accept-Encoding
+Set-Cookie: PB3_SESSION="2|1:0|10:1611553051|11:PB3_SESSION|36:djJleDoyMjEuMjI0LjYyLjM0OjkzMzY3ODcw|cbff87940e8619e0a2a56a8efbfb264fde343dc66974f73a8feef8a533a4ce9c"; expires=Sat, 30 Jan 2021 05:37:31 GMT; httponly; Path=/
+Set-Cookie: V2EX_LANG=zhcn; Path=/
+Google: XY
+X-Frame-Options: sameorigin
+CF-Cache-Status: DYNAMIC
+cf-request-id: 07d9a52aca0000e811c0b01000000001
+Expect-CT: max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Server: cloudflare
+CF-RAY: 616fa48ad99fe811-LAX
+Data: <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta content="True" name="HandheldFriendly">
+<meta name="Referrer" content="unsafe-url">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+...
+<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon-180.png?v=91e795b8b5d9e2cbf2d886c3d4b7d63c">
+...
+</head>
+<body>
+...
+</body>
+...
+</html>
+```
+
+**Post**
+
+POST发送一个请求需要把参数`data`以bytes形式传入，模拟微博登录，先读取登录的邮箱和口令，然后按照weibo.cn的登录页的格式以`username=xxx&password=xxx`的编码传入：
+
+```python
+from urllib import request, parse
+
+print('Login to weibo.cn...')
+email = input('Email: ')
+passwd = input('Password: ')
+login_data = parse.urlencode([
+    ('username', email),
+    ('password', passwd),
+    ('entry', 'mweibo'),
+    ('client_id', ''),
+    ('savestate', '1'),
+    ('ec', ''),
+    ('pagerefer', 'https://passport.weibo.cn/signin/welcome?entry=mweibo&r=http%3A%2F%2Fm.weibo.cn%2F')
+])
+
+req = request.Request('https://passport.weibo.cn/sso/login')
+req.add_header('Origin', 'https://passport.weibo.cn')
+req.add_header('User-Agent', 'Mozilla/6.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/8.0 Mobile/10A5376e Safari/8536.25')
+req.add_header('Referer', 'https://passport.weibo.cn/signin/login?entry=mweibo&res=wel&wm=3349&r=http%3A%2F%2Fm.weibo.cn%2F')
+
+with request.urlopen(req, data=login_data.encode('utf-8')) as f:
+    print('Status:', f.status, f.reason)
+    for k, v in f.getheaders():
+        print('%s: %s' % (k, v))
+    print('Data:', f.read().decode('utf-8'))
+```
+
+登录成功响应如下：
+
+```http
+Status: 200 OK
+Server: nginx/1.6.1
+Date: Mon, 25 Jan 2021 06:11:52 GMT
+Content-Type: text/html
+Transfer-Encoding: chunked
+Connection: close
+Vary: Accept-Encoding
+Cache-Control: no-cache, must-revalidate
+Expires: Sat, 26 Jul 1997 05:00:00 GMT
+Pragma: no-cache
+Access-Control-Allow-Origin: https://passport.weibo.cn
+Access-Control-Allow-Credentials: true
+DPOOL_HEADER: dryad49
+Data: Data: {"retcode":20000000,"msg":"","data":{...,"uid":"1658384301"}}
+// 登录失败
+Data: {"retcode":50011002,"msg":"\u7528\u6237\u540d\u6216\u5bc6\u7801\u9519\u8bef","data":{"errline":1056}}
+```
+
+**Handler**
+
+如果还需要更复杂的控制，比如通过Proxy访问，用`ProxyHandler`来处理：
+
+```python
+proxy_handler = urllib.request.ProxyHandler({'http': 'http://www.example.com:3128/'})
+proxy_auth_handler = urllib.request.ProxyBasicAuthHandler()
+proxy_auth_handler.add_password('realm', 'host', 'username', 'password')
+opener = urllib.request.build_opener(proxy_handler, proxy_auth_handler)
+with opener.open('http://www.example.com/login.html') as f:
+    pass
+```
+
+**练习**
+
+利用urllib读取JSON，然后将JSON解析为Python对象：
+
+```python
+import json
+from urllib import request
+def fetch_data(url):
+    req = request.Request(url)
+    with request.urlopen(req) as f:
+        if not f.status == 200: raise ValueError('请求失败')
+        return json.loads(f.read().decode('utf-8'))
+# 测试
+URL = 'http://www.httpbin.org/get'
+data = fetch_data(URL)
+print(data)
+assert data['url'] == 'http://www.httpbin.org/get'
+print('ok')
+```
+
 ### XML
+
+XML虽然比JSON复杂在Web中应用也少了，但还是有很多地方用，必须了解如何操作XML。
+
+**DOM和SAX**
+
+DOM会把整个XML读入内存解析为树，因此占用内存大解析慢，优点是可以任意遍历树的节点。SAX是流模式边读边解析，占用内存小解析快，缺点是需要自己处理事件。
+
+在Python中使用SAX解析XML，通常需要`start_element`，`end_element`和`char_data`这3个事件函数，当SAX解析器读取到一个节点：
+
+```html
+<a href="/">python</a>
+```
+
+1. start_element事件，在读取`<a href="/">`时；
+2. char_data事件，在读取`python`时；
+3. end_element事件，在读取`</a>`时。
+
+```python
+from xml.parsers.expat import ParserCreate
+
+class DefaultSaxHandler(object):
+    def start_element(self, name, attrs):
+        print('sax:start_element: %s, attrs: %s' % (name, str(attrs)))
+
+    def end_element(self, name):
+        print('sax:end_element: %s' % name)
+
+    def char_data(self, text):
+        print('sax:char_data: %s' % text)
+
+xml = r'''<?xml version="1.0"?>
+<ol>
+    <li><a href="/python">Python</a></li>
+    <li><a href="/ruby">Ruby</a></li>
+</ol>
+'''
+
+handler = DefaultSaxHandler()
+parser = ParserCreate()
+parser.StartElementHandler = handler.start_element
+parser.EndElementHandler = handler.end_element
+parser.CharacterDataHandler = handler.char_data
+parser.Parse(xml)
+```
+
+读取一大段字符串时，`CharacterDataHandler`可能被多次调用，在`EndElementHandler`里面再合并。
+
+生成XML的方法是拼接字符串：
+
+```python
+L = []
+L.append(r'<?xml version="1.0"?>')
+L.append(r'<root>')
+L.append(encode('some & data'))
+L.append(r'</root>')
+return ''.join(L)
+```
+
+**练习**
+
+请利用SAX编写程序解析XML格式的天气预报，获取苏州所有地区当天天气预报信息（地区名：｛当日天气状态：’‘，最高温度：’‘，最低温度｝）：
+
+`http://flash.weather.com.cn/wmaps/xml/suzhou.xml`
+
+```python
+from xml.parsers.expat import ParserCreate  # 引入xml解析模块
+from urllib import request  # 引入URL请求模块
+
+
+class WeatherSaxHandler(object):  # 定义一个天气事件处理器
+    weather = {'city': 1, 'cityname': [], 'forecast': []}  # 初始化城市city和预报信息forecast
+    def start_element(self, name, attrs):  # 定义开始标签处理事件
+        if name == 'suzhou':
+            self.weather['city'] = '：苏州'
+        if name == 'city':  # 获取location信息
+            self.weather['cityname'].append(attrs['cityname'])  # 获取地区名
+            # 获取forecast信息
+            self.weather['forecast'].append({
+                'state': attrs['stateDetailed'],
+                'high': attrs['tem2'],
+                'low': attrs['tem1']
+            })
+
+def parseXml(xml_str):  # 定义xml解析器
+    handler = WeatherSaxHandler()
+    parser = ParserCreate()
+    parser.StartElementHandler = handler.start_element
+    parser.Parse(xml_str)  # 解析xml文本
+    print('City' + handler.weather['city'])
+    for (x, y) in zip(handler.weather['cityname'], handler.weather['forecast']):  # 打印天气信息
+        print('Region：' + x)
+        print(y)
+    return handler.weather
+
+# 测试:
+URL = 'http://flash.weather.com.cn/wmaps/xml/suzhou.xml'
+with request.urlopen(URL, timeout=4) as f:
+    data = f.read()
+result = parseXml(data.decode('utf-8'))
+```
 
 ### HTMLParser
 
+使用`HTMLParser`解析HTML，可以把网页中的文本、图像、视频等解析出来：
+
+```python
+from html.parser import HTMLParser
+
+class MyHTMLParser(HTMLParser):
+    def handle_starttag(self, tag, attrs):
+        print("Encountered a start tag:", tag)
+
+    def handle_endtag(self, tag):
+        print("Encountered an end tag :", tag)
+
+    def handle_data(self, data):
+        print("Encountered some data  :", data)
+
+parser = MyHTMLParser()
+parser.feed('<html><head><title>Test</title></head>'
+            '<body><h1>Parse me!</h1></body></html>')
+```
+
+```
+Encountered a start tag: html
+Encountered a start tag: head
+Encountered a start tag: title
+Encountered some data  : Test
+Encountered an end tag : title
+Encountered an end tag : head
+Encountered a start tag: body
+Encountered a start tag: h1
+Encountered some data  : Parse me!
+Encountered an end tag : h1
+Encountered an end tag : body
+Encountered an end tag : html
+```
+
+`feed()`方法可以多次调用，特殊字符英文表示的`&nbsp;`，数字表示的`&#1234;`。
+
+**练习**
+
+[查看网页源码](https://www.python.org/events/python-events/)，解析HTML，输出会议时间、地点。
+
+```python
+# -*-coding:UTF-8-*-
+from html.parser import HTMLParser
+from urllib.request import Request,urlopen
+import re
+
+def get_data(url):
+   headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.96 Safari/537.36'
+      }
+   req = Request(url, headers=headers)
+   with urlopen(req, timeout=25) as f:
+      data = f.read()
+      print(f'Status: {f.status} {f.reason}')
+      print()
+   return data.decode("utf-8")
+
+class MyHTMLParser(HTMLParser):
+   def __init__(self):
+      super().__init__()
+      self.__parsedata='' # 设置一个空的标志位
+      self.info = []
+
+   def handle_starttag(self, tag, attrs):
+      if ('class', 'event-title') in attrs:
+         self.__parsedata = 'name'  # 通过属性判断如果该标签是我们要找的标签，设置标志位
+      if tag == 'time':
+         self.__parsedata = 'time'
+      if ('class', 'say-no-more') in attrs:
+         self.__parsedata = 'year'
+      if ('class', 'event-location') in attrs:
+         self.__parsedata = 'location'
+
+   def handle_endtag(self, tag):
+      self.__parsedata = ''# 在HTML 标签结束时，把标志位清空
+
+   def handle_data(self, data):
+      if self.__parsedata == 'name':
+         # 通过标志位判断，输出打印标签内容
+         self.info.append(f'会议名称:{data}')
+      if self.__parsedata == 'time':
+         self.info.append(f'会议时间:{data}')
+      if self.__parsedata == 'year':
+         if re.match(r'\s\d{4}', data): # 因为后面还有两组 say-no-more 后面的data却不是年份信息,所以用正则检测一下
+            self.info.append(f'会议年份:{data.strip()}')
+      if self.__parsedata == 'location':
+         self.info.append(f'会议地点:{data} \n')
+
+def main():
+   parser = MyHTMLParser()
+   URL = 'https://www.python.org/events/python-events/'
+   data = get_data(URL)
+   parser.feed(data)
+   for s in parser.info:
+      print(s)
+
+if __name__ == '__main__':
+   main()
+```
+
+```python
+Status: 200 OK
+
+会议名称:BelPy 2021
+会议时间:30 Jan. – 31 Jan. 
+会议年份:2021
+会议地点:Online 
+
+会议名称:PyCascades 2021
+会议时间:19 Feb. – 21 Feb. 
+会议年份:2021
+会议地点:Online 
+
+会议名称:PyCon Cameroon 2021
+会议时间:18 March – 20 March 
+会议年份:2021
+会议地点:Douala, Cameroon 
+
+会议名称: GeoPython 2021
+会议时间:22 April – 23 April 
+会议年份:2021
+会议名称:PyCon US 2021
+会议时间:12 May – 20 May 
+会议年份:2021
+会议地点:Online 
+
+会议名称:PyCon Namibia 2021
+会议时间:18 June – 19 June 
+会议年份:2021
+会议地点:Windhoek, Namibia 
+
+会议名称:Python Pizza New Year's Party
+会议时间:31 Dec.
+会议年份:2020
+会议地点:Online 
+
+会议名称:PyCon Tanzania 2020
+会议时间:14 Dec. – 15 Dec. 
+会议年份:2020
+会议地点:Dar es Salaam, Tanzania 
+```
+
 ## 常用第三方模块
+
+除了内置模块外还可以使用第三方模块[PyPI](https://pypi.org/)
+
+### Pillow
+
+图像处理标准库PIL：Python Imaging Library，仅支持Python2.7。兼容版本叫[Pillow](https://github.com/python-pillow/Pillow)支持最新Python 3.x。[中文文档](https://pillow-cn.readthedocs.io/zh_CN/latest/)
+
+**安装pillow**
+
+```python
+pip install Pillow
+```
+
+**操作图像**
+
+图像缩放：
+
+```python
+from PIL import Image
+# 打开一个jpg图像文件，注意是当前路径:
+im = Image.open('test.jpg')
+# 获得图像尺寸:
+w, h = im.size
+print('Original image size: %sx%s' % (w, h))
+# 缩放到50%:
+im.thumbnail((w//2, h//2))
+print('Resize image to: %sx%s' % (w//2, h//2))
+# 把缩放后的图像用jpeg格式保存:
+im.save('thumbnail.jpg', 'jpeg')
+```
+
+
+
+### requests
+
+### chardet
+
+### psutil
+
+## virtualenv
 
 ## 图形界面
 
