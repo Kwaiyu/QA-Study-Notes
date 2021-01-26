@@ -1424,7 +1424,7 @@ Status: 200 OK
 
 ### Pillow
 
-图像处理标准库PIL：Python Imaging Library，仅支持Python2.7。兼容版本叫[Pillow](https://github.com/python-pillow/Pillow)支持最新Python 3.x。[中文文档](https://pillow-cn.readthedocs.io/zh_CN/latest/)
+图像处理标准库PIL：Python Imaging Library，仅支持Python2.7。兼容版本叫[Pillow](https://github.com/python-pillow/Pillow)支持最新Python 3.x。了解更多强大功能参考[中文文档](https://pillow-cn.readthedocs.io/zh_CN/latest/)
 
 **安装pillow**
 
@@ -1450,17 +1450,728 @@ print('Resize image to: %sx%s' % (w//2, h//2))
 im.save('thumbnail.jpg', 'jpeg')
 ```
 
+还可实现切片、旋转、滤镜、输出文字、调色板等功能。模糊效果也只需几行代码：
 
+```python
+from PIL import Image, ImageFilter
+
+# 打开一个jpg图像文件，注意是当前路径:
+im = Image.open('test.jpg')
+# 应用模糊滤镜:
+im2 = im.filter(ImageFilter.BLUR)
+im2.save('blur.jpg', 'jpeg')
+```
+
+PIL的`ImageDraw`提供了一系列绘图方法可以直接绘图。比如生成字母验证码图片：
+
+```python
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import random
+
+# 随机字母:
+def rndChar():
+    return chr(random.randint(65, 90))
+
+# 随机颜色1:
+def rndColor():
+    return (random.randint(64, 255), random.randint(64, 255), random.randint(64, 255))
+
+# 随机颜色2:
+def rndColor2():
+    return (random.randint(32, 127), random.randint(32, 127), random.randint(32, 127))
+
+# 240 x 60:
+width = 60 * 4
+height = 60
+image = Image.new('RGB', (width, height), (255, 255, 255))
+# 创建Font对象:
+font = ImageFont.truetype('Arial.ttf', 36)
+# 创建Draw对象:
+draw = ImageDraw.Draw(image)
+# 填充每个像素:
+for x in range(width):
+    for y in range(height):
+        draw.point((x, y), fill=rndColor())
+# 输出文字:
+for t in range(4):
+    draw.text((60 * t + 10, 10), rndChar(), font=font, fill=rndColor2())
+# 模糊:
+image = image.filter(ImageFilter.BLUR)
+image.save('code.jpg', 'jpeg')
+```
 
 ### requests
 
+相比urllib模块，requests模块更简单更实用。
+
+**安装requests**
+
+```python
+pip install requests
+```
+
+**Get**
+
+通过Get访问一个页面：
+
+```python
+>>> import requests
+>>> r = requests.get('https://www.douban.com/') # 豆瓣首页
+>>> r.status_code
+200
+>>> r.text
+<!DOCTYPE html>
+...
+</html>
+```
+
+对于带参数的URL，传入一个dict作为`params`参数：
+
+```python
+>>> r = requests.get('https://www.douban.com/search', params={'q': 'python', 'cat': '1001'})
+>>> r.url # 实际请求的URL
+'https://www.douban.com/search?q=python&cat=1001'
+```
+
+requests自动检测编码，可以使用`encoding`属性查看：
+
+```python
+>>> r.encoding
+UTF-8
+```
+
+无论响应是文本还是二进制内容都可以用`content`属性获得`bytes`对象：
+
+```python
+>>> r.content
+b'<!DOCTYPE html>\n<html lang="zh-CN">\n...
+```
+
+对于特定类型的响应例如JSON可直接获取：
+
+```python
+>>> r = requests.get('https://www.v2ex.com/api/topics/hot.json')
+>>> r.json()
+[{'node': {'avatar_large': 'https://cdn.v2ex.com/', 'name': 'beijing',...}]
+```
+
+需要传入HTTP Header时，传入一个dict作为`headers`参数：
+
+```python
+>>> r = requests.get('https://www.douban.com/', headers={'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit'})
+>>> r.text
+'\n\n<!DOCTYPE html>\n<html itemscope itemtype="http://schema.org/WebPage" class
+="ua-mobile ">\n  <head>\n      <meta charset="UTF-8">\n      <title>豆瓣(手机版
+)</title>\n...
+```
+
+**Post**
+
+传入`data`参数作为POST请求的数据：
+
+```python
+>>> r = requests.post('https://accounts.douban.com/login', data={'form_email': 'abc@example.com', 'form_password': '123456'})
+```
+
+requests默认使用`application/x-www-form-urlencoded`对POST数据编码。可直接传入JSON数据：
+
+```python
+params = {'key': 'value'}
+r = requests.post(url, json=params) # 内部自动序列化为JSON
+```
+
+上传文件需要更复杂的编码格式，requests把它简化成`files`参数，使用`'rb'`即二进制模式读取，获取的`bytes`长度才是文件的长度：
+
+```python
+>>> upload_files = {'file': open('report.xls', 'rb')}
+>>> r = requests.post(url, files=upload_files)
+```
+
+把`post()`方法替换为`put()`，`delete()`等，就可以以PUT或DELETE方式请求资源。
+
+除了能轻松获取响应内容外，requests对获取HTTP响应的其他信息也非常简单。例如获取响应头：
+
+```python
+>>> r.headers
+{Content-Type': 'text/html; charset=utf-8', 'Transfer-Encoding': 'chunked', 'Content-Encoding': 'gzip', ...}
+>>> r.headers['Content-Type']
+'text/html; charset=utf-8'
+```
+
+requests对Cookie做了特殊处理，使得我们不必解析Cookie就可以轻松获取指定的Cookie：
+
+```python
+>>> r.cookies['ts']
+'example_cookie_12345'
+```
+
+要在请求中传入Cookie，只需准备一个dict传入`cookies`参数：
+
+```python
+>>> cs = {'token': '12345', 'status': 'working'}
+>>> r = requests.get(url, cookies=cs)
+```
+
+要指定超时，传入以秒为单位的timeout参数：
+
+```python
+>>> r = requests.get(url, timeout=5) # 5秒后超时
+```
+
 ### chardet
+
+Python提供了Unicode表示的`str`和`bytes`两种数据类型，可以通过`encode()`和`decode()`方法转换，但是在不知道编码的情况下对`bytes`做`decode()`不好做。对于未知编码的`bytes`，要把它转换成`str`，需要先猜测编码。chardet第三方库用它来检测编码。
+
+**安装**
+
+```python
+pip install chardet
+```
+
+**使用**
+
+当我们拿到一个`bytes`时，就可以用chardet检测编码。检测出的编码是`ascii`，`confidence`字段表示检测的概率是1.0：
+
+```python
+>>> chardet.detect(b'Hello, world!')
+{'encoding': 'ascii', 'confidence': 1.0, 'language': ''}
+```
+
+检测GBK编码的中文，检测到编码是`GB2312`（GBK是GB2312的超集，两者是同一种编码）检测正确的概率是74%，`language`字段指出的语言是`'Chinese'`：
+
+```python
+>>> data = '离离原上草，一岁一枯荣'.encode('gbk')
+>>> chardet.detect(data)
+{'encoding': 'GB2312', 'confidence': 0.7407407407407407, 'language': 'Chinese'}
+```
+
+检测UTF-8编码：
+
+```python
+>>> data = '离离原上草，一岁一枯荣'.encode('utf-8')
+>>> chardet.detect(data)
+{'encoding': 'utf-8', 'confidence': 0.99, 'language': ''}
+```
+
+日文编码检测：
+
+```python
+>>> data = '最新の主要ニュース'.encode('euc-jp')
+>>> chardet.detect(data)
+{'encoding': 'EUC-JP', 'confidence': 0.99, 'language': 'Japanese'}
+```
+
+用chardet获取到编码后[支持编码列表](https://chardet.readthedocs.io/en/latest/supported-encodings.html)，再转换为`str`，就可以方便后续处理。
 
 ### psutil
 
+用Python来编写脚本简化日常的运维工作是Python的一个重要用途。在Linux下有许多系统命令可以让我们时刻监控系统运行的状态，如`ps`，`top`，`free`等等。要获取这些系统信息，Python可以通过`subprocess`模块调用并获取结果。但这样做很麻烦，尤其是要写很多解析代码。
+
+在Python中获取系统信息的另一个好办法是使用`psutil`这个第三方模块。psutil = process and system utilities，不仅可以通过一两行代码实现系统监控，还可以跨平台使用。
+
+**安装psutil**
+
+```python
+pip install psutil
+```
+
+**获取CPU信息**
+
+```python
+>>> import psutil
+>>> psutil.cpu_count() # CPU逻辑数量
+4
+>>> psutil.cpu_count(logical=False) # CPU物理核心
+2
+# 2说明是双核超线程, 4则是4核非超线程
+```
+
+统计CPU的用户／系统／空闲时间：
+
+```python
+>>> psutil.cpu_times()
+scputimes(user=3440.2120525, system=1163.9234609999985, idle=39970.311018299995, interrupt=264.5620959, dpc=91.9313893)
+```
+
+实现类似`top`命令的CPU使用率，每秒刷新一次累计10次：
+
+```python
+>>> for x in range(10):
+...     print(psutil.cpu_percent(interval=1, percpu=True))
+[4.7, 3.1, 6.3, 0.0]
+[18.7, 20.0, 17.2, 0.0]
+[9.4, 6.1, 6.3, 0.0]
+[1.6, 9.0, 6.3, 0.0]
+[16.9, 7.6, 15.4, 0.0]
+```
+
+**获取内存信息**
+
+使用psutil获取物理内存和交换内存信息，返回字节为单位的整数：
+
+```python
+>>> psutil.virtual_memory()
+svmem(total=12808732672, available=5786382336, percent=54.8, used=7022350336, free=5786382336)
+>>> psutil.swap_memory()
+sswap(total=25615515648, used=8623194112, free=16992321536, percent=33.7, sin=0, sout=0)
+```
+
+**获取磁盘信息**
+
+可以通过psutil获取磁盘分区、磁盘使用率和磁盘IO信息。`opts`中包含`rw`表示可读写，`journaled`表示支持日志：
+
+```python
+>>> psutil.disk_partitions() # 磁盘分区信息
+[sdiskpart(device='C:\\', mountpoint='C:\\', fstype='NTFS', opts='rw,fixed', maxfile=255, maxpath=260), sdiskpart(device='D:\\', mountpoint='D:\\', fstype='NTFS', opts='rw,fixed', maxfile=255, maxpath=260)]
+>>> psutil.disk_usage('/') # 磁盘使用情况
+sdiskusage(total=322122547200, used=124638212096, free=197484335104, percent=38.7)
+>>> psutil.disk_io_counters() # 磁盘IO
+sdiskio(read_count=124293, write_count=172095, read_bytes=4392716800, write_bytes=4837870080, read_time=3279, write_time=325)
+```
+
+**获取网络信息**
+
+psutil可以获取网络接口和网络连接信息：
+
+```python
+>>> psutil.net_io_counters() # 获取网络读写字节／包的个数
+snetio(bytes_sent=30396275, bytes_recv=667421107, packets_sent=312184, packets_recv=578178, errin=0, errout=0, dropin=0, dropout=0)
+>>> psutil.net_if_addrs() # 获取网络接口信息
+{
+  'lo0': [snic(family=<AddressFamily.AF_INET: 2>, address='127.0.0.1', netmask='255.0.0.0'), ...],
+  'en1': [snic(family=<AddressFamily.AF_INET: 2>, address='10.0.1.80', netmask='255.255.255.0'), ...],
+  'en0': [...],
+  'en2': [...],
+  'bridge0': [...]
+}
+>>> psutil.net_if_stats() # 获取网络接口状态
+{
+  'lo0': snicstats(isup=True, duplex=<NicDuplex.NIC_DUPLEX_UNKNOWN: 0>, speed=0, mtu=16384),
+  'en0': snicstats(isup=True, duplex=<NicDuplex.NIC_DUPLEX_UNKNOWN: 0>, speed=0, mtu=1500),
+  'en1': snicstats(...),
+  'en2': snicstats(...),
+  'bridge0': snicstats(...)
+}
+```
+
+使用`net_connections()`获取当前网络连接信息：
+
+```python
+>>> psutil.net_connections()
+Traceback (most recent call last):
+  ...
+PermissionError: [Errno 1] Operation not permitted
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  ...
+psutil.AccessDenied: psutil.AccessDenied (pid=3847)
+```
+
+可能会得到一个`AccessDenied`错误，原因是psutil获取信息也是要走系统接口，而获取网络连接信息需要root权限，这种情况下可以退出Python交互环境，用`sudo`重新启动：
+
+```python
+[root@VM-0-16-centos ~]# sudo python3
+Python 3.6.8 (default, Apr 16 2020, 01:36:27) 
+[GCC 8.3.1 20191121 (Red Hat 8.3.1-5)] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import psutil
+>>> psutil.net_connections()
+[
+    sconn(fd=83, family=<AddressFamily.AF_INET6: 30>, type=1, laddr=addr(ip='::127.0.0.1', port=62911), raddr=addr(ip='::127.0.0.1', port=3306), status='ESTABLISHED', pid=3725),
+    sconn(fd=84, family=<AddressFamily.AF_INET6: 30>, type=1, laddr=addr(ip='::127.0.0.1', port=62905), raddr=addr(ip='::127.0.0.1', port=3306), status='ESTABLISHED', pid=3725),
+    sconn(fd=93, family=<AddressFamily.AF_INET6: 30>, type=1, laddr=addr(ip='::', port=8080), raddr=(), status='LISTEN', pid=3725),
+    sconn(fd=103, family=<AddressFamily.AF_INET6: 30>, type=1, laddr=addr(ip='::127.0.0.1', port=62918), raddr=addr(ip='::127.0.0.1', port=3306), status='ESTABLISHED', pid=3725),
+    sconn(fd=105, family=<AddressFamily.AF_INET6: 30>, type=1, ..., pid=3725),
+    sconn(fd=106, family=<AddressFamily.AF_INET6: 30>, type=1, ..., pid=3725),
+    sconn(fd=107, family=<AddressFamily.AF_INET6: 30>, type=1, ..., pid=3725),
+    ...
+    sconn(fd=27, family=<AddressFamily.AF_INET: 2>, type=2, ..., pid=1)
+]
+```
+
+```python
+import psutil
+
+def show_process():
+    '''列出所有当前正在运行的进程pid-name信息'''
+    for proc in psutil.process_iter():
+        try:
+            pinfo = proc.as_dict(attrs=['pid', 'name'])
+        except psutil.NoSuchProcess:
+            pass
+        else:
+            print(pinfo)
+
+if __name__ == '__main__':
+    show_process()
+```
+
+**获取进程信息**
+
+通过psutil可以获取到所有进程的详细信息，和获取网络信息一样需要root权限：
+
+```python
+>>> psutil.pids() # 所有进程ID
+[3865, 3864, 3863, 3856, 3855, 3853, 3776, ..., 45, 44, 1, 0]
+>>> p = psutil.Process(3776) # 获取指定进程ID=3776，其实就是当前Python交互环境
+>>> p.name() # 进程名称
+'python3.8'
+>>> p.exe() # 进程exe路径
+'/Users/michael/lsaiah/bin/python3.8'
+>>> p.cwd() # 进程工作目录
+'/Users/lsaiah'
+>>> p.cmdline() # 进程启动的命令行
+['python3']
+>>> p.ppid() # 父进程ID
+3765
+>>> p.parent() # 父进程
+<psutil.Process(pid=3765, name='bash') at 4503144040>
+>>> p.children() # 子进程列表
+[]
+>>> p.status() # 进程状态
+'running'
+>>> p.username() # 进程用户名
+'lsaiah'
+>>> p.create_time() # 进程创建时间
+1511052731.120333
+>>> p.terminal() # 进程终端
+'/dev/ttys002'
+>>> p.cpu_times() # 进程使用的CPU时间
+pcputimes(user=0.081150144, system=0.053269812, children_user=0.0, children_system=0.0)
+>>> p.memory_info() # 进程使用的内存
+pmem(rss=8310784, vms=2481725440, pfaults=3207, pageins=18)
+>>> p.open_files() # 进程打开的文件
+[]
+>>> p.connections() # 进程相关网络连接
+[]
+>>> p.num_threads() # 进程的线程数量
+1
+>>> p.threads() # 所有线程信息
+[pthread(id=1, user_time=0.090318, system_time=0.062736)]
+>>> p.environ() # 进程环境变量
+{'SHELL': '/bin/bash', 'PATH': '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:...', 'PWD': '/Users/michael', 'LANG': 'zh_CN.UTF-8', ...}
+>>> p.terminate() # 结束进程
+Terminated: 15 <-- 自己把自己结束了
+```
+
+psutil还提供了一个`test()`函数，可以模拟出`ps`命令的效果：
+
+```python
+[root@VM-0-16-centos ~]# sudo python3
+Python 3.6.8 (default, Apr 16 2020, 01:36:27) 
+[GCC 8.3.1 20191121 (Red Hat 8.3.1-5)] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import psutil
+>>> psutil.test()
+USER         PID  %MEM     VSZ     RSS  NICE STATUS  START   TIME  CMDLINE
+SYSTEM         0   0.0    0.0B   24.0K        runni         26:33  System Idle P
+SYSTEM         4   0.0  124.0K  368.0K    32  runni  08:39  04:53  System
+SYSTEM       312   0.0  556.0K    1.3M    32  runni  08:39  00:00  \SystemRoot\S
+```
+
+psutil还可以获取用户信息、Windows服务等很多有用的系统信息。[参考psutil的官网](https://github.com/giampaolo/psutil)
+
 ## virtualenv
 
+系统安装的Python3只有一个版本，所有第三方的包都会被`pip`安装到Python3的`site-packages`目录下。在多个应用开发中相同的包可能需要不同版本，virtualenv就可以用来为一个应用创建一套隔离的Python运行环境。
+
+首先安装`virtualenv`：
+
+```python
+pip install virtualenv
+```
+
+然后假设要开发一个新项目，需要一套独立的python运行环境。第一步先创建目录：
+
+```shell
+mkdir myproject
+cd myproject/
+```
+
+第二步创建一个独立的Python运行环境，命名为`venv`：
+
+```python
+virtualenv --no-site-packages venv
+Using base prefix '/usr/local/.../Python.framework/Versions/3.4'
+created virtual environment CPython3.8.1.final.0-64 in 1577ms
+  creator CPython3Windows(dest=C:\Users\Administrator.PC-20190504PBOJ\PycharmProjects\myproject\venv, clear=False, no_vcs_ignore=False, global=False)
+  seeder FromAppData(download=False, pip=bundle, setuptools=bundle, wheel=bundle, via=copy, app_data_dir=C:\Users\Administrator.PC-20190504PBOJ\AppData\Local\
+pypa\virtualenv)
+    added seed packages: pip==20.3.3, setuptools==51.3.3, wheel==0.36.2
+  activators BashActivator,BatchActivator,FishActivator,PowerShellActivator,PythonActivator,XonshActivator
+```
+
+版本大于20默认参数`--no-site-packages`表示新的环境不复制第三方包。新的环境在当前目录下的`venv`目录，用`source`进入该环境，windows则直接运行Script文件夹下的activate.bat：
+
+```python
+source venv/bin/activate
+(venv)Mac:myproject michael$
+```
+
+下面正常安装各种第三方包，并运行`python`命令：
+
+```python
+(venv)Mac:myproject michael$ pip install jinja2
+...
+Successfully installed jinja2-2.7.3 markupsafe-0.23
+(venv)Mac:myproject michael$ python myapp.py
+...
+```
+
+在`venv`环境下，用`pip`安装的包都被安装到`venv`这个环境下，系统Python环境不受任何影响。`venv`环境是专门针对`myproject`这个应用创建的。退出当前的`venv`环境，使用`deactivate`命令，windows同理：
+
+```
+(venv)Mac:myproject michael$ deactivate 
+Mac:myproject michael$ 
+```
+
+此时就回到了正常的环境，现在`pip`或`python`均是在系统Python环境下执行。
+
+推荐使用：[pipenv](https://pypi.org/project/pipenv/)，pip + virtualenv 结合体，解决了virtualenvwrapper弊端
+
+会自动帮你创建虚拟环境，以及安装三方库
+
+会自动的记录你的项目依赖的所有三方库
+
+使用 pipfile 和 pipfile.lock取代了requirements.txt
+
 ## 图形界面
+
+Python支持多种图形界面第三方库包含：Tk、wxWidgets、Qt、GTK等等，自带的库是支持Tk的Tkinter。
+
+**Tkinter**
+
+编写的Python代码会调用内置的Tkinter，Tkinter封装了访问Tk的接口；
+
+Tk是一个图形库，支持多个操作系统，使用Tcl语言开发；
+
+Tk会调用操作系统提供的本地GUI接口，完成最终的GUI。
+
+**GUI程序**
+
+```python
+import tkinter as tk
+# 从Frame派生一个Application类，这是所有Widget的父容器:
+class Application(tk.Frame):
+    # Application构造函数，master为窗口的父控件
+    def __init__(self, master=None):
+        # 初始化Application的Frame部分
+        # tk.Frame.__init__(self, master)
+        super().__init__(master)
+        self.master = master
+        # 显示窗口，并使用pack布局
+        self.pack()
+        # 创建控件
+        self.create_widgets()
+
+    def create_widgets(self):
+        # 创建一个按钮
+        self.hi_python = tk.Button(self)
+        self.hi_python["text"] = "Hello World\n(click me)"
+        # 绑定按钮事件
+        self.hi_python["command"] = self.say_hi
+        # 按钮布局
+        self.hi_python.pack(side="top")
+
+        self.quit = tk.Button(self, text="QUIT", fg="red", command=self.master.destroy)
+        self.quit.pack(side="bottom")
+
+    def say_hi(self):
+        print("hi, python!")
+```
+
+在GUI中，每个Button、Label、输入框等，都是一个Widget。Frame则是可以容纳其他Widget的Widget，所有的Widget组合起来就是一棵树。`pack()`方法把Widget加入到父容器中，并实现布局。`pack()`是最简单的布局，`grid()`可以实现更复杂的布局。
+
+在`createWidgets()`方法中，创建一个`Label`和一个`Button`，当Button被点击时触发`self.quit()`使程序退出。
+
+实例化`Application`，并启动消息循环：
+
+```python
+def main():
+    root = tk.Tk()
+    app = Application(master=root)
+    app.master.title('Hello World')    # 设置窗口标题
+    app.mainloop()    # 主消息循环
+
+if __name__ == '__main__':
+    main()
+```
+
+GUI程序的主线程负责监听来自操作系统的消息并依次处理每一条消息。如果消息处理非常耗时，就需要在新线程中处理。
+
+**输入文本**
+
+对上面的GUI程序改进下，加入一个文本框，输入文本点击按钮弹出消息对话框。当用户点击按钮时触发`hello()`，通过`self.nameInput.get()`获得用户输入的文本后，使用`tkMessageBox.showinfo()`可以弹出消息对话框。：
+
+```python
+import tkinter as tk
+# 从Frame派生一个Application类，这是所有Widget的父容器:
+class Application(tk.Frame):
+    # Application构造函数，master为窗口的父控件
+    def __init__(self, master=None):
+        # 初始化Application的Frame部分
+        # tk.Frame.__init__(self, master)
+        super().__init__(master)
+        self.master = master
+        # 显示窗口，并使用pack布局
+        self.pack()
+        # 创建控件
+        self.create_widgets()
+
+    def create_widgets(self):
+        # 创建一个按钮
+        self.hi_python = tk.Button(self)
+        self.hi_python["text"] = "Hello World\n(click me)"
+        # 绑定按钮事件
+        self.hi_python["command"] = self.say_hi
+        # 按钮布局
+        self.hi_python.pack(side="top")
+
+        self.quit = tk.Button(self, text="QUIT", fg="red", command=self.master.destroy)
+        self.quit.pack(side="bottom")
+
+    def say_hi(self):
+        print("hi, python!")
+
+def main():
+    root = tk.Tk()
+    app = Application(master=root)
+    app.master.title('Hello World')    # 设置窗口标题
+    app.mainloop()    # 主消息循环
+
+if __name__ == '__main__':
+    main()
+```
+
+Python内置的Tkinter可以满足基本的GUI程序，如果是非常复杂的GUI程序建议用操作系统原生支持的语言和库来编写。
+
+### 海龟绘图
+
+Python内置了turtle库基本上100%复制了原始的海龟绘图（Turtle Graphics）所有功能。
+
+指挥海龟绘制一个长方形：
+
+```python
+# 导入turtle包的所有内容:
+from turtle import *
+
+# 设置笔刷宽度:
+width(4)
+
+# 前进:
+forward(200)
+# 右转90度:
+right(90)
+
+# 笔刷颜色:
+pencolor('red')
+forward(100)
+right(90)
+
+pencolor('green')
+forward(200)
+right(90)
+
+pencolor('blue')
+forward(100)
+right(90)
+
+# 调用done()使得窗口等待被关闭，否则将立刻关闭窗口:
+done()
+```
+
+可设置笔刷宽度，前进，转向，移动，设置轨迹颜色，绘制完成调用`done()`函数，让窗口进入消息循环等待被关闭，否则会立刻关闭。更多操作请参考[turtle库](https://docs.python.org/3.3/library/turtle.html#turtle-methods)的说明。
+
+`turtle`包本身只是一个绘图库，但是配合Python代码就可以绘制各种复杂的图形。例如通过循环绘制5个五角星：
+
+```python
+from turtle import *
+
+def drawStar(x, y):
+    pu()
+    goto(x, y)
+    pd()
+    # set heading: 0
+    seth(0)
+    for i in range(5):
+        fd(40)
+        rt(144)
+
+for x in range(0, 250, 50):
+    drawStar(x, 0)
+
+done()
+```
+
+使用递归可以绘制出非常复杂的图形。例如绘制一棵分型树：
+
+```python
+from turtle import *
+
+# 设置色彩模式是RGB:
+colormode(255)
+
+lt(90)
+
+lv = 14
+l = 120
+s = 45
+
+width(lv)
+
+# 初始化RGB颜色:
+r = 0
+g = 0
+b = 0
+pencolor(r, g, b)
+
+penup()
+bk(l)
+pendown()
+fd(l)
+
+def draw_tree(l, level):
+    global r, g, b
+    # save the current pen width
+    w = width()
+
+    # narrow the pen width
+    width(w * 3.0 / 4.0)
+    # set color:
+    r = r + 1
+    g = g + 2
+    b = b + 3
+    pencolor(r % 200, g % 200, b % 200)
+
+    l = 3.0 / 4.0 * l
+
+    lt(s)
+    fd(l)
+
+    if level < lv:
+        draw_tree(l, level + 1)
+    bk(l)
+    rt(2 * s)
+    fd(l)
+
+    if level < lv:
+        draw_tree(l, level + 1)
+    bk(l)
+    lt(s)
+
+    # restore the previous pen width
+    width(w)
+
+speed("fastest")
+
+draw_tree(l, 4)
+
+done()
+```
+
+
 
 ## 网络编程
 

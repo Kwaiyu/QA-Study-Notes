@@ -3420,6 +3420,7 @@ def greeting(name):
 
 ```python
 pip install Pillow
+pip --default-timeout=1000 install virtualenv
 ```
 
 当需要安装很多个常用库时，推荐使用[Anaconda](https://www.anaconda.com/)，内置集成了许多非常有用的第三方库。
