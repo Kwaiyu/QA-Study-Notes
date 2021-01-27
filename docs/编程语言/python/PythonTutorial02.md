@@ -2171,11 +2171,266 @@ draw_tree(l, 4)
 done()
 ```
 
-
-
 ## 网络编程
 
+### TCP/IP
+
+[参考网络协议](https://notes.lsaiah.cn/#/%E6%8E%A5%E5%8F%A3%E6%B5%8B%E8%AF%95/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE)
+
+**IP协议**
+
+IP协议在第三层网络层或IP层，该层包括功能强大的 Internet 协议 (Internet Protocol, IP)、地址解析协议 (Address Resolution Protocol, ARP) 和 Internet 控制消息协议 (Internet Control Message Protocol, ICMP)。
+
+IP 协议及其关联的路由协议可能是整个 TCP/IP 套件中最重要的部分。IP 负责以下操作：
+
+- **IP 寻址**－IP 寻址约定是 IP 协议的一部分。[设计 IPv4 寻址方案](https://docs.oracle.com/cd/E19253-01/819-7058/ipplan-5/index.html)介绍了 IPv4 寻址，[IPv6 寻址概述](https://docs.oracle.com/cd/E19253-01/819-7058/ipv6-overview-10/index.html)介绍了 IPv6 寻址。
+- **主机到主机通信**－根据接收系统的 IP 地址，IP 确定包必须采用的路径。
+- **包格式设置**－IP 将包组装到称为**数据报**的单元中。[Internet 层：准备传送包的位置](https://docs.oracle.com/cd/E19253-01/819-7058/ipov-38/index.html)中全面介绍了数据报。
+- **分段**－如果包太大而无法通过网络介质进行传输，则发送系统上的 IP 会将包分为较小的段。然后，接收系统上的 IP 会将这些段重构为原始包。
+
+Oracle Solaris ： 同时支持 IPv4 和 IPv6 寻址格式，这两种格式都在本书中进行了介绍。为避免对 Internet 协议进行寻址时出现混淆，请使用以下约定之一：
+
+- 如果说明中使用了术语 "IP"，则此说明既适用于 IPv4 又适用于 IPv6。
+- 如果说明中使用了术语 "IPv4"，则此说明仅适用于 IPv4。
+- 如果说明中使用了术语 "IPv6"，则此说明仅适用于 IPv6。
+
+**TCP协议**
+
+TCP协议在第四层传输层，通过交换数据接收的确认信息并重新传送丢失的包，可确保包按顺序到达且不会出现错误。这种通信类型称为端对端。此级别的传输层协议栈包括传输控制协议 (Transmission Control Protocol, TCP)、用户数据报协议 (User Datagram Protocol, UDP) 以及流控制传输协议 (Stream Control Transmission Protocol, SCTP)。TCP 和 SCTP 可提供可靠的端对端服务。UDP 则会提供不可靠的数据报服务。
+
+使用 TCP，应用程序可以像通过实际线路连接一样进行相互通信。TCP 发送数据的形式类似于逐个字符进行传送，而不是以独立的包进行发送。这种传输由以下各项组成：
+
+- 起始点，用于打开连接
+- 按字节顺序进行的完整传输
+- 结束点，用于关闭连接。
+
+TCP 会向传送的数据中附加一个头。此头包含许多参数，可帮助发送系统上的进程连接到接收系统上的对等进程。
+
+TCP 通过在发送主机和接收主机之间建立端对端连接，确认包是否已到达其目的地。因此，TCP 被视为一种“可靠的、面向连接的”协议。
+
+### TCP
+
+**客户端**
+
+创建一个基于TCP连接的Socket：
+
+```python
+import socket
+# import ssl
+# 创建一个socket:
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# s = ssl.wrap_socket(socket.socket())
+# 建立连接:
+s.connect(('www.sina.com.cn', 80))
+# s.connect(('www.sina.com.cn', 443))
+```
+
+`socket.AF_INET`指定使用IPv4协议，指定`AF_INET6`使用IPv6，`SOCK_STREAM`指定使用面向流的TCP协议。`connect`参数是一个`tuple`传入域名自动转换到IP地址，传入80端口表示Web服务。其它服务如SMTP服务是`25`端口，FTP服务是`21`端口，端口号小于1024的是Internet标准服务的端口，端口号大于1024的可以任意使用。建立连接后向服务器发送请求，要求返回首页内容：
+
+```python
+s.send(b'GET / HTTP/1.1\r\nHost: www.sina.com.cn\r\nConnection: close\r\n\r\n')
+```
+
+TCP连接创建的是双向通道，双方都可以同时给对方发数据。HTTP协议规定客户端必须先发送请求给服务器，服务器收到后返回数据给客户端。
+
+```python
+# 接收数据:
+buffer = []
+while True:
+    # 每次最多接收1k字节:
+    d = s.recv(1024)
+    if d:
+        buffer.append(d)
+    else:
+        break
+data = b''.join(buffer)
+# 关闭连接:
+s.close()
+```
+
+调用`recv(max)`方法，一次最多接收指定的字节数，在一个while循环中反复接收，直到`recv()`返回空数据表示接收完毕退出循环。接收完数据后调用`close()`方法关闭Socket。
+
+接收到的数据包括HTTP头和网页本身，把HTTP头和网页分离，打印头，网页内容保存到文件：
+
+```python
+header, html = data.split(b'\r\n\r\n', 1)
+# 打印头
+print(header.decode('utf-8'))
+# 把接收的数据写入文件:
+with open('sina.html', 'wb') as f:
+    f.write(html)
+```
+
+**服务器**
+
+服务器会打开固定端口监听，每来一个客户端连接就创建该Socket。由于服务器会有大量来自客户端的连接，通过服务器地址、服务器端口、客户端地址、客户端端口来唯一确定一个Socket区分是哪个客户端绑定的。但是服务器还需要同时响应多个客户端请求，所以每个连接都需要一个新的进程或者新的线程来处理，否则服务器就只能服务一个客户端了。
+
+写一个简单的服务器程序，接收客户端连接，把客户端发来的字符串加上Hello返回：
+
+```python
+import socket, threading, time
+
+# 服务器首先发一条欢迎消息，等待客户端数据，然后加上Hello再发送给客户端。如果客户端发送了exit字符串关闭连接。
+def tcplink(sock, addr):
+    print('Accept new connection from %s:%s...' % addr)
+    sock.send(b'Welcome!')
+    while True:
+        data = sock.recv(1024)
+        time.sleep(1)
+        if not data or data.decode('utf-8') == 'exit':
+            break
+        sock.send(('Hello, %s!' % data.decode('utf-8')).encode('utf-8'))
+    sock.close()
+    print('Connection from %s:%s closed.' % addr)
+
+# 创建一个基于IPv4和TCP协议的Socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# 绑定监听的地址和端口，可以绑到某一块网卡的IP地址上，也可以用0.0.0.0绑定所有网络地址，绑定127.0.0.1表示本机地址。指定端口号小于1024需要管理员权限，这里使用9999端口
+s.bind(('127.0.0.1', 9999))
+# 监听端口，传入的参数指定等待连接的最大数量
+s.listen(5)
+print('Waiting for connection...')
+# 服务器程序永久循环接受来自客户端的连接,accept()会等待并返回一个客户端的连接
+while True:
+    # 接受一个新连接:
+    sock, addr = s.accept()
+    # 创建新线程来处理TCP连接:
+    t = threading.Thread(target=tcplink, args=(sock, addr))
+    t.start()
+# 每个连接都必须创建新线程（或进程）来处理，否则单线程在处理连接的过程中无法接受其他客户端的连接
+```
+
+客户端测试：
+
+```python
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# 建立连接:
+s.connect(('127.0.0.1', 9999))
+# 接收欢迎消息:
+print(s.recv(1024).decode('utf-8'))
+for data in [b'lily',b'tom',b'jim']:
+    # 发送数据:
+    s.send(data)
+    print(s.recv(1024).decode('utf-8'))
+s.send(b'exit')
+s.close()
+```
+
+运行结果：
+
+```python
+# 服务器
+Waiting for connection...
+Accept new connection from 127.0.0.1:55946...
+Connection from 127.0.0.1:55946 closed.
+# 客户端
+Welcome!
+Hello, lily!
+Hello, tom!
+Hello, jim!
+```
+
+### UDP
+
+UDP 可提供数据报传送服务并且不会检验接收主机和发送主机之间的连接。由于 UDP 不需要建立和验证连接，因此发送少量数据的应用程序可使用 UDP。使用UDP协议时知道对方的IP地址和端口号就可以直接发数据包，但不知道是否到达。
+
+UDP服务器需要绑定端口，`SOCK_DGRAM`指定了这个Socket的类型是UDP：
+
+```python
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+# 绑定端口:
+s.bind(('127.0.0.1', 9999))
+```
+
+绑定端口和TCP一样但是不需要调用`listen()`方法，而是直接接收来自任何客户端的数据：
+
+```python
+print('Bind UDP on 9999...')
+while True:
+    # 接收数据:
+    data, addr = s.recvfrom(1024)
+    print('Received from %s:%s.' % addr)
+    s.sendto(b'Hello, %s!' % data, addr)
+```
+
+`recvfrom()`方法返回数据和客户端的地址与端口，这样服务器收到数据后直接调用`sendto()`就可以把数据用UDP发给客户端。因为例子简单省略了多线程。
+
+客户端使用UDP先创建基于UDP的Socket，然后不需要调用`connect()`，直接通过`sendto()`给服务器发数据：
+
+```python
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+for data in [b'lily',b'tom',b'jim']:
+    # 发送数据:
+    s.sendto(data, ('127.0.0.1', 9999))
+    # 接收数据:
+    print(s.recv(1024).decode('utf-8'))
+s.close()
+```
+
+运行结果：
+
+```python
+# 服务器
+Bind UDP on 9999...
+Received from 127.0.0.1:49888.
+Received from 127.0.0.1:49888.
+Received from 127.0.0.1:49888.
+# 客户端
+Hello, lily!
+Hello, tom!
+Hello, jim!
+```
+
+UDP不需要建立连接，绑定UDP端口和TCP端口互不冲突。
+
 ## 电子邮件
+
+MUA：Mail User Agent邮件用户代理
+
+MTA：Mail Transfer Agent邮件传输代理
+
+MDA：Mail Delivery Agent邮件投递代理
+
+1. 发邮件：MUA（SMTP） -> MTA（SMTP） -> MTA（SMTP） -> 若干个MTA（SMTP） -> MDA （POP3或IMAP4）
+2. 收邮件：MDA（POP3或IMAP4） <- MUA（POP3或IMAP4）
+
+### SMTP发送邮件
+
+Python对SMTP支持有`smtplib`和`email`两个模块，`email`负责构造邮件，`smtplib`负责发送邮件。
+
+构造一个纯文本邮件，`MIMEText`对象第一个参数就是邮件正文，第二个参数是MIME的subtype，传入`'plain'`表示纯文本，最终的MIME就是`'text/plain'`，最后用`utf-8`编码保证多语言兼容性：
+
+```python
+from email.mime.text import MIMEText
+msg = MIMEText('hello, send by Python...', 'plain', 'utf-8')
+```
+
+通过SMTP发出去：
+
+```python
+import smtplib
+# 输入Email地址和口令:
+from_addr = input('From: ')
+password = input('Password: ')
+# 输入收件人地址:
+to_addr = input('To: ')
+# 输入SMTP服务器地址:
+smtp_server = input('SMTP server: ')
+
+server = smtplib.SMTP(smtp_server, 25) # SMTP协议默认端口是25
+# 打印出和SMTP服务器交互的所有信息
+server.set_debuglevel(1)
+# 登录SMTP服务器
+server.login(from_addr, password)
+# 发邮件，传入一个list可发多人，msg.as_string()把MIMEText对象变成str
+server.sendmail(from_addr, [to_addr], msg.as_string())
+server.quit()
+```
+
+
+
+### POP3收取邮件
 
 ## 访问数据库
 
