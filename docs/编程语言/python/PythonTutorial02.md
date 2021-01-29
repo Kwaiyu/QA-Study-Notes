@@ -3240,7 +3240,388 @@ class Book(Base):
 
 ## Web开发
 
+1. 静态Web页面：由文本编辑器直接编辑并生成静态的HTML页面，如果要修改Web页面的内容，就需要再次编辑HTML源文件，早期的互联网Web页面就是静态的；
+2. CGI：由于静态Web页面无法与用户交互，比如用户填写了一个注册表单，静态Web页面就无法处理。要处理用户发送的动态数据，出现了Common Gateway Interface，简称CGI，用C/C++编写。
+3. ASP/JSP/PHP：由于Web应用特点是修改频繁，用C/C++这样的低级语言非常不适合Web开发，而脚本语言由于开发效率高，与HTML结合紧密，因此迅速取代了CGI模式。ASP是微软推出的用VBScript脚本编程的Web开发技术，而JSP用Java来编写脚本，PHP本身则是开源的脚本语言。
+4. MVC：为了解决直接用脚本语言嵌入HTML导致的可维护性差的问题，Web应用也引入了Model-View-Controller的模式简化Web开发。ASP发展为ASP.Net，JSP和PHP也有一大堆MVC框架。
+5. 异步开发、新的MVVM前端技术
+
+### HTTP协议
+
+HTTP（HyperText Transfer Protocol）超文本传输协议在TCP/IP协议之上，属于应用层协议。
+
+1. 支持客户/服务器模式简单快速：客户向服务器请求服务时，只需传送请求方法和路径。请求方法常用的有GET、POST。每种方法规定了客户与服务器联系的类型不同。由于HTTP协议简单，使得HTTP服务器的程序规模小，因而通信速度很快。
+2. 灵活：*HTTP允许传输任意类型的数据对象。正在传输的类型由Content-Type加以标记。
+3. 无连接： 无连接的含义是限制每次连接只处理一个请求。服务器处理完客户的请求，并收到客户的应答后，即断开连接。采用这种方式可以节省传输时间。
+4. 无状态： HTTP协议是无状态协议。无状态是指协议对于事务处理没有记忆能力。缺少状态意味着如果后续处理需要前面的信息，则它必须重传，这样可能导致每次连接传送的数据量增大。另一方面，在服务器不需要先前信息时它的应答就较快。
+
+| 请求方法 | 说明                                                 |
+| :------- | :--------------------------------------------------- |
+| GET      | 请求获取Request-URI所标识的资源                      |
+| POST     | 在Request-URI所标识的资源后附加新的数据              |
+| HEAD     | 请求获取由Request-URI所标识的资源的响应消息报头      |
+| PUT      | 请求服务器存储一个资源，并用Request-URI作为其标识    |
+| DELETE   | 请求服务器删除Request-URI所标识的资源                |
+| TRACE    | 请求服务器回送收到的请求信息，主要用于测试或诊断     |
+| CONNECT  | 保留将来使用                                         |
+| OPTIONS  | 请求查询服务器的性能，或者查询与资源相关的选项和需求 |
+
+- 1xx：指示信息--表示请求已接收，继续处理
+- 2xx：成功--表示请求已被成功接收、理解、接受
+- 3xx：重定向--要完成请求必须进行更进一步的操作
+- 4xx：客户端错误--请求有语法错误或请求无法实现
+- 5xx：服务器端错误--服务器未能实现合法的请求
+
+**Get Headers**
+
+```http
+# General
+Request URL: https://notes.lsaiah.cn/
+Request Method: GET
+Status Code: 200 
+Remote Address: 0.0.0.0:443
+Referrer Policy: strict-origin-when-cross-origin
+# Response Headers
+accept-ranges: bytes
+access-control-allow-origin: *
+age: 0
+cache-control: max-age=600
+content-encoding: gzip
+content-length: 7093
+content-type: text/html; charset=utf-8
+date: Fri, 29 Jan 2021 05:35:00 GMT
+etag: W/"60128516-5af4"
+expires: Fri, 29 Jan 2021 05:31:58 GMT
+last-modified: Thu, 28 Jan 2021 09:34:14 GMT
+server: GitHub.com
+vary: Accept-Encoding
+via: 1.1 varnish
+x-cache: MISS
+x-cache-hits: 0
+x-fastly-request-id: cb3c6e8edae88cbf51b4148ba2b91e7dbf491f34
+x-github-request-id: 30B4:1AC1:8E293:96599:60139B75
+x-proxy-cache: MISS
+x-served-by: cache-tyo11974-TYO
+x-timer: S1611898501.651423,VS0,VE184
+# Request Headers
+:authority: notes.lsaiah.cn
+:method: GET
+:path: /
+:scheme: https
+accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+accept-encoding: gzip, deflate, br
+accept-language: zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7
+cache-control: no-cache
+cookie: ...
+pragma: no-cache
+referer: https://notes.lsaiah.cn/
+sec-fetch-dest: document
+sec-fetch-mode: navigate
+sec-fetch-site: same-origin
+sec-fetch-user: ?1
+upgrade-insecure-requests: 1
+user-agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36
+```
+
+**Post Headers**
+
+```http
+# General
+Request URL: https://www.lsaiah.cn/login
+Request Method: POST
+Status Code: 302 
+Remote Address: 0.0.0.0:443
+Referrer Policy: strict-origin-when-cross-origin
+# Response Headers
+accept-ranges: bytes
+access-control-allow-methods: GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH
+access-control-allow-origin: *
+access-control-max-age: 86400
+content-type: text/html; charset=UTF-8
+date: Fri, 29 Jan 2021 05:47:49 GMT
+location: https://www.lsaiah.cn/admin/
+server: marco/2.13
+set-cookie: ...; path=/
+set-cookie: ...; path=/
+via: S.mix-js-czx2-045, V.mix-js-czx2-045, T.61.-, M.ctn-zj-jgh-061
+x-request-id: 32d2846cbaadca653b9a1864e757d478
+x-source: C/302
+# Request Headers
+:authority: www.lsaiah.cn
+:method: POST
+:path: /...
+:scheme: https
+accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+accept-encoding: gzip, deflate, br
+accept-language: zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7
+cache-control: no-cache
+content-length: 79
+content-type: application/x-www-form-urlencoded
+cookie: ...
+origin: https://www.lsaiah.cn
+pragma: no-cache
+referer: https://www.lsaiah.cn/...
+sec-fetch-dest: document
+sec-fetch-mode: navigate
+sec-fetch-site: same-origin
+sec-fetch-user: ?1
+upgrade-insecure-requests: 1
+user-agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36
+# Query String Parameters
+_=16进制字符串
+# Form Data
+name=admin&password=...referer=https...
+```
+
+### HTML+CSS+JavaScript
+
+[w3school](https://www.w3school.com.cn/h.asp)
+
+### WSGI接口
+
+WSGI：Web Server Gateway Interface，实现底层TCP连接，HTTP请求响应接口。
+
+函数`application()`符合WSGI接口处理HTTP请求，接收参数：
+
+- environ：一个包含所有HTTP请求信息的`dict`对象；
+- start_response：一个发送HTTP响应的函数，在函数中调用，接收参数：
+  - HTTP响应码
+  - 一组`list`表示的HTTP Header，每个Header包含两个`str`的`tuple`。
+
+然后返回HTTP响应body，由WSGI服务器调用，Python内置模块wsgiref。
+
+**运行WSGI服务**
+
+Web应用程序WSGI处理函数：
+
+```python
+# hello.py
+def application(environ, start_response):
+    start_response('200 OK', [('Content-Type', 'text/html')])
+    return [b'<h1>Hello, web!</h1>']
+
+# 从environ里读取PATH_INFO显示动态的内容
+def application(environ, start_response):
+    start_response('200 OK', [('Content-Type', 'text/html')])
+    body = '<h1>Hello, %s!</h1>' % (environ['PATH_INFO'][1:] or 'web')
+    return [body.encode('utf-8')]
+# 中文UTF-8解码
+def application(environ, start_response) :
+    print(environ['PATH_INFO'].encode('iso-8859-1').decode('utf8'))
+    start_response('200 OK', [('Content-Type', 'text/html;charset=utf-8')])
+    body = '<h1>Hello, %s!</h1>'%(environ['PATH_INFO'].encode('iso-8859-1').decode('utf8')[1:] or 'web')
+    return [body.encode('utf-8')]
+```
+
+启动WSGI服务器，加载`application()`函数：
+
+```python
+# server.py
+# 从wsgiref模块导入:
+from wsgiref.simple_server import make_server
+# 导入我们自己编写的application函数:
+from hello import application
+
+# 创建一个服务器，IP地址为空，端口是8000，处理函数是application:
+httpd = make_server('', 8000, application)
+print('Serving HTTP on port 8000...')
+# 开始监听HTTP请求:
+httpd.serve_forever()
+```
+
+### Web框架
+
+处理多个不同请求从`environ`变量里取出HTTP请求的信息逐个判断：
+
+```python
+def application(environ, start_response):
+    method = environ['REQUEST_METHOD']
+    path = environ['PATH_INFO']
+    if method=='GET' and path=='/':
+        return handle_home(environ, start_response)
+    if method=='POST' and path='/signin':
+        return handle_signin(environ, start_response)
+    ...
+```
+
+这样写不好维护，用一个函数处理一个URL对WSGI接口进一步抽象。至于URL到函数的映射交给Web框架。[Flask](http://flask.pocoo.org/)编写Web APP比WSGI接口更简单。先安装：
+
+```python
+pip install flask
+```
+
+写一个`app.py`处理3个URL，分别是：
+
+- `GET /`：首页，返回`Home`；
+- `GET /signin`：登录页，显示登录表单；
+- `POST /signin`：处理登录表单，显示登录结果。
+
+同一个URL`/signin`分别有GET和POST两种请求，映射到两个处理函数中。
+
+Flask通过Python的[装饰器](https://www.liaoxuefeng.com/wiki/1016959663602400/1017451662295584)在内部自动地把URL和函数给关联起来：
+
+```python
+from flask import Flask
+from flask import request
+
+app = Flask(__name__)
+
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    return '<h1>Home</h1>'
+
+@app.route('/signin', methods=['GET'])
+def signin_form():
+    return '''<form action="/signin" method="post">
+              <p><input name="username"></p>
+              <p><input name="password" type="password"></p>
+              <p><button type="submit">Sign In</button></p>
+              </form>'''
+
+@app.route('/signin', methods=['POST'])
+def signin():
+    # 需要从request对象读取表单内容：
+    if request.form['username']=='admin' and request.form['password']=='password':
+        return '<h3>Hello, admin!</h3>'
+    return '<h3>Bad username or password.</h3>'
+
+if __name__ == '__main__':
+    app.run()
+```
+
+运行结果：
+
+```python
+ * Serving Flask app "app" (lazy loading)
+ * Environment: production
+   WARNING: Do not use the development server in a production environment.
+   Use a production WSGI server instead.
+ * Debug mode: off
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+127.0.0.1 - - [29/Jan/2021 15:13:40] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [29/Jan/2021 15:13:41] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [29/Jan/2021 15:16:38] "GET /signin HTTP/1.1" 200 -
+127.0.0.1 - - [29/Jan/2021 15:17:59] "POST /signin HTTP/1.1" 200 -
+```
+
+进入首页`http://localhost:5000/`，显示Home；进入登录表单`http://localhost:5000/signin`，如果账号密码和预设（实际去数据库查询比对）一致登录成功，否则登录失败。
+
+常见Python Web框架：
+
+- [Django](https://www.djangoproject.com/)：全能型Web框架；
+- [web.py](http://webpy.org/)：一个小巧的Web框架；
+- [Bottle](http://bottlepy.org/)：和Flask类似的Web框架；
+- [Tornado](http://www.tornadoweb.org/)：Facebook的开源异步Web框架。
+
+### 模板
+
+由于在Python代码中拼大量字符串不现实，所以使用模板，在HTML文档中嵌入变量和指令，传入数据替换后得到最终的HTML。
+
+MVC：Model-View-Controller 模型-视图-控制器
+
+Python处理URL的函数就是C：Controller，Controller负责业务逻辑，比如检查用户名是否存在，取出用户信息等等；
+
+包含变量`{{ name }}`的模板就是V：View，View负责显示逻辑，通过简单地替换一些变量，View最终输出的就是用户看到的HTML。
+
+Model是用来传给View的，View在替换变量的时候就可以从Model中取出相应的数据`dict`。
+
+把输出字符串作为HTML的例子用MVC模式改写：
+
+```python
+from flask import Flask, request, render_template
+
+app = Flask(__name__)
+
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    return render_template('home.html')
+
+@app.route('/signin', methods=['GET'])
+def signin_form():
+    return render_template('form.html')
+
+@app.route('/signin', methods=['POST'])
+def signin():
+    username = request.form['username']
+    password = request.form['password']
+    if username=='admin' and password=='password':
+        return render_template('signin-ok.html', username=username)
+    return render_template('form.html', message='Bad username or password', username=username)
+
+if __name__ == '__main__':
+    app.run()
+```
+
+Flask通过`render_template()`函数实现模板的渲染。渲染模块也有很多种，Flask默认支持的模板是[jinja2](http://jinja.pocoo.org/)，安装jinja2：
+
+```python
+pip install jinja2
+```
+
+开始编写模板`home.html`：
+
+```jinja2
+<html>
+<head>
+  <title>Home</title>
+</head>
+<body>
+  <h1 style="font-style:italic">Home</h1>
+</body>
+</html>
+```
+
+登录模板`form.html`：
+
+```jinja2
+<html>
+<head>
+  <title>Please Sign In</title>
+</head>
+<body>
+  {% if message %}
+  <p style="color:red">{{ message }}</p>
+  {% endif %}
+  <form action="/signin" method="post">
+    <legend>Please sign in:</legend>
+    <p><input name="username" placeholder="Username" value="{{ username }}"></p>
+    <p><input name="password" placeholder="Password" type="password"></p>
+    <p><button type="submit">Sign In</button></p>
+  </form>
+</body>
+</html>
+```
+
+登录成功模板`signin-ok.html`：
+
+```jinja2
+<html>
+<head>
+  <title>Welcome, {{ username }}</title>
+</head>
+<body>
+  <p>Welcome, {{ username }}!</p>
+</body>
+</html>
+```
+
+登录失败在`form.html`做判断重用模板。把所有模板放在`templates`目录下，和`app.py`在同级目录下，启动`app.py`。这样就把HTML代码和Python代码分离了，而且每次改完模板刷新就有效果。在Jinja2模板中，用`{{ name }}`表示一个需要替换的变量，需要循环、条件判断等指令语句用`{% ... %}`表示指令，如循环输出页码：
+
+```jinja2
+{% for i in page_list %}
+    <a href="/page/{{ i }}">{{ i }}</a>
+{% endfor %}
+```
+
+除了Jinja2，常见的模板还有：
+
+- [Mako](http://www.makotemplates.org/)：用`<% ... %>`和`${xxx}`的一个模板；
+- [Cheetah](http://www.cheetahtemplate.org/)：也是用`<% ... %>`和`${xxx}`的一个模板；
+- [Django](https://www.djangoproject.com/)：Django是一站式框架，内置一个用`{% ... %}`和`{{ xxx }}`的模板。
+
 ## 异步IO
+
+
 
 ### 协程
 
