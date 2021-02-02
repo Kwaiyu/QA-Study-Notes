@@ -3621,16 +3621,105 @@ pip install jinja2
 
 ## 异步IO
 
+在一个线程中，CPU等待IO完成才继续进行称为同步IO，一个IO阻塞导致当前线程挂起无法继续执行，多线程多进程解决了并发问题但有上限且切换开销大性能下降。另一种解决办法是异步IO，执行耗时的IO操作只发指令不等待结果继续下一个任务，当耗时IO完成后会得到通知。
 
+同步IO：
+
+```python
+do_some_code()
+f = open('/path/to/file', 'r')
+r = f.read() # <== 线程停在此处等待IO操作结果
+# IO操作完成后线程才能继续执行:
+do_some_code(r)
+```
+
+异步IO模型需要一个消息循环，主线程不断地重复读取消息-处理消息的过程：
+
+```python
+loop = get_event_loop()
+while True:
+    event = loop.get_event()
+    process_event(event)
+```
 
 ### 协程
 
-线程和进程的操作是由程序触发系统接口，最后的执行者是系统，它本质上是操作系统提供的功能。而协程的操作则是程序员指定的，在python中通过yield，人为的实现并发处理。
+线程和进程的操作是由程序触发系统接口，本质上是操作系统提供的功能。而协程的操作则是程序员指定的，在python中通过yield人为的实现并发处理。
 
-协程存在的意义：对于多线程应用，CPU通过切片的方式来切换线程间的执行，线程切换时需要耗时。协程，则只使用一个线程，分解一个线程成为多个“微线程”，在一个线程中规定某个代码块的执行顺序。
+协程存在的意义：对于多线程应用，CPU通过切片的方式来切换线程间的执行，线程切换时需要耗时。协程只使用一个线程，分解一个线程成为多个微线程（Coroutine），在一个线程中规定某个代码块的执行顺序，子程序调用总是一个入口一个返回顺序明确，而协程调用在执行过程中可能内部中断转而执行别的子程序再返回中断位置继续执行。协程比多线程执行效率高，没有锁机制。
 
-协程的适用场景：当程序中存在大量不需要CPU的操作时（IO）。
-常用第三方模块gevent和greenlet。（本质上，gevent是对greenlet的高级封装，因此一般用它就行，这是一个相当高效的模块。）
+```python
+def A():
+    print('1')
+    print('2')
+    print('3')
+
+def B():
+    print('x')
+    print('y')
+    print('z')
+# 可能结果    
+12xy3z
+```
+
+Python协程是generator实现的，不但可以通过`for`循环来迭代，还可以不断调用`next()`函数获取由`yield`语句返回的下一个值。`yield`不但可以返回一个值，还可以接收调用者发出的参数。
+
+传统生产者-消费者模型是一个线程写消息，一个线程取消息，通过锁机制控制队列和等待，不小心就可能死锁。改用协程，生产者生产消息后，通过`yield`跳转到消费者开始执行，待消费者执行完毕后，切换回生产者继续生产，效率极高：
+
+```python
+def consumer():
+    r = ''
+    while True:
+        n = yield r
+        if not n:
+            return
+        print('[CONSUMER] Consuming %s...' % n)
+        r = '200 OK'
+
+def produce(c):
+    c.send(None)
+    n = 0
+    while n < 5:
+        n = n + 1
+        print('[PRODUCER] Producing %s...' % n)
+        r = c.send(n)
+        print('[PRODUCER] Consumer return: %s' % r)
+    c.close()
+
+c = consumer()
+produce(c)
+
+# 执行结果：
+[PRODUCER] Producing 1...
+[CONSUMER] Consuming 1...
+[PRODUCER] Consumer return: 200 OK
+[PRODUCER] Producing 2...
+[CONSUMER] Consuming 2...
+[PRODUCER] Consumer return: 200 OK
+[PRODUCER] Producing 3...
+[CONSUMER] Consuming 3...
+[PRODUCER] Consumer return: 200 OK
+[PRODUCER] Producing 4...
+[CONSUMER] Consuming 4...
+[PRODUCER] Consumer return: 200 OK
+[PRODUCER] Producing 5...
+[CONSUMER] Consuming 5...
+[PRODUCER] Consumer return: 200 OK
+```
+
+`consumer`函数是一个`generator`，把一个`consumer`传入`produce`后：
+
+1. 首先调用`c.send(None)`启动生成器；
+2. 然后一旦生产了东西，通过`c.send(n)`切换到`consumer`执行；
+3. `consumer`通过`yield`拿到消息，处理，又通过`yield`把结果传回；
+4. `produce`拿到`consumer`处理的结果，继续生产下一条消息；
+5. `produce`决定不生产了，通过`c.close()`关闭`consumer`，整个过程结束。
+
+整个流程无锁，由一个线程执行，`produce`和`consumer`协作完成任务，所以称为协程而非线程的抢占式多任务。
+
+协程的适用场景：当程序中存在大量不需要CPU的操作时（IO）
+
+常用第三方模块gevent和greenlet（本质上，gevent是对greenlet的高级封装）
 
 **greenlet**
 
@@ -3677,8 +3766,162 @@ gevent.joinall([
 ])
 ```
 
-### asyncio
+### asyncio(<3.5)
+
+`asyncio`标准库模型就是一个消息循环，直接获取一个`EventLoop`的引用，把需要执行的协程扔到`EventLoop`中执行就实现了异步IO。
+
+```python
+import asyncio
+
+@asyncio.coroutine
+def hello():
+    print("Hello world!")
+    # 异步调用asyncio.sleep(1):
+    r = yield from asyncio.sleep(1)
+    print("Hello again!")
+
+# 获取EventLoop:
+loop = asyncio.get_event_loop()
+# 执行coroutine
+loop.run_until_complete(hello())
+loop.close()
+```
+
+`@asyncio.coroutine`把一个generator标记为coroutine类型，然后把这个`coroutine`扔到`EventLoop`中执行。
+
+`hello()`先打印出`Hello world!`，然后`yield from`调用另一个`generator`。由于`asyncio.sleep()`也是一个`coroutine`，所以线程不会等待`asyncio.sleep()`，而是直接中断并执行下一个消息循环。当`asyncio.sleep()`返回时，线程就可以从`yield from`拿到返回值（此处是`None`）接着执行下一行语句。
+
+把`asyncio.sleep(1)`看成是一个耗时1秒的IO操作，期间主线程并未等待，而是去执行`EventLoop`中其他可以执行的`coroutine`实现了并发执行。
 
 ### async/await
 
+用Task封装两个`coroutine`（从Python3.5开始引入新的语法async和await）：
+
+```python
+import threading
+import asyncio
+
+async def hello():
+    print('Hello world! (%s)' % threading.currentThread())
+    await asyncio.sleep(1)
+    print('Hello again! (%s)' % threading.currentThread())
+
+loop = asyncio.get_event_loop()
+tasks = [hello(), hello()]
+loop.run_until_complete(asyncio.wait(tasks))
+loop.close()
+
+# 执行结果：
+Hello world! (<_MainThread(MainThread, started 5064)>)
+Hello world! (<_MainThread(MainThread, started 5064)>)
+暂停约1秒继续输出：
+Hello again! (<_MainThread(MainThread, started 5064)>)
+Hello again! (<_MainThread(MainThread, started 5064)>)
+```
+
+两个`coroutine`是由同一个线程并发执行的，把`asyncio.sleep()`换成真正的IO操作就可以实现同线程协程并发。用`async`和`await`异步协程网络连接获取sina，sohu和163的网站：
+
+```python
+import asyncio
+
+async def wget(host):
+    print('wget {}'.format(host))
+    # 创建 TCP 客户端并连接服务器，或者说创建一个 TCP 连接对象
+    # open_connection 接收两个参数：主机和端口号
+    # connect 是协程，这步仅是创建协程对象，立即返回，不阻塞
+    connect = asyncio.open_connection(host, 80)
+    # await 运行协程连接服务器，这步是阻塞操作，释放 CPU
+    # 连接创建成功后，asyncio.open_connection 方法的返回值就是读写对象
+    # 读写对象分别为 StreamReader 和 StreamWriter 实例
+    # 它们也是协程对象，底层调用 socket 模块的 send 和 recv 方法实现读写
+    reader, writer = await connect
+    # header 是发送给服务器的消息，意为获取页面的 header 信息
+    # 这个格式是固定的，见下图
+    header = 'GET / HTTP/1.0\r\nHost: {}\r\n\r\n'.format(host)
+    # 给服务器发消息，注意消息是二进制的
+    writer.write(header.encode())
+    # 这是一个与底层 IO 输入缓冲区交互的流量控制方法
+    # 当缓冲区达到上限时，drain() 阻塞，待到缓冲区回落到下限时，写操作恢复
+    # 当不需要等待时，drain() 会立即返回，例如上面的消息内容较少，不会阻塞
+    # 这就是一个控制消息的数据量的控制阀
+    await writer.drain()
+    # 给服务器发送消息后，就等着读取服务器返回来的消息
+    while True:
+        # 读取数据是阻塞操作，释放 CPU
+        # reader 相当于一个水盆，服务器发来的数据是水流
+        # readline 表示读取一行，以 \n 作为换行符
+        # 如果在出现 \n 之前，数据流中出现 EOF（End Of File 文件结束符）也会返回
+        # 相当于出现 \n 或 EOF 时，拧上水龙头，line 就是这盆水
+        line = await reader.readline()
+        # 数据接收完毕，会返回空字符串 \r\n ，退出 while 循环，结束数据接收
+        if line.decode() == '\r\n':
+            break
+        # 接收的数据是二进制数据，转换为 UTF-8 格式并打印
+        # rstrip 方法删掉字符串的结尾处的空白字符，也就是 \n
+        print('{} header > {}'.format(host, line.decode().rstrip()))
+    writer.close()   # 关闭数据流，可以省略
+
+host_list = ['www.baidu.com', 'www.douban.com', 'zhihu.com']   # 主机列表
+loop = asyncio.get_event_loop()                             # 事件循环
+tasks = asyncio.wait([wget(host) for host in host_list])    # 任务收集器
+loop.run_until_complete(tasks)                              # 阻塞运行任务
+loop.close()
+```
+
+执行结果：
+
+```python
+wget www.sohu.com...
+wget www.sina.com.cn...
+wget www.163.com...
+www.sina.com.cn header > HTTP/1.1 302 Found
+www.sohu.com header > HTTP/1.1 307 Temporary Redirect
+www.163.com header > HTTP/1.1 301 Moved Permanently
+```
+
 ### aiohttp
+
+把`asyncio`用在服务器端单线程+`coroutine`实现多并发TCP、UDP、SSL等协议。`aiohttp`则是基于`asyncio`实现的HTTP框架。安装：
+
+```python
+pip install aiohttp
+```
+
+编写一个HTTP服务器，分别处理以下URL：
+
+- `/` - 首页返回`b'<h1>Index</h1>'`；
+- `/hello/{name}` - 根据URL参数返回文本`hello, %s!`。
+
+`aiohttp`的初始化函数`init()`也是一个`coroutine`，`loop.create_server()`则利用`asyncio`创建TCP服务：
+
+```python
+import asyncio
+
+from aiohttp import web
+
+routes = web.RouteTableDef()
+@routes.get('/')
+async def index(request):
+    await asyncio.sleep(0.5)
+    return web.Response(body=b'<h1>Index</h1>',headers={'content-type': 'text/html', 'charset': 'utf-8'})
+
+@routes.get('/hello')
+async def hello(request):
+    await asyncio.sleep(0.5)
+    text = '<h1>hello, %s!</h1>' % request.match_info['name']
+    return web.Response(body=text.encode('utf-8'),headers={'content-type': 'text/html', 'charset': 'utf-8'})
+
+async def init(loop):
+    app = web.Application()
+    app.add_routes(routes)
+    app.router.add_route('GET', '/', index)
+    app.router.add_route('GET', '/hello/{name}', hello)
+    # web.run_app(app,host='127.0.0.1',port=8000)
+    srv = await loop.create_server(app._make_handler(), '127.0.0.1', 8000)
+    print('Server started at http://127.0.0.1:8000...')
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(init(loop))
+loop.run_forever()
+```
+
