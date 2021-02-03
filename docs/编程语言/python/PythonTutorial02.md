@@ -3917,7 +3917,11 @@ async def init(loop):
     app.router.add_route('GET', '/', index)
     app.router.add_route('GET', '/hello/{name}', hello)
     # web.run_app(app,host='127.0.0.1',port=8000)
-    srv = await loop.create_server(app._make_handler(), '127.0.0.1', 8000)
+    # srv = await loop.create_server(app._make_handler(), '127.0.0.1', 8000)
+    # srv = await loop.create_server(app.make_handler(), '127.0.0.1', 8000)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    srv = await loop.create_server(runner.server, '127.0.0.1', 8000)
     print('Server started at http://127.0.0.1:8000...')
 
 loop = asyncio.get_event_loop()
