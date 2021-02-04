@@ -6819,7 +6819,7 @@ for i in range(multiprocessing.cpu_count()):
     t.start()
 ```
 
-启动与CPU核心数量相同的N个线程死循环，在4核CPU上可以监控到CPU占用率仅有102%，也就是仅使用了一核。但是用C、C++或Java改写相同的死循环可以把全部核心跑满，4核400%占用。因为Python的解释器有GIL锁（Global Interpreter Lock），每执行100条字节码自动释放GIL锁，所以在Python中只能交替执行，即使100个线程跑在100核CPU上，也只能用到1个核。不能完全利用多核，除非写一个不带GIL的解释器。虽然不能利用多线程实现多核任务，但可以通过多进程实现多核任务，各自进程的GIL锁互不影响。
+启动与CPU核心数量相同的N个线程死循环，在4核CPU上可以监控到CPU占用率仅有102%，也就是仅使用了一核。但是用C、C++或Java改写相同的死循环可以把全部核心跑满，4核400%占用。因为Python的解释器有GIL锁（Global Interpreter Lock），每执行100条字节码自动释放GIL锁，所以在Python中只能交替执行，即使100个线程跑在100核CPU上，也只能用到1个核。不能完全利用多核，除非使用**Ctypes**绕过GIL。虽然不能利用多线程实现多核任务，但可以通过多进程**MultiProcess**实现多核任务，各自进程的GIL锁互不影响。或者使用协程。
 
 ### ThreadLocal
 
