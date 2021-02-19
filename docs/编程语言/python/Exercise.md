@@ -384,14 +384,11 @@ class Comment(Model):
 数据库的测试：
 
 ```python
-# https://www.liaoxuefeng.com/wiki/1177760294764384
-# 这里对我们前面写的进行测试， 看看能不能工作
 # 安装好 MySQL 后， 第一步：从开始菜单打开 'MySQL Notifier 1.1.8' ，并在任务栏中开启它
 # 第二步：开始菜单打开 'MySQL 5.6 Command Line Client' ，并输入安装时你设置的 root 密码
 # 输密码的时候不会显示密码，你只管输，然后回车
 # 第三步：把下面注释的代码复制到 SQL 命令行里，然后回车
 # 这里初始化了一个名为 moe 的数据库表
-'''
 -- schema.sql
 drop database if exists moe;
 drop user if exists 'www-data'@'localhost';
@@ -435,16 +432,16 @@ create table comments (
     key `idx_created_at` (`created_at`),
     primary key (`id`)
 ) engine=innodb default charset=utf8;
-'''
+# 如果表数量很多，可以从Model对象直接通过脚本自动生成sql脚本
+mysql -u root -p < schema.sql
 
-# 第四步：把下面这部分代码放在 python 里跑 （直接跑我这个 test_sql.py 也行）
+# 第四步：数据访问
 import www.orm
 import asyncio
 from www.models import User, Blog, Comment
-# 这部分源码来自 https://aodabo.tech/blog/001546713871394a2814d2c180b4e6f8d30c62a3eaf218a000
-async def test(loop):                      # *** 注意此处的密码填自己设的密码 ***
+async def test(loop):                      # *** 填自己设的密码 ***
     await www.orm.create_pool(loop=loop, user='root', password='369874125', db='moe')
-                                           # *** 注意此处的密码填自己设的密码 ***
+                                           # *** 填自己设的密码 ***
     u = User(name='Test', email='test@qq.com', passwd='1234567890', image='about:blank')
     await u.save()
     ## 网友指出添加到数据库后需要关闭连接池，否则会报错 RuntimeError: Event loop is closed

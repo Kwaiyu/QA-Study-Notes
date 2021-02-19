@@ -72,6 +72,7 @@
  * [Appium](/自动化测试/Appium.md)
  * [UIAutomator](/自动化测试/UIAutomator.md)
  * [HttpRunner](/自动化测试/HttpRunner.md)
+ * [Postman+Newman](/自动化测试/Postman+Newman.md)
 
 # 安全测试
  * XSS跨站脚本
