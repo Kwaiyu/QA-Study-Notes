@@ -1,5 +1,3 @@
-## 实战
-
 ### 搭建开发环境
 
 ```python
@@ -28,6 +26,127 @@ async def init(loop):
     runner = web.AppRunner(app)
     await runner.setup()
     srv = await loop.create_server(runner.server, '127.0.0.1', 9000)
+    logging.info('server started at http://127.0.0.1:9000...')
+    return srv
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(init(loop))
+loop.run_forever()
+```
+
+```python
+# app.py
+import logging; logging.basicConfig(level=logging.INFO)
+
+import asyncio, os, json, time
+from datetime import datetime
+
+from aiohttp import web
+from jinja2 import Environment, FileSystemLoader
+
+import www.orm
+from www.coroweb import add_routes, add_static
+
+def init_jinja2(app, **kw):
+    logging.info('init jinja2...')
+    options = dict(
+        autoescape = kw.get('autoescape', True),
+        block_start_string = kw.get('block_start_string', '{%'),
+        block_end_string = kw.get('block_end_string', '%}'),
+        variable_start_string = kw.get('variable_start_string', '{{'),
+        variable_end_string = kw.get('variable_end_string', '}}'),
+        auto_reload = kw.get('auto_reload', True)
+    )
+    path = kw.get('path', None)
+    if path is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+    logging.info('set jinja2 template path: %s' % path)
+    env = Environment(loader=FileSystemLoader(path), **options)
+    filters = kw.get('filters', None)
+    if filters is not None:
+        for name, f in filters.items():
+            env.filters[name] = f
+    app['__templating__'] = env
+
+async def logger_factory(app, handler):
+    async def logger(request):
+        logging.info('Request: %s %s' % (request.method, request.path))
+        # await asyncio.sleep(0.3)
+        return (await handler(request))
+    return logger
+
+async def data_factory(app, handler):
+    async def parse_data(request):
+        if request.method == 'POST':
+            if request.content_type.startswith('application/json'):
+                request.__data__ = await request.json()
+                logging.info('request json: %s' % str(request.__data__))
+            elif request.content_type.startswith('application/x-www-form-urlencoded'):
+                request.__data__ = await request.post()
+                logging.info('request form: %s' % str(request.__data__))
+        return (await handler(request))
+    return parse_data
+
+async def response_factory(app, handler):
+    async def response(request):
+        logging.info('Response handler...')
+        r = await handler(request)
+        if isinstance(r, web.StreamResponse):
+            return r
+        if isinstance(r, bytes):
+            resp = web.Response(body=r)
+            resp.content_type = 'application/octet-stream'
+            return resp
+        if isinstance(r, str):
+            if r.startswith('redirect:'):
+                return web.HTTPFound(r[9:])
+            resp = web.Response(body=r.encode('utf-8'))
+            resp.content_type = 'text/html;charset=utf-8'
+            return resp
+        if isinstance(r, dict):
+            template = r.get('__template__')
+            if template is None:
+                resp = web.Response(body=json.dumps(r, ensure_ascii=False, default=lambda o: o.__dict__).encode('utf-8'))
+                resp.content_type = 'application/json;charset=utf-8'
+                return resp
+            else:
+                resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
+                resp.content_type = 'text/html;charset=utf-8'
+                return resp
+        if isinstance(r, int) and r >= 100 and r < 600:
+            return web.Response(r)
+        if isinstance(r, tuple) and len(r) == 2:
+            t, m = r
+            if isinstance(t, int) and t >= 100 and t < 600:
+                return web.Response(t, str(m))
+        # default:
+        resp = web.Response(body=str(r).encode('utf-8'))
+        resp.content_type = 'text/plain;charset=utf-8'
+        return resp
+    return response
+
+def datetime_filter(t):
+    delta = int(time.time() - t)
+    if delta < 60:
+        return u'1分钟前'
+    if delta < 3600:
+        return u'%s分钟前' % (delta // 60)
+    if delta < 86400:
+        return u'%s小时前' % (delta // 3600)
+    if delta < 604800:
+        return u'%s天前' % (delta // 86400)
+    dt = datetime.fromtimestamp(t)
+    return u'%s年%s月%s日' % (dt.year, dt.month, dt.day)
+
+async def init(loop):
+    await www.orm.create_pool(loop=loop, host='127.0.0.1', port=3306, user='root', password='asd', db='awesome')
+    app = web.Application(loop=loop, middlewares=[
+        logger_factory, response_factory
+    ])
+    init_jinja2(app, filters=dict(datetime=datetime_filter))
+    add_routes(app, 'handlers')
+    add_static(app)
+    srv = await loop.create_server(app.make_handler(), '127.0.0.1', 9000)
     logging.info('server started at http://127.0.0.1:9000...')
     return srv
 
@@ -341,7 +460,7 @@ import time, uuid
 from www.orm import Model, StringField, BooleanField, FloatField, TextField
 
 def next_id():
-    # uuid.uuid4() 可以生成一个随机的 UUID ，目的是区别不同事务（大概）
+    # uuid.uuid4() 可以生成一个随机的 UUID ，目的是区别不同事务
     # hex 可以把自身返回为一个16进制整数，所以这个函数就是生成各种 id ，里面还包含时间
     return '%015d%s000' % (int(time.time() * 1000), uuid.uuid4().hex)
 
@@ -381,22 +500,56 @@ class Comment(Model):
     created_at = FloatField(default=time.time)
 ```
 
-数据库的测试：
+Mysql server配置文件：
+
+```ini
+# For advice on how to change settings please see
+# http://dev.mysql.com/doc/refman/5.6/en/server-configuration-defaults.html
+# *** DO NOT EDIT THIS FILE. It's a template which will be copied to the
+# *** default location during install, and will be replaced if you
+# *** upgrade to a newer version of MySQL.
+[client]
+# 设置mysql客户端默认字符集
+default-character-set=utf8
+
+[mysqld]
+# Remove leading # and set to the amount of RAM for the most important data
+# cache in MySQL. Start at 70% of total RAM for dedicated server, else 10%.
+# innodb_buffer_pool_size = 128M
+
+# Remove leading # to turn on a very important data integrity option: logging
+# changes to the binary log between backups.
+# log_bin
+
+# These are commonly set, remove the # and set as required.
+basedir = C:\\Program Files\\MySQL\\MySQL Server 5.6
+# datadir = .....
+port = 3306
+max_connections=20
+character-set-server=utf8
+default-storage-engine=INNODB
+# server_id = .....
+
+# Remove leading # to set options mainly useful for reporting servers.
+# The server defaults are faster for transactions and fast SELECTs.
+# Adjust sizes as needed, experiment to find the optimal values.
+# join_buffer_size = 128M
+# sort_buffer_size = 2M
+# read_rnd_buffer_size = 2M 
+
+sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES 
+```
+
+初始化数据库表：
 
 ```python
-# 安装好 MySQL 后， 第一步：从开始菜单打开 'MySQL Notifier 1.1.8' ，并在任务栏中开启它
-# 第二步：开始菜单打开 'MySQL 5.6 Command Line Client' ，并输入安装时你设置的 root 密码
-# 输密码的时候不会显示密码，你只管输，然后回车
-# 第三步：把下面注释的代码复制到 SQL 命令行里，然后回车
-# 这里初始化了一个名为 moe 的数据库表
 -- schema.sql
-drop database if exists moe;
-drop user if exists 'www-data'@'localhost';
-create database moe;
-use moe;
-create user 'www-data'@'localhost' identified by 'www-data';
-alter user 'www-data'@'localhost' identified with mysql_native_password by 'www-data';
-grant select, insert, update, delete on moe.* to 'www-data'@'localhost';
+
+drop database if exists awesome;
+create database awesome;
+use awesome;
+grant select, insert, update, delete on awesome.* to 'www-data'@'localhost' identified by 'www-data';
+
 create table users (
     `id` varchar(50) not null,
     `email` varchar(50) not null,
@@ -409,6 +562,7 @@ create table users (
     key `idx_created_at` (`created_at`),
     primary key (`id`)
 ) engine=innodb default charset=utf8;
+
 create table blogs (
     `id` varchar(50) not null,
     `user_id` varchar(50) not null,
@@ -421,6 +575,7 @@ create table blogs (
     key `idx_created_at` (`created_at`),
     primary key (`id`)
 ) engine=innodb default charset=utf8;
+
 create table comments (
     `id` varchar(50) not null,
     `blog_id` varchar(50) not null,
@@ -432,37 +587,318 @@ create table comments (
     key `idx_created_at` (`created_at`),
     primary key (`id`)
 ) engine=innodb default charset=utf8;
-# 如果表数量很多，可以从Model对象直接通过脚本自动生成sql脚本
-mysql -u root -p < schema.sql
-
-# 第四步：数据访问
-import www.orm
-import asyncio
-from www.models import User, Blog, Comment
-async def test(loop):                      # *** 填自己设的密码 ***
-    await www.orm.create_pool(loop=loop, user='root', password='369874125', db='moe')
-                                           # *** 填自己设的密码 ***
-    u = User(name='Test', email='test@qq.com', passwd='1234567890', image='about:blank')
-    await u.save()
-    ## 网友指出添加到数据库后需要关闭连接池，否则会报错 RuntimeError: Event loop is closed
-    www.orm.__pool.close()
-    await www.orm.__pool.wait_closed()
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(test(loop))
-    loop.close()
-
-# 第五步：在 sql 命令行里输入 'SELECT * FROM users;'  然后回车（别漏了分号）
-# 显示 test@qq.com 代表测试成功了
 ```
 
+数据库访问：
 
+```python
+# import www.orm
+# import asyncio
+# from www.models import User, Blog, Comment
+#
+# async def test(loop):
+#     await www.orm.create_pool(loop=loop, user='root', password='asdasd', db='awesome')
+#     u = User(name='Test', email='test@qq.com', passwd='1234567890', image='about:blank')
+#     await u.save()
+#     www.orm.__pool.close()
+#     await www.orm.__pool.wait_closed()
+# if __name__ == '__main__':
+#     loop = asyncio.get_event_loop()
+#     loop.run_until_complete(test(loop))
+#     loop.close()
+
+import asyncio
+import www.orm as orm
+from www.models import User, Blog, Comment
+loop = asyncio.get_event_loop()
+async def test():
+    await orm.create_pool(user='root', password='asdasd', db='awesome', loop=loop)
+    u = User(name='Test', email='test@example.com', passwd='1234567890', image='about:blank')
+    await u.save()
+loop.run_until_complete(test())
+```
 
 ### 编写Web框架
 
+从使用者的角度来说`aiohttp`相对比较底层，编写一个URL的处理函数第一步用`@asyncio.coroutine`装饰的函数：
+
+```python
+@asyncio.coroutine
+def handle_url_xxx(request):
+    pass
+```
+
+第二步，传入的参数需要自己从`request`中获取：
+
+```python
+url_param = request.match_info['key']
+query_params = parse_qs(request.query_string)
+```
+
+最后，需要自己构造`Response`对象：
+
+```python
+text = render('template', data)
+return web.Response(text.encode('utf-8'))
+```
+
+这些重复的工作可以由框架完成。例如，处理带参数的URL`/blog/{id}`可以这么写：
+
+```python
+@get('/blog/{id}')
+def get_blog(id):
+    pass
+```
+
+处理`query_string`参数可以通过关键字参数`**kw`或者命名关键字参数接收：
+
+```python
+@get('/api/comments')
+def api_comments(*, page='1'):
+    pass
+```
+
+对于函数的返回值，不一定是`web.Response`对象，可以是`str`、`bytes`或`dict`。如果希望渲染模板，我们可以这么返回一个`dict`：
+
+```python
+return {
+    '__template__': 'index.html',
+    'data': '...'
+}
+```
+
+因此Web框架的设计是完全从使用者出发，目的是让使用者编写尽可能少的代码。编写简单的函数而非引入`request`和`web.Response`还有一个额外的好处就是可以单独测试，否则需要模拟一个`request`才能测试。
+
+#### @get和@post
+
+要把一个函数映射为一个URL处理函数，我们先定义`@get()`：
+
+```python
+def get(path):
+    '''
+    Define decorator @get('/path')
+    '''
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            return func(*args, **kw)
+        wrapper.__method__ = 'GET'
+        wrapper.__route__ = path
+        return wrapper
+    return decorator
+```
+
+这样，一个函数通过`@get()`的装饰就附带了URL信息。`@post`与`@get`定义类似。
+
+#### 定义RequestHandler
+
+URL处理函数不一定是一个`coroutine`，因此我们用`RequestHandler()`来封装一个URL处理函数。
+
+`RequestHandler`是一个类，由于定义了`__call__()`方法，因此可以将其实例视为函数。
+
+`RequestHandler`目的就是从URL函数中分析其需要接收的参数，从`request`中获取必要的参数，调用URL函数，然后把结果转换为`web.Response`对象，这样，就完全符合`aiohttp`框架的要求：
+
+```python
+class RequestHandler(object):
+
+    def __init__(self, app, fn):
+        self._app = app
+        self._func = fn
+        ...
+
+    @asyncio.coroutine
+    def __call__(self, request):
+        kw = ... 获取参数
+        r = yield from self._func(**kw)
+        return r
+```
+
+再编写一个`add_route`函数，用来注册一个URL处理函数：
+
+```python
+def add_route(app, fn):
+    method = getattr(fn, '__method__', None)
+    path = getattr(fn, '__route__', None)
+    if path is None or method is None:
+        raise ValueError('@get or @post not defined in %s.' % str(fn))
+    if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn):
+        fn = asyncio.coroutine(fn)
+    logging.info('add route %s %s => %s(%s)' % (method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
+    app.router.add_route(method, path, RequestHandler(app, fn))
+```
+
+最后一步，把很多次`add_route()`注册的调用：
+
+```python
+add_route(app, handles.index)
+add_route(app, handles.blog)
+add_route(app, handles.create_comment)
+...
+```
+
+变成自动扫描：
+
+```python
+# 自动把handler模块的所有符合条件的函数注册了:
+add_routes(app, 'handlers')
+```
+
+`add_routes()`定义如下：
+
+```python
+def add_routes(app, module_name):
+    n = module_name.rfind('.')
+    if n == (-1):
+        mod = __import__(module_name, globals(), locals())
+    else:
+        name = module_name[n+1:]
+        mod = getattr(__import__(module_name[:n], globals(), locals(), [name]), name)
+    for attr in dir(mod):
+        if attr.startswith('_'):
+            continue
+        fn = getattr(mod, attr)
+        if callable(fn):
+            method = getattr(fn, '__method__', None)
+            path = getattr(fn, '__route__', None)
+            if method and path:
+                add_route(app, fn)
+```
+
+最后，在`app.py`中加入`middleware`、`jinja2`模板和自注册的支持：
+
+```python
+app = web.Application(loop=loop, middlewares=[
+    logger_factory, response_factory
+])
+init_jinja2(app, filters=dict(datetime=datetime_filter))
+add_routes(app, 'handlers')
+add_static(app)
+```
+
+#### middleware
+
+`middleware`是一种拦截器，一个URL在被某个函数处理前，可以经过一系列的`middleware`的处理。
+
+一个`middleware`可以改变URL的输入、输出，甚至可以决定不继续处理而直接返回。middleware的用处就在于把通用的功能从每个URL处理函数中拿出来，集中放到一个地方。例如，一个记录URL日志的`logger`可以简单定义如下：
+
+```python
+@asyncio.coroutine
+def logger_factory(app, handler):
+    @asyncio.coroutine
+    def logger(request):
+        # 记录日志:
+        logging.info('Request: %s %s' % (request.method, request.path))
+        # 继续处理请求:
+        return (yield from handler(request))
+    return logger
+```
+
+而`response`这个`middleware`把返回值转换为`web.Response`对象再返回，以保证满足`aiohttp`的要求：
+
+```python
+@asyncio.coroutine
+def response_factory(app, handler):
+    @asyncio.coroutine
+    def response(request):
+        # 结果:
+        r = yield from handler(request)
+        if isinstance(r, web.StreamResponse):
+            return r
+        if isinstance(r, bytes):
+            resp = web.Response(body=r)
+            resp.content_type = 'application/octet-stream'
+            return resp
+        if isinstance(r, str):
+            resp = web.Response(body=r.encode('utf-8'))
+            resp.content_type = 'text/html;charset=utf-8'
+            return resp
+        if isinstance(r, dict):
+            ...
+```
+
+有了这些基础设施就可以专注地往`handlers`模块不断添加URL处理函数了，提高了开发效率。
+
+### 编写配置文件
+
+通常一个Web App在运行时都需要读取配置文件，比如数据库的用户名口令等，在不同的环境中运行时，Web App可以通过读取不同的配置文件来获得正确的配置。由于Python本身语法简单，完全可以直接用Python源代码来实现配置，不需要再解析一个单独的`.properties`或者`.yaml`等配置文件。配置文件命名为`config_default.py`：
+
+```python
+configs = {
+    'db': {
+        'host': '127.0.0.1',
+        'port': 3306,
+        'user': 'www-data',
+        'password': 'www-data',
+        'database': 'awesome'
+    },
+    'session': {
+        'secret': 'AwEsOmE'
+    }
+}
+```
+
+如果要部署到生产环境服务器时，更好的方法是编写一个`config_override.py`用来覆盖某些默认设置：
+
+```python
+configs = {
+    'db': {
+        'host': '192.168.0.100'
+    }
+}
+```
+
+为了简化读取配置文件可以把所有配置读取到统一的`config.py`中：
+
+```python
+configs = config_default.configs
+try:
+    import config_override
+    configs = merge(configs, config_override.configs)
+except ImportError:
+    pass
+```
+
 ### 编写MVC
 
+有了ORM框架，WEB框架，配置文件就可以编写MVC启动了。通过Web框架的`@get`和ORM框架的`Model`编写一个处理首页URL的函数：
+
+```python
+@get('/')
+def index(request):
+    users = yield from User.findAll()
+    return {
+        '__template__': 'test.html',
+        'users': users
+    }
+```
+
+在模板的根目录`templates`下创建`test.html`：
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Test users - Awesome Python Webapp</title>
+</head>
+<body>
+    <h1>All users</h1>
+    {% for u in users %}
+    <p>{{ u.name }} / {{ u.email }}</p>
+    {% endfor %}
+</body>
+</html>
+```
+
+启动Web服务器并访问：
+
+```
+python app.py
+```
+
 ### 构建前端
+
+
 
 ### 编写API
 
