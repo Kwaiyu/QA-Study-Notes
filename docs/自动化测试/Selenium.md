@@ -1,3 +1,5 @@
+# Selenium Java
+
 ## Selenium IDE
 
 Selenium IDE是用于开发Selenium测试用例的工具。这是一个易于使用的浏览器扩展程序，通常是开发测试用例的最有效方法。它使用现有的Selenium命令以及由该元素的上下文定义的参数，在浏览器中记录用户的操作。这不仅是节省时间的方法，还是学习Selenium脚本语法的绝佳方法。
@@ -904,4 +906,79 @@ class MainTest {
 }
 ```
 
-## 
+# Selenium Python
+
+[API文档](https://www.selenium.dev/selenium/docs/api/py/index.html)
+
+安装Selenium
+
+```python
+pip install selenium
+```
+
+下载[chromedriver](https://chromedriver.chromium.org/downloads)，实例化：
+
+```python
+#Simple assignment
+from selenium.webdriver import Chrome
+driver = Chrome(executable_path='C:\\Users\\lsaiah\\seleniumdemo\\chromedriver.exe')
+#Or use the context manager
+from selenium.webdriver import Chrome
+with Chrome(executable_path='C:\\Users\\lsaiah\\seleniumdemo\\chromedriver.exe') as driver:
+    #your code inside this indent
+#或者
+from selenium import webdriver
+driver = webdriver.Chrome()
+```
+
+```python
+# 打开网站
+driver.get('http://127.0.0.1:9000')
+# 获取当前URL
+driver.current_url
+# 后退
+driver.back()
+# 向前
+driver.forward()
+# 刷新
+driver.refresh()
+# 获取标题
+driver.title
+# 获取窗口ID
+driver.current_window_handle
+# 切换窗口或标签
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+# Start the driver
+with webdriver.Firefox() as driver:
+    # Open URL
+    driver.get("https://seleniumhq.github.io")
+
+    # Setup wait for later
+    wait = WebDriverWait(driver, 10)
+
+    # Store the ID of the original window
+    original_window = driver.current_window_handle
+
+    # Check we don't have other windows open already
+    assert len(driver.window_handles) == 1
+
+    # Click the link which opens in a new window
+    driver.find_element(By.LINK_TEXT, "new window").click()
+
+    # Wait for the new window or tab
+    wait.until(EC.number_of_windows_to_be(2))
+
+    # Loop through until we find a new window handle
+    for window_handle in driver.window_handles:
+        if window_handle != original_window:
+            driver.switch_to.window(window_handle)
+            break
+
+    # Wait for the new tab to finish loading content
+    wait.until(EC.title_is("SeleniumHQ Browser Automation"))
+  
+```
+

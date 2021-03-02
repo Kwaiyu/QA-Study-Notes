@@ -212,8 +212,32 @@
 
 假如录制的登录脚本中有登录操作，需要输入用户密码，系统不允许相同用户名和密码同时登录，模拟多个用户登录系统。对用户名和密码进行参数化使每个虚拟用户都使用不同用户名和密码访问。
 
+准备参数化文件.csv，在函数助手调用文件路径、列值，参数填入生成的函数字符串。设置线程组线程数=用户数。
 
+### 断言
 
-### 检查点
+参数化登录成功特征，添加响应断言。
+
+**要测试的响应字段：** 响应文本、Document(text)、URL样本、响应信息、Response Headers、Lgnore Staus 等选项。
+
+**模式匹配规则：** 包括、 匹配、 Equals、 Substring。这里只需要验证返回数据中是否包含主要的关键字。
+
+**要测试的模式：** 其实就是断言的数据。 点击添加 输入要断言的数据。
+
+我们怎么 **证明** 登录是成功的？肯定是从登录成功的页面上抓取信息来判断了。那么，**Guest Manage System** 和 **退出** 看来不错，因为只有登录成功的页面上才有。
 
 ### 集合点
+
+添加同步定时器（Synchronizing Timer）：
+
+**Number of Simulated Users to Group by：** 每次释放的线程数量。如果设置为0，等同于线程组中设置的线程数量。
+
+**Timeout in milliseconds：** 如果设置为0，Timer将会等待线程数达到了"Number of Simultaneous Users to Group"中设置的值才释放。如果大于0，那么超过Timeout in milliseconds中设置的最大等待时间(毫秒为单位)后还没达到"Number of Simultaneous Users to Group"中设置的值，Timer将不再等待，释放已到达的线程。
+
+**注意：**
+
+- 如果设置Timeout in milliseconds为0，且线程数量无法达到"Number of Simultaneous Users to Group by"中设置的值，那么Test将无限等待，除非手动终止。
+- Synchronizing timer 仅作用于同一个JVM中的线程,所以，如果使用并发测试，确保"Number of Simultaneous Users to Group by"中设置的值不大于它所在线程组包含的用户数。
+- Synchronizing Timer是在每个sampler（采样器）之前执行的，而不是之后，不管放在之前还是之后都能集合。
+- 作用域：当执行一个sampler之前时，和sampler处于相同作用域的定时器都会被执行。
+- 如果希望定时器仅应用于其中一个sampler，则把该定时器作为子节点加入，如上图：Synchronizing Timer 所属于 HTTP请求。
