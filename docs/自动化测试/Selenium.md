@@ -931,6 +931,8 @@ from selenium import webdriver
 driver = webdriver.Chrome()
 ```
 
+### 浏览器操作
+
 ```python
 # 打开网站
 driver.get('http://127.0.0.1:9000')
@@ -944,41 +946,87 @@ driver.forward()
 driver.refresh()
 # 获取标题
 driver.title
-# 获取窗口ID
-driver.current_window_handle
 # 切换窗口或标签
-from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
-# Start the driver
-with webdriver.Firefox() as driver:
-    # Open URL
-    driver.get("https://seleniumhq.github.io")
-
-    # Setup wait for later
-    wait = WebDriverWait(driver, 10)
-
-    # Store the ID of the original window
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+with webdriver.Chrome() as driver:
+    driver.get("http://127.0.0.1:9000/")
+    wait = WebDriverWait(driver, 20)
+    # 定义当前打开的窗口
     original_window = driver.current_window_handle
-
-    # Check we don't have other windows open already
-    assert len(driver.window_handles) == 1
-
-    # Click the link which opens in a new window
-    driver.find_element(By.LINK_TEXT, "new window").click()
-
-    # Wait for the new window or tab
+    # 断言总窗口数为1
+    assert len(driver.window_handles) == 1, '窗口不等于1'
+    # 前提注册链接target="_blank"
+    driver.find_element(By.LINK_TEXT, "注册").click()
+    # 等待注册窗口
     wait.until(EC.number_of_windows_to_be(2))
-
-    # Loop through until we find a new window handle
+    # 循环判断新窗口和原窗口不一致，切换到原窗口
     for window_handle in driver.window_handles:
         if window_handle != original_window:
-            driver.switch_to.window(window_handle)
+            driver.switch_to.window(original_window)
             break
+    # 关闭窗口
+    driver.close()
+    # 切换到新窗口
+    driver.switch_to.window(window_handle)
+    # 等待新窗口loading结束
+    wait.until(EC.title_is("注册 - Python Web Demo"))
+    # Selenium 4和更高版本创建新标签，新窗口
+    # driver.switch_to.new_window('tab')
+```
 
-    # Wait for the new tab to finish loading content
-    wait.until(EC.title_is("SeleniumHQ Browser Automation"))
-  
+```python
+    # 安全退出
+    driver.quit()
+    # unittest
+def tearDown(self):
+    self.driver.quit()
+    # try/finally
+    try:
+    #WebDriver code here...
+finally:
+    driver.quit()
+    # with关键字执行结束自动退出
+```
+
+**操作iframe**
+
+使用WebElement
+
+```python
+# Store iframe web element
+iframe = driver.find_element(By.CSS_SELECTOR, "#modal > iframe")
+
+# switch to selected iframe
+driver.switch_to.frame(iframe)
+
+# Now click on button
+driver.find_element(By.TAG_NAME, 'button').click()
+```
+
+使用name或id
+
+```python
+# Switch frame by id
+driver.switch_to.frame('buttonframe')
+
+# Now, Click on the button
+driver.find_element(By.TAG_NAME, 'button').click()
+```
+
+使用索引
+
+```python
+# Switch to the second frame
+driver.switch_to.frame(1)
+```
+
+离开iframe
+
+```python
+# switch back to default content
+driver.switch_to.default_content()
 ```
 
