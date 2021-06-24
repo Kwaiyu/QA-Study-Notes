@@ -1022,6 +1022,12 @@ public class StringBuilderDemo {
 
 ```
 
+String：适用于少量字符串操作的情况
+
+StringBuilder：适用于单线程下大量字符串操作的情况。非线程安全的，适合单线程处理字符串。
+
+StringBuffer：适用于多线程下大量字符串操作的情况。是线程安全的，适合多线程处理字符串。
+
 ### StringJoiner
 
 - 用指定分隔符拼接字符串数组时，使用`StringJoiner`或者`String.join()`更方便；
@@ -2400,7 +2406,7 @@ Java集合使用统一的`Iterator`遍历，尽量不要使用遗留接口。
 
 ### 使用List
 
-- `List`是按索引顺序访问的长度可变的有序表，允许`null`元素和重复元素。优先使用`ArrayList`而不是`LinkedList`；
+- `List`是按索引顺序访问的长度可变的有序表，允许`null`元素和重复元素。优先使用`ArrayList`（底层数据结构为数组，可以自动扩容，查询快，增删慢）而不是`LinkedList`（底层数据结构为双向链表，查询慢，增删快），；
 - 可以直接使用`for each`遍历`List`，它会自动把`for each`循环变成`Iterator`的调用，原因就在于`Iterable`接口定义了一个`Iterator<E> iterator()`方法，强迫集合类必须返回一个`Iterator`实例；
 - `List`可以和`Array`相互转换
 
@@ -5236,6 +5242,20 @@ public class Point {
     }
 }
 ```
+
+**乐观锁原理**
+
+使用数据版本（Version）记录机制实现，这是乐观锁最常用的一种实现方式。何谓数据版本？即为数据增加一个版本标识，一般是通过为数据库表增加一个数字类型的 “version” 字段来实现。当读取数据时，将version字段的值一同读出，数据每更新一次，对此version值加一。当我们提交更新的时候，判断数据库表对应记录的当前版本信息与第一次取出来的version值进行比对，如果数据库表当前版本号与第一次取出来的version值相等，则予以更新，否则认为是过期数据。
+
+**悲观锁原理**
+
+需要使用数据库的锁机制，比如MySQL， 
+
+1. 先关闭auto commit属性，改为手动提交事务
+
+2. 在事务内通过select...for update语句锁定数据，如：select * from t_goods where id=1 for update
+
+3. 此时在t_goods表中，id为1的 那条数据就被我们锁定了，其它的事务必须等本次事务提交之后才能执行。这样我们可以保证当前的数据不会被其它事务修改
 
 ### 使用Concurrent集合
 

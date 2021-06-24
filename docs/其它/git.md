@@ -271,3 +271,17 @@ Git有很多图形界面工具，这里我们推荐[SourceTree](https://www.sour
 ### 命令脑图
 
 ![img](https://cdn.jsdelivr.net/gh/Kwaiyu/SQA-Study-Notes@master/docs/_media/git.png)
+
+```
+git clone 克隆指定仓库 
+git add 将文件添加到暂存区 
+git commit 将文件提交到服务器 
+git push 将文件提交到远程仓库 
+git status 查看当前仓库状态 
+git diff 比较版本的区别 
+git log 查看 
+git 操作日志 
+git reset 回溯历史版本 
+git checkout 切换到指定分支
+```
+

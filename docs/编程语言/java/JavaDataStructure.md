@@ -641,6 +641,102 @@ public class LinkedList {
 }
 ```
 
+**双向链表**
+
+```java
+package com.lsaiah.java;
+
+public class MyDoubleLink {
+    public int linkSize = 0;
+    public Node head = null;// 头结点
+    public Node tail = null;// 尾结点
+    // 使用内部类定义节点
+    public class Node {
+        public Object data;
+        public Node prev = null;
+        public Node next = null;
+        public Node(Object data) {
+            this.data = data;
+        }
+    }
+    /*** 添加节点至尾部 ** @param data */
+    public void addLast(Object data) {
+        linkSize++; Node newNode = new Node(data);
+        if (head == null) {
+            // 第一个元素
+            head = newNode;
+            return;
+        }
+        if (tail == null) {
+            // 第二个元素
+            tail = newNode;
+            tail.prev = head;
+            head.next = tail;
+            return;
+        }
+        // 将新节点的指针和tail节点建立关系
+        tail.next = newNode;
+        newNode.prev = tail;
+        tail = newNode;
+    }
+    /*** 删除指定位置的节点 * 遍历到指定节点，将指定位置的上一个节点与下一个节点指针建立关系 ** @param index * @return */
+    public boolean delete(int index) {
+        if (index < 0 || index >= linkSize) {
+            return false;
+        }
+        linkSize--;
+        // 删除的是头结点
+        if (index == 0) {
+            // 只有一个头结点
+            if (head.next == null) {
+                head = null;
+                return true;
+            }
+            head = head.next;
+            // 删除头结点
+            head.prev = null;
+            return true;
+        }
+        // 删除的是尾节点
+        if (index == (linkSize - 1)) {
+            tail = tail.prev;
+            tail.next = null;
+            return true;
+        }
+        Node tmpNode = head;
+        // 遍历链表，获取被删除的节点
+        for (int i = 0; i < index; i++) {
+            tmpNode = tmpNode.next;
+        }
+        // tmpNode是被删除节点，将其上下两个节点之间建立关系
+        tmpNode.prev.next = tmpNode.next;
+        tmpNode.next.prev = tmpNode.prev;
+        return true;
+    }
+    /*** 获取指定位置的节点 ** @param index * @return */
+    public Node get(int index) {
+        if (index < 0 || index >= linkSize) {
+            throw new RuntimeException("指针越界");
+        }Node tmpNode = head;
+        // 遍历节点，获取指定位置的节点
+        for (int i = 0; i < index; i++) {
+            tmpNode = tmpNode.next;
+        }
+        return tmpNode;
+    }
+    /*** 打印链表上所有节点的数据 */
+    public void print() {
+        Node tmpNode = head;
+        for (int i = 0; i < linkSize; i++) {
+            System.out.println(tmpNode.data);
+            tmpNode = tmpNode.next;
+        }
+    }
+}
+```
+
+
+
 ### Binary Tree
 
 二叉树是由一个根节点和两颗互不相交的（分别称为左子树和右子树）组成，二叉树即是每个节点最多包含左子节点与右子节点这两个节点的树形数据结构。
@@ -816,6 +912,44 @@ public class BinaryTree {
 - 时间复杂度：最优时间O(nlog(n))，最坏时间O(n^2)，平均时间O(nlog(n))
 
 ![](https://lsaiah-1259166707.cos.ap-shanghai.myqcloud.com/图片/1659e6abe14838f2.gif)
+
+```java
+package com.lsaiah.java;
+
+public class SortDemo {
+    public static void quickSort(int[] array, int leftIndex, int rightIndex) {
+            if (leftIndex > rightIndex) {
+            return;
+        }
+        int base = array[leftIndex];// 存放基准数
+        int newLeftIndex = leftIndex;
+        int newRightIndex = rightIndex;
+        //移动左边指针和右边指针，一直到两个指针相遇
+        while (newLeftIndex != newRightIndex) {
+            // 先向左移动右指针，一直到找到一个比基准数小的值
+            while (array[newRightIndex] >= base && newLeftIndex < newRightIndex) {
+                newRightIndex--;
+            }
+            // 再向右移动左指针，一直找到一个比基准数大的值
+            while (array[newLeftIndex] <= base && newLeftIndex < newRightIndex) {
+                newLeftIndex++;
+            }
+            // 左右两个值交换
+            int tmp = array[newLeftIndex];
+            array[newLeftIndex] = array[newRightIndex];
+            array[newRightIndex] = tmp;
+        }
+        // 左右两个指针相遇，将相遇值与基准数字交换
+        array[leftIndex] = array[newRightIndex];
+        array[newRightIndex] = base;
+        // 将基准数左边的数字，继续递归调用
+        quickSort(array, leftIndex, newRightIndex - 1);
+        // 将基准数右边的数字，继续递归调用
+        quickSort(array, newRightIndex + 1, rightIndex); }
+}
+```
+
+
 
 ### 归并排序
 

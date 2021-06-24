@@ -231,7 +231,11 @@ adb shell logcat|grep -i displayed
 </project>
 ```
 
+## Android
+
 ### 基类
+
+**JAVA**
 
 ```java
 import io.appium.java_client.service.local.AppiumDriverLocalService;
@@ -263,7 +267,128 @@ public abstract class BaseTest {
 }
 ```
 
+**Python**
+
+```python
+import pytest
+import datetime
+import os
+
+from helpers import ensure_dir
+
+
+def pytest_configure(config):
+    if not hasattr(config, 'input'):
+        current_day = '{:%Y_%m_%d_%H_%S}'.format(datetime.datetime.now())
+        ensure_dir(os.path.join(os.path.dirname(__file__), 'input', current_day))
+        result_dir = os.path.join(os.path.dirname(__file__), 'results', current_day)
+        ensure_dir(result_dir)
+        result_dir_test_run = result_dir
+        ensure_dir(os.path.join(result_dir_test_run, 'screenshots'))
+        ensure_dir(os.path.join(result_dir_test_run, 'logcat'))
+        config.screen_shot_dir = os.path.join(result_dir_test_run, 'screenshots')
+        config.logcat_dir = os.path.join(result_dir_test_run, 'logcat')
+
+
+class DeviceLogger:
+    def __init__(self, logcat_dir, screenshot_dir):
+        self.screenshot_dir = screenshot_dir
+        self.logcat_dir = logcat_dir
+
+
+@pytest.fixture(scope='function')
+def device_logger(request):
+    logcat_dir = request.config.logcat_dir
+    screenshot_dir = request.config.screen_shot_dir
+    return DeviceLogger(logcat_dir, screenshot_dir)
+
+```
+
+```python
+import os
+import sys
+from selenium.common.exceptions import InvalidSessionIdException
+from datetime import datetime
+from sauceclient import SauceClient
+
+
+ANDROID_BASE_CAPS = {
+    'app': os.path.abspath('../apps/ApiDemos-debug.apk'),
+    'automationName': 'UIAutomator2',
+    'platformName': 'Android',
+    'platformVersion': os.getenv('ANDROID_PLATFORM_VERSION') or '8.0',
+    'deviceName': os.getenv('ANDROID_DEVICE_VERSION') or 'Android Emulator',
+}
+
+IOS_BASE_CAPS = {
+    'app': os.path.abspath('../apps/TestApp.app.zip'),
+    'automationName': 'xcuitest',
+    'platformName': 'iOS',
+    'platformVersion': os.getenv('IOS_PLATFORM_VERSION') or '12.2',
+    'deviceName': os.getenv('IOS_DEVICE_NAME') or 'iPhone 8 Simulator',
+    # 'showIOSLog': False,
+}
+
+if os.getenv('SAUCE_LABS') and os.getenv('SAUCE_USERNAME') and os.getenv('SAUCE_ACCESS_KEY'):
+    build_id = os.getenv('TRAVIS_BUILD_ID') or datetime.now().strftime('%B %d, %Y %H:%M:%S')
+    build_name = 'Python Sample Code %s' % build_id
+
+    ANDROID_BASE_CAPS['build'] = build_name
+    ANDROID_BASE_CAPS['tags'] = ['e2e', 'appium', 'sample-code', 'android', 'python']
+    ANDROID_BASE_CAPS['app'] = 'http://appium.github.io/appium/assets/ApiDemos-debug.apk'
+
+    IOS_BASE_CAPS['build'] = build_name
+    IOS_BASE_CAPS['tags'] = ['e2e', 'appium', 'sample-code', 'ios', 'python']
+    IOS_BASE_CAPS['app'] = 'http://appium.github.io/appium/assets/TestApp9.4.app.zip'
+
+    EXECUTOR = 'http://{}:{}@ondemand.saucelabs.com:80/wd/hub'.format(
+        os.getenv('SAUCE_USERNAME'), os.getenv('SAUCE_ACCESS_KEY'))
+
+    sauce = SauceClient(os.getenv('SAUCE_USERNAME'), os.getenv('SAUCE_ACCESS_KEY'))
+else:
+    EXECUTOR = 'http://127.0.0.1:4723/wd/hub'
+
+
+def ensure_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+
+def take_screenshot_and_logcat(driver, device_logger, calling_request):
+    __save_log_type(driver, device_logger, calling_request, 'logcat')
+
+
+def take_screenshot_and_syslog(driver, device_logger, calling_request):
+    __save_log_type(driver, device_logger, calling_request, 'syslog')
+
+
+def __save_log_type(driver, device_logger, calling_request, type):
+    logcat_dir = device_logger.logcat_dir
+    screenshot_dir = device_logger.screenshot_dir
+
+    try:
+        driver.save_screenshot(os.path.join(screenshot_dir, calling_request + '.png'))
+        logcat_data = driver.get_log(type)
+    except InvalidSessionIdException:
+        logcat_data = ''
+
+    with open(os.path.join(logcat_dir, '{}_{}.log'.format(calling_request, type)), 'w') as logcat_file:
+        for data in logcat_data:
+            data_string = '%s:  %s\n' % (data['timestamp'], data['message'].encode('utf-8'))
+            logcat_file.write(data_string)
+
+def report_to_sauce(session_id):
+    print("Link to your job: https://saucelabs.com/jobs/%s" % session_id)
+    passed = str(sys.exc_info() == (None, None, None))
+    sauce.jobs.update_job(session_id, passed=passed)
+
+```
+
+
+
 ### TestNG+Appium+SLF4J+APP查找元素
+
+**Java**
 
 ```java
 import io.appium.java_client.android.AndroidDriver;
@@ -334,7 +459,274 @@ public class AndroidSelectorsTest extends BaseTest {
 }
 ```
 
+**Python**
+
+```python
+import pytest
+import os
+import copy
+
+from appium import webdriver
+from helpers import report_to_sauce, take_screenshot_and_logcat, ANDROID_BASE_CAPS, EXECUTOR
+
+
+class TestAndroidSelectors():
+
+    @pytest.fixture(scope='function')
+    def driver(self, request, device_logger):
+        calling_request = request._pyfuncitem.name
+
+        caps = copy.copy(ANDROID_BASE_CAPS)
+        caps['name'] = calling_request
+        driver = webdriver.Remote(
+            command_executor=EXECUTOR,
+            desired_capabilities=caps
+        )
+
+        def fin():
+            report_to_sauce(driver.session_id)
+            take_screenshot_and_logcat(driver, device_logger, calling_request)
+            driver.quit()
+
+        request.addfinalizer(fin)
+
+        driver.implicitly_wait(10)
+        return driver
+
+    def test_should_find_elements_by_accessibility_id(self, driver):
+        search_parameters_element = driver.find_elements_by_accessibility_id('Content')
+        assert 1 == len(search_parameters_element)
+
+    def test_should_find_elements_by_id(self, driver):
+        action_bar_container_elements = driver.find_elements_by_id('android:id/action_bar_container')
+        assert 1 == len(action_bar_container_elements)
+
+    def test_should_find_elements_by_class_name(self, driver):
+        action_bar_container_elements = driver.find_elements_by_class_name('android.widget.FrameLayout')
+        assert 3 == len(action_bar_container_elements)
+
+    def test_should_find_elements_by_xpath(self, driver):
+        action_bar_container_elements = driver.find_elements_by_xpath('//*[@class="android.widget.FrameLayout"]')
+        assert 3 == len(action_bar_container_elements)
+
+```
+
+
+
+### TestNG+Appium+Logger+APP对话框
+
+**Java**
+
+```java
+import android.content.res.Resources;
+import io.appium.java_client.android.Activity;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.android.AndroidElement;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import org.testng.log4testng.Logger;
+
+import java.io.File;
+import java.io.IOException;
+
+public class AndroidBasicInteractionsTest extends BaseTest {
+    private AndroidDriver<WebElement> driver;
+    private final String SEARCH_ACTIVITY = ".app.SearchInvoke";
+    private final String ALERT_DIALOG_ACTIVITY = ".app.AlertDialogSamples";
+    private final String PACKAGE = "io.appium.android.apis";
+    public static Logger logger = Logger.getLogger(AndroidBasicInteractionsTest.class);
+
+    @BeforeClass
+    public void setUp() throws IOException {
+        File classpathRoot = new File(System.getProperty("user.dir"));
+        File appDir = new File(classpathRoot, "../TestAppium/apps");
+        File app = new File(appDir.getCanonicalPath(), "ApiDemos-debug.apk");
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        /*
+        'deviceName' capability only affects device selection if you run the test in a cloud
+        environment. It has no effect if the test is executed on a local machine.
+        */
+        capabilities.setCapability("deviceName", "Android Emulator");
+        capabilities.setCapability("deviceName", "Android Emulator");
+        capabilities.setCapability("platformVersion", "10");
+        capabilities.setCapability("platformName", "Android");
+        capabilities.setCapability("appPackage", "io.appium.android.apis");
+        capabilities.setCapability("appActivity", ".ApiDemos");
+        /*
+        It makes sense to set device udid if there are multiple devices/emulators
+        connected to the local machine. Run `adb devices -l` to check which devices
+        are online and what are their identifiers.
+        If only one device is connected then this capability might be omitted
+        */
+        // capabilities.setCapability("udid", "ABCD123456789");
+
+        /*
+        It is recommended to set a full path to the app being tested.
+        Appium for Android supports application .apk and .apks bundles.
+        If this capability is not set then your test starts on Dashboard view.
+        It is also possible to provide an URL where the app is located.
+        */
+        capabilities.setCapability("app", app.getAbsolutePath());
+
+        /*
+        By default Appium tries to autodetect the main application activity,
+        but if you app's very first activity is not the main one then
+        it is necessary to provide its name explicitly. Check
+        https://github.com/appium/appium/blob/master/docs/en/writing-running-appium/android/activity-startup.md
+        for more details on activities selection topic.
+        */
+        // capabilities.setCapability("appActivity", "com.myapp.SplashActivity"));
+        // capabilities.setCapability("appPackage", "com.myapp"));
+        // capabilities.setCapability("appWaitActivity", "com.myapp.MainActivity"));
+
+        /*
+        Appium for Android supports multiple automation backends, where
+        each of them has its own pros and cons. The default one is UIAutomator2.
+        */
+        capabilities.setCapability("automationName", "UIAutomator2");
+        // capabilities.setCapability("automationName", "Espresso");
+
+        /*
+        There are much more capabilities and driver settings, that allow
+        you to customize and tune your test to achieve the best automation
+        experience. Read http://appium.io/docs/en/writing-running-appium/caps/
+        and http://appium.io/docs/en/advanced-concepts/settings/
+        for more details.
+
+        Feel free to visit our forum at https://discuss.appium.io/
+        if you have more questions.
+        */
+
+        driver = new AndroidDriver<WebElement>(getServiceUrl(), capabilities);
+    }
+
+    @AfterClass
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+
+
+    @Test()
+    public void testSendKeys() {
+        driver.startActivity(new Activity(PACKAGE, SEARCH_ACTIVITY));
+        AndroidElement searchBoxEl = (AndroidElement) driver.findElementById("txt_query_prefill");
+        searchBoxEl.sendKeys("Hello world!");
+        AndroidElement onSearchRequestedBtn = (AndroidElement) driver.findElementById("btn_start_search");
+        onSearchRequestedBtn.click();
+        AndroidElement searchText = (AndroidElement) new WebDriverWait(driver, 30)
+                .until(ExpectedConditions.visibilityOfElementLocated(By.id("android:id/search_src_text")));
+        String searchTextValue = searchText.getText();
+        Assert.assertEquals(searchTextValue, "Hello world!");
+    }
+
+    @Test
+    public void testOpensAlert() throws InterruptedException {
+        logger.info("start test opens alert!!!!");
+        // Open the "Alert Dialog" activity of the android app
+        driver.startActivity(new Activity(PACKAGE, ALERT_DIALOG_ACTIVITY));
+
+        // Click button that opens a dialog
+        AndroidElement openDialogButton = (AndroidElement) driver.findElementById("io.appium.android.apis:id/two_buttons");
+        Thread.sleep(200);
+        openDialogButton.click();
+        logger.info("找到并点击io.appium.android.apis:id/two_buttons");
+        // Check that the dialog is there
+//        AndroidElement alertElement = (AndroidElement) driver.findElementById("android:id/alertTitle");
+        AndroidElement alertElement = (AndroidElement) driver.findElementById("android:id/alertTitle");
+        String alertText = alertElement.getText();
+        logger.info("对话框的内容是：" + alertText);
+        Assert.assertEquals(alertText, "Lorem ipsum dolor sit aie consectetur adipiscing Plloaso mako nuto siwuf cakso dodtos anr koop.");
+        AndroidElement closeDialogButton = (AndroidElement) driver.findElementById("android:id/button1");
+        // Close the dialog
+        closeDialogButton.click();
+    }
+}
+```
+
+**Python**
+
+```python
+import pytest
+import os
+import textwrap
+import copy
+
+from appium import webdriver
+from helpers import report_to_sauce, take_screenshot_and_logcat, ANDROID_BASE_CAPS, EXECUTOR
+
+
+class TestAndroidBasicInteractions():
+    PACKAGE = 'io.appium.android.apis'
+    SEARCH_ACTIVITY = '.app.SearchInvoke'
+    ALERT_DIALOG_ACTIVITY = '.app.AlertDialogSamples'
+
+    @pytest.fixture(scope='function')
+    def driver(self, request, device_logger):
+        calling_request = request._pyfuncitem.name
+
+        caps = copy.copy(ANDROID_BASE_CAPS)
+        caps['name'] = calling_request
+        caps['appActivity'] = self.SEARCH_ACTIVITY
+
+        driver = webdriver.Remote(
+            command_executor=EXECUTOR,
+            desired_capabilities=caps
+        )
+
+        def fin():
+            report_to_sauce(driver.session_id)
+            take_screenshot_and_logcat(driver, device_logger, calling_request)
+            driver.quit()
+
+        request.addfinalizer(fin)
+
+        driver.implicitly_wait(10)
+        return driver
+
+    def test_should_send_keys_to_search_box_and_then_check_the_value(self, driver):
+        search_box_element = driver.find_element_by_id('txt_query_prefill')
+        search_box_element.send_keys('Hello world!')
+
+        on_search_requested_button = driver.find_element_by_id('btn_start_search')
+        on_search_requested_button.click()
+
+        search_text = driver.find_element_by_id('android:id/search_src_text')
+        search_text_value = search_text.text
+
+        assert 'Hello world!' == search_text_value
+
+    def test_should_click_a_button_that_opens_an_alert_and_then_dismisses_it(self, driver):
+        driver.start_activity(self.PACKAGE, self.ALERT_DIALOG_ACTIVITY)
+
+        open_dialog_button = driver.find_element_by_id('io.appium.android.apis:id/two_buttons')
+        open_dialog_button.click()
+
+        alert_element = driver.find_element_by_id('android:id/alertTitle')
+        alert_text = alert_element.text
+
+        assert textwrap.dedent('''\
+        Lorem ipsum dolor sit aie consectetur adipiscing
+        Plloaso mako nuto siwuf cakso dodtos anr koop.''') == alert_text
+
+        close_dialog_button = driver.find_element_by_id('android:id/button1')
+        close_dialog_button.click()
+
+```
+
+
+
 ### TestNG+Appium+SLF4J+APP断言Activity和包名
+
+**Java**
 
 ```java
 import io.appium.java_client.android.AndroidDriver;
@@ -378,7 +770,57 @@ public class AndroidCreateSessionTest extends BaseTest {
 }
 ```
 
+**Python**
+
+```python
+import unittest
+import os
+import copy
+import sys
+
+from time import sleep
+
+from appium import webdriver
+from helpers import report_to_sauce, ANDROID_BASE_CAPS, EXECUTOR
+from selenium.common.exceptions import WebDriverException
+
+# Run standard unittest base.
+
+
+class TestAndroidCreateSession(unittest.TestCase):
+    def tearDown(self):
+        report_to_sauce(self.driver.session_id)
+
+    def test_should_create_and_destroy_android_session(self):
+        caps = copy.copy(ANDROID_BASE_CAPS)
+        caps['name'] = 'test_should_create_and_destroy_android_session'
+
+        self.driver = webdriver.Remote(
+            command_executor=EXECUTOR,
+            desired_capabilities=caps
+        )
+        self.driver.implicitly_wait(10)
+
+        # make sure the right package and activity were started
+        self.assertEquals('io.appium.android.apis', self.driver.current_package)
+        self.assertEquals('.ApiDemos', self.driver.current_activity)
+
+        self.driver.quit()
+
+        sleep(5)
+
+        # should not be able to use the driver anymore
+        with self.assertRaises(WebDriverException) as excinfo:
+            self.driver.title
+        self.assertTrue('has already finished' in str(excinfo.exception.msg))
+
+```
+
+
+
 ### TestNG+Appium+SLF4J+浏览器页面
+
+**Java**
 
 ```java
 import io.appium.java_client.android.AndroidDriver;
@@ -415,6 +857,54 @@ public class AndroidCreateWebSessionTest extends BaseTest {
     }
 }
 ```
+
+**Python**
+
+```python
+import unittest
+import os
+import copy
+import sys
+
+from time import sleep
+
+from appium import webdriver
+from helpers import report_to_sauce, ANDROID_BASE_CAPS, EXECUTOR
+from selenium.common.exceptions import WebDriverException
+
+
+class TestAndroidCreateWebSession(unittest.TestCase):
+    def tearDown(self):
+        report_to_sauce(self.driver.session_id)
+
+    def test_should_create_and_destroy_android_web_session(self):
+        caps = copy.copy(ANDROID_BASE_CAPS)
+        caps['name'] = 'test_should_create_and_destroy_android_web_session'
+        # can only specify one of `app` and `browserName`
+        caps['browserName'] = 'Chrome'
+        caps.pop('app')
+
+        self.driver = webdriver.Remote(
+            command_executor=EXECUTOR,
+            desired_capabilities=caps
+        )
+        self.driver.implicitly_wait(10)
+
+        self.driver.get('https://www.google.com')
+
+        assert 'Google' == self.driver.title
+
+        self.driver.quit()
+
+        sleep(5)
+
+        with self.assertRaises(WebDriverException) as excinfo:
+            self.driver.title
+        self.assertTrue('has already finished' in str(excinfo.exception.msg))
+
+```
+
+
 
 ### saucelabs+Appium+Windwos web
 
@@ -465,6 +955,640 @@ public class AndroidBrowserSaucelabsTest {
         String title = driver.getTitle();
         Assert.assertEquals(title, "百度一下，你就知道");
     }
+}
+```
+
+## IOS
+
+### IOSSelectorsTest
+
+**Java**
+
+```java
+import io.appium.java_client.ios.IOSDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testng.Assert;
+import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+import java.io.File;
+import java.util.List;
+
+public class IOSSelectorsTest extends BaseTest {
+    private IOSDriver<WebElement> driver;
+
+    @BeforeSuite
+    public void setUp() throws Exception {
+        File classpathRoot = new File(System.getProperty("user.dir"));
+        File appDir = new File(classpathRoot, "../apps");
+        File app = new File(appDir.getCanonicalPath(), "TestApp.app.zip");
+        String deviceName = System.getenv("IOS_DEVICE_NAME");
+        String platformVersion = System.getenv("IOS_PLATFORM_VERSION");
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability("deviceName", deviceName == null ? "iPhone 6s" : deviceName);
+        capabilities.setCapability("platformVersion", platformVersion == null ? "11.1" : platformVersion);
+        capabilities.setCapability("app", app.getAbsolutePath());
+        capabilities.setCapability("automationName", "XCUITest");
+        driver = new IOSDriver<WebElement>(getServiceUrl(), capabilities);
+    }
+
+    @AfterSuite
+    public void tearDown() {
+        driver.quit();
+    }
+
+
+    @Test
+    public void testFindElementsByAccessibilityID () {
+        // This finds elements by "accessibility id", which in the case of IOS is the "name" attribute of the element
+        List<WebElement> computeSumButtons = driver.findElementsByAccessibilityId("ComputeSumButton");
+        Assert.assertEquals(computeSumButtons.size(), 1);
+        computeSumButtons.get(0).click();
+    }
+
+    @Test
+    public void testFindElementsByClassName () {
+        // Find element by name
+        List<WebElement> windowElements = driver.findElementsByClassName("XCUIElementTypeWindow");
+        Assert.assertTrue(windowElements.size() > 1);
+    };
+
+    @Test
+    public void testFindElementsByNSPredicateString () {
+        // This is an IOS-specific selector strategy. See https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/Predicates/Articles/pSyntax.html for reference
+        List<WebElement> allVisibleElements = driver.findElementsByIosNsPredicate("visible = true");
+        Assert.assertTrue(allVisibleElements.size() > 1);
+    };
+
+    @Test
+    public void testFindElementsByClassChain () {
+        // This is also an IOS-specific selector strategy. Similar to XPath. This is recommended over XPath.
+        List<WebElement> windowElements = driver.findElementsByIosClassChain("XCUIElementTypeWindow[1]/*[2]");
+        Assert.assertEquals(windowElements.size(), 1);
+    };
+
+    @Test
+    public void testFindElementsByXPath () {
+        // Can find source xml by calling "driver.source()"
+        // Note that XPath is not recommended due to major performance issues
+        List<WebElement> buttons = driver.findElementsByXPath("//XCUIElementTypeWindow//XCUIElementTypeButton");
+        Assert.assertTrue(buttons.size() > 1);
+    };
+}
+
+```
+
+**Python**
+
+```python
+import pytest
+import os
+import copy
+
+from appium import webdriver
+from helpers import report_to_sauce, take_screenshot_and_syslog, IOS_BASE_CAPS, EXECUTOR
+
+
+class TestIOSSelectors():
+
+    @pytest.fixture(scope='function')
+    def driver(self, request, device_logger):
+        calling_request = request._pyfuncitem.name
+
+        caps = copy.copy(IOS_BASE_CAPS)
+        caps['name'] = calling_request
+
+        driver = webdriver.Remote(
+            command_executor=EXECUTOR,
+            desired_capabilities=caps
+        )
+
+        def fin():
+            report_to_sauce(driver.session_id)
+            take_screenshot_and_syslog(driver, device_logger, calling_request)
+            driver.quit()
+
+        request.addfinalizer(fin)
+
+        driver.implicitly_wait(10)
+        return driver
+
+    def test_should_find_elements_by_accessibility_id(self, driver):
+        search_parameters_element = driver.find_elements_by_accessibility_id('ComputeSumButton')
+        assert 1 == len(search_parameters_element)
+
+    def test_should_find_elements_by_class_name(self, driver):
+        window_elements = driver.find_elements_by_class_name('XCUIElementTypeWindow')
+        assert 2 == len(window_elements)
+
+    def test_should_find_elements_by_nspredicate(self, driver):
+        all_visible_elements = driver.find_elements_by_ios_predicate('visible = 1')
+        assert 24 <= len(all_visible_elements)
+
+    def test_should_find_elements_by_class_chain(self, driver):
+        window_element = driver.find_elements_by_ios_class_chain('XCUIElementTypeWindow[1]/*')
+        assert 1 == len(window_element)
+
+    def test_should_find_elements_by_xpath(self, driver):
+        action_bar_container_elements = driver.find_elements_by_xpath('//XCUIElementTypeWindow//XCUIElementTypeButton')
+        assert 7 <= len(action_bar_container_elements) <= 8
+
+```
+
+
+
+### IOSCreateSessionTest
+
+**Java**
+
+```java
+import io.appium.java_client.ios.IOSDriver;
+import io.appium.java_client.ios.IOSElement;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testng.Assert;
+import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+import java.io.File;
+
+public class IOSCreateSessionTest extends BaseTest {
+    private IOSDriver<WebElement> driver;
+
+    @BeforeSuite
+    public void setUp() throws Exception {
+        File classpathRoot = new File(System.getProperty("user.dir"));
+        File appDir = new File(classpathRoot, "../apps");
+        File app = new File(appDir.getCanonicalPath(), "TestApp.app.zip");
+
+        String deviceName = System.getenv("IOS_DEVICE_NAME");
+        String platformVersion = System.getenv("IOS_PLATFORM_VERSION");
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability("deviceName", deviceName == null ? "iPhone 6s" : deviceName);
+        capabilities.setCapability("platformVersion", platformVersion == null ? "11.1" : platformVersion);
+        capabilities.setCapability("app", app.getAbsolutePath());
+        capabilities.setCapability("automationName", "XCUITest");
+        driver = new IOSDriver<WebElement>(getServiceUrl(), capabilities);
+    }
+
+    @AfterSuite
+    public void tearDown() {
+        driver.quit();
+    }
+
+    @Test
+    public void testCreateSession () {
+        // Check that the XCUIElementTypeApplication was what we expect it to be
+        IOSElement applicationElement = (IOSElement) driver.findElementByClassName("XCUIElementTypeApplication");
+        String applicationName = applicationElement.getAttribute("name");
+        Assert.assertEquals(applicationName, "TestApp");
+    }
+}
+
+```
+
+**Python**
+
+```python
+import unittest
+import os
+import copy
+import sys
+
+from time import sleep
+
+from appium import webdriver
+from helpers import report_to_sauce, IOS_BASE_CAPS, EXECUTOR
+from selenium.common.exceptions import WebDriverException
+
+
+# Run standard unittest base.
+class TestIOSCreateSession(unittest.TestCase):
+    def tearDown(self):
+        report_to_sauce(self.driver.session_id)
+
+    def test_should_create_and_destroy_ios_session(self):
+        caps = copy.copy(IOS_BASE_CAPS)
+        caps['name'] = self.id()
+
+        self.driver = webdriver.Remote(
+            command_executor=EXECUTOR,
+            desired_capabilities=caps
+        )
+        self.driver.implicitly_wait(10)
+
+        app_element = self.driver.find_element_by_class_name('XCUIElementTypeApplication')
+        self.assertEquals('TestApp', app_element.get_attribute('name'))
+
+        self.driver.quit()
+
+        # pause a moment because Sauce Labs takes a bit to stop accepting requests
+        sleep(5)
+
+        with self.assertRaises(WebDriverException) as excinfo:
+            self.driver.find_element_by_class_name('XCUIElementTypeApplication')
+        self.assertTrue(
+            'has already finished' in str(excinfo.exception.msg) or
+            'Unhandled endpoint' in str(excinfo.exception.msg)
+        )
+
+```
+
+
+
+### IOSCreateWebSessionTest
+
+**Java**
+
+```java
+import io.appium.java_client.ios.IOSDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testng.Assert;
+import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
+
+public class IOSCreateWebSessionTest extends BaseTest {
+    private IOSDriver<WebElement> driver;
+
+    @BeforeSuite
+    public void setUp() throws IOException {
+        String deviceName = System.getenv("IOS_DEVICE_NAME");
+        String platformVersion = System.getenv("IOS_PLATFORM_VERSION");
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability("deviceName", deviceName == null ? "iPhone 6s" : deviceName);
+        capabilities.setCapability("platformVersion", platformVersion == null ? "11.1" : platformVersion);
+        capabilities.setCapability("browserName", "Safari");
+        capabilities.setCapability("automationName", "XCUITest");
+        driver = new IOSDriver<WebElement>(getServiceUrl(), capabilities);
+    }
+
+    @AfterSuite
+    public void tearDown() {
+        driver.quit();
+    }
+
+    @Test()
+    public void testCreateSafariSession() {
+        // Navigate to google.com
+        driver.get("https://www.google.com");
+
+        // Test that it was successful by checking the document title
+        String pageTitle = driver.getTitle();
+        Assert.assertEquals(pageTitle, "Google");
+
+    }
+}
+
+```
+
+**Python**
+
+```python
+import unittest
+import os
+import copy
+import sys
+
+from time import sleep
+
+from appium import webdriver
+from helpers import report_to_sauce, IOS_BASE_CAPS, EXECUTOR
+from selenium.common.exceptions import WebDriverException
+
+
+class TestIOSCreateWebSession(unittest.TestCase):
+    def tearDown(self):
+        report_to_sauce(self.driver.session_id)
+
+    def test_should_create_and_destroy_ios_web_session(self):
+        caps = copy.copy(IOS_BASE_CAPS)
+        caps['name'] = self.id()
+        # can only specify one of `app` and `browserName`
+        caps['browserName'] = 'Safari'
+        caps.pop('app')
+
+        self.driver = webdriver.Remote(
+            command_executor=EXECUTOR,
+            desired_capabilities=caps
+        )
+
+        self.driver.get('https://www.google.com')
+        assert 'Google' == self.driver.title
+
+        self.driver.quit()
+
+        sleep(5)
+
+        with self.assertRaises(WebDriverException) as excinfo:
+            self.driver.title
+        self.assertTrue(
+            'has already finished' in str(excinfo.exception.msg) or
+            'Unhandled endpoint' in str(excinfo.exception.msg)
+        )
+
+```
+
+
+
+### IOSBrowserSaucelabsTest
+
+```java
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testng.Assert;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
+import io.appium.java_client.ios.IOSDriver;
+import io.appium.java_client.remote.MobileCapabilityType;
+
+/**
+ * IOS Browser Sauce Labs Test.
+ */
+public class IOSBrowserSaucelabsTest extends BaseTest {
+    public static final String USERNAME = "YOUR_USERNAME";
+    public static final String ACCESS_KEY = "YOUR_ACESS_KEY";
+    public static final String URL = "https://"+USERNAME+":" + ACCESS_KEY + "@ondemand.saucelabs.com:443/wd/hub";
+    public static IOSDriver<?> mobiledriver;
+
+    @BeforeTest
+    public void beforeTest( ) throws MalformedURLException {
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, "11.2.2");
+        capabilities.setCapability(MobileCapabilityType.PLATFORM_NAME,"iOS");
+        capabilities.setCapability(MobileCapabilityType.AUTOMATION_NAME,"XCUITest");
+        capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, "iPhone Simulator");
+        capabilities.setCapability(MobileCapabilityType.BROWSER_NAME, "Safari");
+        capabilities.setCapability("newCommandTimeout", 2000);
+        mobiledriver = new IOSDriver<>(new URL(URL), capabilities);
+
+    }
+
+    @AfterTest
+    public void afterTest( ) {
+        mobiledriver.quit();
+    }
+
+    @Test
+    public static void launchBrowser(){
+        mobiledriver.get("http://appium.io/");
+        Assert.assertEquals(mobiledriver.getCurrentUrl(), "http://appium.io/", "URL Mismatch");
+        Assert.assertEquals(mobiledriver.getTitle(), "Appium: Mobile App Automation Made Awesome.", "Title Mismatch");
+    }
+}
+```
+
+### IOSBasicInteractionsTest
+
+**Java**
+
+```java
+import io.appium.java_client.MobileBy;
+import io.appium.java_client.ios.IOSDriver;
+import io.appium.java_client.ios.IOSElement;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+import org.testng.annotations.*;
+
+import java.io.File;
+import java.io.IOException;
+
+public class IOSBasicInteractionsTest extends BaseTest {
+    private IOSDriver<WebElement> driver;
+
+    @BeforeTest
+    public void setUp() throws IOException {
+        File classpathRoot = new File(System.getProperty("user.dir"));
+        File appDir = new File(classpathRoot, "../apps");
+        File app = new File(appDir.getCanonicalPath(), "TestApp.app.zip");
+
+        String deviceName = System.getenv("IOS_DEVICE_NAME");
+        String platformVersion = System.getenv("IOS_PLATFORM_VERSION");
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        /*
+        'deviceName' capability only affects device selection if you run the test in a cloud
+        environment or your run your test on a Simulator device. This combination of this value
+        plus `platformVersion` capability value
+        is used to select a proper Simulator if it already exists. Use `xcrun simctl list` command
+        to list available Simulator devices.
+        */
+        capabilities.setCapability("deviceName", deviceName == null ? "iPhone 6s" : deviceName);
+
+        /*
+        udid value must be set if you run your test on a real iOS device.
+        The udid of your real device could be retrieved from Xcode->Windows->Devices and Simulators
+        dialog.
+        Usually, it is not enough to simply provide udid itself in order to automate apps
+        on real iOS devices. You must also verify the target device is included into
+        your Apple developer profile and the WebDriverAgent is signed with a proper signature.
+        Refer https://github.com/appium/appium-xcuitest-driver/blob/master/docs/real-device-config.md
+        for more details.
+        */
+        // capabilities.setCapability("udid", "ABCD123456789");
+
+        /*
+        Platform version is required to be set. Only the major and minor version numbers have effect.
+        Check `xcrun simctl list` to see which platform versions are available if the test is going
+        to run on a Simulator.
+        */
+        capabilities.setCapability("platformVersion", platformVersion == null ? "11.1" : platformVersion);
+
+        /*
+        It is recommended to set a full path to the app being tested.
+        Appium for iOS supports .app and .ipa application bundles.
+        It is also possible to pass zipped .app packages (they will be extracted automatically).
+
+        Make sure the application is built for correct architecture (either
+        real device or Simulator) before running your tests, as there are not interchangeable.
+        If the test is going to run on a real device then make sure your app
+        is signed with correct development signature (as described in the above
+        Real Device Config document)
+
+        If this capability is not set then your test starts on Springboard view.
+        It is also possible to provide an URL where the app is located.
+        */
+        capabilities.setCapability("app", app.getAbsolutePath());
+
+        /*
+        This is the only supported automation backend for iOS
+        */
+        capabilities.setCapability("automationName", "XCUITest");
+
+        /*
+        There are much more capabilities and driver settings, that allow
+        you to customize and tune your test to achieve the best automation
+        experience. Read http://appium.io/docs/en/writing-running-appium/caps/
+        and http://appium.io/docs/en/advanced-concepts/settings/
+        for more details.
+
+        Feel free to visit our forum at https://discuss.appium.io/
+        if you have more questions.
+        */
+
+        driver = new IOSDriver<WebElement>(getServiceUrl(), capabilities);
+    }
+
+    @AfterTest
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+
+    @Test
+    public void testSendKeysToInput () {
+        // Find TextField input element
+        String textInputId = "TextField1";
+        IOSElement textViewsEl = (IOSElement) new WebDriverWait(driver, 30)
+                .until(ExpectedConditions.visibilityOfElementLocated(MobileBy.AccessibilityId(textInputId)));
+
+        // Check that it doesn"t have a value
+        String value = textViewsEl.getAttribute("value");
+        Assert.assertEquals(value, null);
+
+        // Send keys to that input
+        textViewsEl.sendKeys("Hello World!");
+
+        // Check that the input has new value
+        value = textViewsEl.getAttribute("value");
+        Assert.assertEquals(value, "Hello World!");
+    }
+
+    @Test
+    public void testOpenAlert () {
+        // Find Button element and click on it
+        String buttonElementId = "show alert";
+        IOSElement buttonElement = (IOSElement) new WebDriverWait(driver, 30)
+                .until(ExpectedConditions.visibilityOfElementLocated(MobileBy.AccessibilityId(buttonElementId)));
+        buttonElement.click();
+
+        // Wait for the alert to show up
+        String alertTitleId = "Cool title";
+        IOSElement alertTitleElement = (IOSElement) new WebDriverWait(driver, 30)
+                .until(ExpectedConditions.visibilityOfElementLocated(MobileBy.AccessibilityId(alertTitleId)));
+
+        // Check the text
+        String alertTitle = alertTitleElement.getText();
+        Assert.assertEquals(alertTitle, "Cool title");
+
+        // Dismiss the alert
+        IOSElement okButtonElement = (IOSElement) new WebDriverWait(driver, 30)
+                .until(ExpectedConditions.visibilityOfElementLocated(MobileBy.AccessibilityId("OK")));
+        okButtonElement.click();
+    }
+}
+
+```
+
+**Python**
+
+```python
+import pytest
+import os
+import copy
+
+from appium import webdriver
+from helpers import report_to_sauce, take_screenshot_and_syslog, IOS_BASE_CAPS, EXECUTOR
+
+
+class TestIOSBasicInteractions():
+
+    @pytest.fixture(scope='function')
+    def driver(self, request, device_logger):
+        calling_request = request._pyfuncitem.name
+
+        caps = copy.copy(IOS_BASE_CAPS)
+        caps['name'] = calling_request
+
+        driver = webdriver.Remote(
+            command_executor=EXECUTOR,
+            desired_capabilities=caps
+        )
+
+        def fin():
+            report_to_sauce(driver.session_id)
+            take_screenshot_and_syslog(driver, device_logger, calling_request)
+            driver.quit()
+
+        request.addfinalizer(fin)
+
+        driver.implicitly_wait(10)
+        return driver
+
+    def test_should_send_keys_to_inputs(self, driver):
+        text_field_el = driver.find_element_by_id('TextField1')
+        assert text_field_el.get_attribute('value') is None
+        text_field_el.send_keys('Hello World!')
+        assert 'Hello World!' == text_field_el.get_attribute('value')
+
+    def test_should_click_a_button_that_opens_an_alert(self, driver):
+        button_element_id = 'show alert'
+        button_element = driver.find_element_by_accessibility_id(button_element_id)
+        button_element.click()
+
+        alert_title_element_id = 'Cool title'
+        alert_title_element = driver.find_element_by_accessibility_id(alert_title_element_id)
+        alert_title = alert_title_element.get_attribute('name')
+        assert 'Cool title' == alert_title
+
+```
+
+
+
+## Windows
+
+### WindowsDesktopAppTest
+
+```java
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testng.Assert;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
+import io.appium.java_client.windows.WindowsDriver;
+
+public class WindowsDesktopAppTest extends BaseTest {
+	
+    public static WindowsDriver<?> driver;
+
+    @BeforeTest
+    public void setup( ) {
+        DesiredCapabilities caps = new DesiredCapabilities();
+        caps.setCapability("platformVersion", "10");
+        caps.setCapability("platformName", "Windows");
+        caps.setCapability("deviceName", "WindowsPC");
+        caps.setCapability("app", "Microsoft.WindowsCalculator_8wekyb3d8bbwe!App");
+        caps.setCapability("newCommandTimeout", 2000);
+        driver = new WindowsDriver<>(getServiceUrl(), caps);
+    }
+
+    @AfterTest
+    public void tearDown( ) {
+        driver.quit();
+    }
+
+    @Test
+    public void test() {
+        driver.findElementByName("One").click();
+        driver.findElementByName("Plus").click();
+        driver.findElementByName("Two").click();
+        driver.findElementByName("Equals").click();
+        Assert.assertEquals(driver.findElementByAccessibilityId("CalculatorResults").getText(), "Display is 3");
+    }   
 }
 ```
 
