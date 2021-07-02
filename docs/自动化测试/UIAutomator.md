@@ -164,6 +164,21 @@ AndroidMainfest.xml（androidTest）
 </manifest>
 ```
 
+### adb
+
+path:	B:\Android\Sdk\platform-tools
+
+USB连接 开发者选项 USB调试 动画关
+
+通过 Wi-Fi 配置 ADB 连接的步骤：
+
+- 将设备和电脑连接到同一个 Wi-Fi 网络
+- 使用 USB 数据线将设备插入计算机以配置连接
+- 在计算机命令行输入： `adb tcpip 5555`
+- 在电脑命令行输入：`adb shell ip addr show wlan0`复制“inet”后的IP地址
+- 在计算机命令行输入： `adb connect ip-address-of-device:5555`
+- 断开 USB 电缆与设备的连接，并检查`adb devices`设备是否仍被检测到。
+
 ### uiautomatorviewer
 
 `uiautomatorviewer` 工具提供了一个方便的 GUI，用于扫描和分析 Android 设备上当前显示的界面组件。您可以使用此工具来检查布局层次结构并查看设备前台显示的界面组件的属性。利用此信息，您可以使用 UI Automator 创建更精细的测试。例如，通过创建与特定可见属性匹配的界面选择器以做到这一点。
@@ -820,3 +835,329 @@ UI Automator 测试类的编写方式应与 JUnit 4 测试类相同。如需详�
     
 ```
 
+### API
+
+```Java
+import android.support.test.uiautomator.UiDevice;
+```
+
+作用：设备封装类，测试过程中获取设备信息和设备交互。
+
+```Java
+import android.support.test.uiautomator.UiObject;
+```
+
+作用：所有控件抽象，用于表示一个Android控件。
+
+```Java
+import android.support.test.uiautomator.UiObjectNotFoundException;
+```
+
+作用：异常处理机制，在预期控件不存在时抛出。
+
+```Java
+import android.support.test.uiautomator.UiSelector;
+```
+
+作用：控制选择器，利用控制属性描述目标控件，用于控件匹配使用。
+
+```Java
+import android.support.test.uiautomator.Configurator;
+```
+
+所用：配置基类，用以控制测试过程的事件等超时、控件可见超时等。
+
+```Java
+import android.support.test.uiautomator.UiCollection;
+```
+
+作用：控件集合，用于控件遍历。
+
+```Java
+import android.support.test.uiautomator.UiScrollable;
+```
+
+作用：滚动控件，当目标控件存在于屏幕之外时使用。
+
+```Java
+import android.support.test.uiautomator.UiWatcher;
+```
+
+作用：界面观察者，用于处理弹窗中断逻辑。
+
+**定位控件** 
+
+`Java import android.support.test.uiautomator.By;` 
+
+作用：可以更简洁的方式使用ByScelector 选择器。 用法： `findObject(By.text(“text”))`
+
+`import android.support.test.uiautomator.BySelector;`
+作用： BySelector 调用findObject 时匹配UI 元素
+用法：
+`findObject(new BySelector().text(“text”))`
+
+```
+<br>
+### By类常用定位方法
+
+​```Java
+/**
+ * 通过文本 text 定位控件
+ * 例如： text = "hello world"
+ */
+device.findObject(By.text("text"));
+device.findObject(By.textContains("llo wor"));
+device.findObject(By.textStartsWith("hello"));
+device.findObject(By.textEndsWith("world"));
+
+/**
+ * 通过内容描述 content-dec 定位控件
+ * 例如： desc = "content-dec"
+ */
+device.findObject(By.desc("content-dec"));
+device.findObject(By.descContains("tent"));
+device.findObject(By.descStartsWith("content"));
+device.findObject(By.descEndsWith("-dec"));
+
+/**
+ *  通过包名package定位控件
+ *  例如： package = "com.android.calculator2"
+ */
+device.findObject(By.pkg("com.android.calculator2"));
+
+/**
+ *  通过资源名 resource 定位控件
+ *  例如： resource = "com.android.calculator2:id/digit_0"
+ */
+device.findObject(By.res("com.android.calculator2:id/digit_0"));
+
+/**
+ *  通过类名 class定位控件
+ *  例如： class = "android.widget.Button"
+ */
+device.findObject(By.clazz("android.widget.Button"));
+```
+
+
+**UiDevice类常用方法**
+
+```Java
+// home键
+device.pressHome();
+
+// back 键
+device.pressBack();
+
+// 显示最近打开并置于后台的App
+device.pressRecentApps();
+
+// 快速设置键
+device.openQuickSettings();
+
+// 打开通知
+device.openNotification();
+
+// 虚拟键盘，参考appium
+device.pressKeyCode(17);
+
+// 获得屏幕高度和宽度
+int x = device.getDisplayWidth();
+int y = device.getDisplayHeight();
+String xs =String.valueOf(x);
+String ys =String.valueOf(y);
+Log.e("xxxxxxxxxx", xs);
+Log.e("yyyyyyyyyy", ys);
+
+// 向下滑显示通知栏
+device.swipe(200,0,200, 300,180);
+// 向左滑显示右一屏
+device.swipe(20,400,460, 400,180);
+
+// 获取当前应用活动名 和 包名
+String activity = device.getCurrentActivityName();
+String packagea = device.getCurrentPackageName();
+Log.e("activity", activity);
+Log.e("packagea", packagea);
+
+// 休眠屏幕
+device.sleep();
+// 如果屏幕熄灭，点亮
+device.wakeUp();
+```
+
+
+**UiObject2类常用方法**
+
+```Java
+UiObject2 element = device.findObject(By.text("text"));
+
+//清除元素，针对输入框
+element.clear();
+
+// 点击
+element.click();
+
+// 长按
+element.longClick();
+
+// 获取元素文本
+element.getText();
+
+//设置元素文本,相当于输入
+element.setText("new text");
+
+//获取元素scrollable属性，判断是否可滚动
+element.isScrollable();
+
+// 判断两个对象是否一致
+UiObject2 element2 = device.findObject(By.text("text"));
+element.equals(element2);
+
+//获取元素content_desc属性
+element.getContentDescription();
+
+// 获取包名 package 属性
+element.getApplicationPackage();
+
+// 获取元素的子元素集合
+element.getChildren();
+
+// 获取元素的子元素的个数
+element.getChildCount();
+
+// 获取元素的class属性
+element.getClassName();
+
+// 获取元素的 resource-id 属性
+element.getResourceName();
+
+// 将元素拖动到指定位置
+Point desPoint = new Point();
+desPoint.x = 200;
+desPoint.y = 20;
+element.drag(desPoint, 2000);
+
+// 点击并等待新窗口
+element.clickAndWait(Until.newWindow(), 2000);
+```
+
+
+**Configurator类**
+
+```Java
+Configurator configurator = Configurator.getInstance();
+
+//动作，设置延时， 默认3s
+configurator.setActionAcknowledgmentTimeout(1000);
+
+//键盘输入，设置延时,默认0s
+configurator.setKeyInjectionDelay(1500);
+
+// 滚动，设置延时， 默认200ms
+configurator.setScrollAcknowledgmentTimeout(2000);
+
+// 空闲，设置延时，默认10s
+configurator.setWaitForIdleTimeout(2500);
+
+// 组件查找, 设置延时, 默认10s
+configurator.setWaitForSelectorTimeout(3000);
+```
+
+
+**UiWatcher 类用法**
+
+```Java
+final UiObject2 ui = mDevice.findObject(By.text("Messenger"));
+//注册监听器
+mDevice.registerWatcher("testWatcher", new UiWatcher() {
+    @Override
+    public boolean checkForCondition() {
+        if(mDevice.hasObject(By.text("Contact"))){
+            ui.click();
+            Log.i("testWatcher", "监听器被触发了");
+            return true;
+        }
+        Log.i("testWatcher", "监听器未被触发");
+        return false;
+    }
+});
+
+//重置监听器
+mDevice.resetWatcherTriggers();
+
+//移除监听器
+mDevice.removeWatcher("testWatcher");
+
+//运行所有的监听器
+mDevice.runWatchers();
+```
+
+
+**UiScrollable 类的常用方法**
+
+```Java
+UiScrollable scroll  = new UiScrollable( new UiSelector()
+        .scrollable(true));
+
+// 以步长为5快速向后滑动
+scroll.flingBackward();
+
+//以步长为5快速向前滑动
+scroll.flingForward();
+
+// 是否允许滚动获取具备UiSelector条件元素集合后, 再以text属性的查找对象
+scroll.getChildByText(
+        new  UiSelector().resourceId("android:id/title"), "About emulated device", true);
+// 是否允许滚动获取具备UiSelector条件元素集合后, 再以content-desc属性搜索子元素
+scroll.getChildByDescription(new UiSelector().text("text"), "content-desc", true);
+
+//通过实例查找子元素,资源id为"android:id/title"下的第1个实例
+scroll.getChildByInstance(new UiSelector().resourceId("android:id/title"),0);
+
+// 获取执行搜索滑动过程中的最大滑动次数，默认常量为30
+scroll.getMaxSearchSwipes();
+
+//设置最大可扫动次数
+scroll.setMaxSearchSwipes(50);
+
+/**
+ * 设置listview校准常量为0.15，即距离listview顶部15%和底部15%的区域不可滑动，只有控件中部70%的区域可滑动。
+ * 当校准常量设置为0.5时，控件的可滑动区域为0，滑动的动作效果将和单击的效果一样。
+ */
+scroll.setSwipeDeadZonePercentage(0.15);
+// 获得校准常量，校准常量默认值为0.1(10%)
+scroll.getSwipeDeadZonePercentage();
+
+//设置滚动方向设置为水平滚动
+scroll.setAsHorizontalList();
+// 设置滚动方向设置为纵向滚动
+scroll.setAsVerticalList();
+
+// 滚动到某个元素上
+scroll.scrollIntoView(new UiSelector().text("abc"));
+//滚动到文本对象所在位置
+scroll.scrollTextIntoView("abc");
+
+//自定义最大滚动次数，滚动到开始/结束位置
+scroll.scrollToBeginning(30);
+scroll.scrollToEnd(30);
+//以步长（速率）5滚动到列表底部，最多滚动10次。
+scroll.scrollToEnd(10, 5);
+```
+
+**UiCollection 类的常用方法**
+
+```Java
+UiCollection  coll = new UiScrollable(new UiSelector()
+.resourceId("android:id/title"));
+// 查找元素下面子元素的数量
+coll.getChildCount();
+// 获取元素集合，再以text属性的查找对象
+coll.getChildByText(new UiSelector().text("Display"), "Display");
+// 获取元素集合，再查找其下面第1个元素
+coll.getChildByInstance(new UiSelector().text("Display"), 0);
+// 获取元素集合，再以content_desc属性的查找对象
+coll.getChildByDescription(new UiSelector().text("Display"), "content_desc");
+// 获得指定的子元素
+coll.getChild(new UiSelector().text("aaa"));
+```
