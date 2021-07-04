@@ -14,6 +14,73 @@
   npm install -g appium-doctor
   appium-doctor --android
   ```
+  
+  之前有些warn的包没装，现在全部装好了，记录一些踩坑的点：
+
+![image-20210704192122222](https://qwq.lsaiah.cn//image-20210704192122222.png)
+
+**opencv4nodejs**
+
+自动构建：
+
+```
+$ npm install -g node-gyp
+# npm install --global --production windows-build-tools 在安装完Python2.7后卡死，可以尝试下面命令
+$ npm install --global --production windows-build-tools --vs2015
+$ npm config set python python2.7
+$ npm config set msvs_version 2015
+$ npm config set python /path/to/executable/python2.7
+$ npm config get python
+# 将Python环境变量指向v2.7
+
+# 安装最新发布的CMAKE：https://cmake.org/download 并添加到Path
+$ npm install opencv4nodejs
+# CMakeDownloadLog报download failed 将raw.githubusercontent.com加入代理
+# 找不到boostdesc_lbgm.i .... 等文件时：
+cd ./cache/xfeatures2d/
+cd boostdesc
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/34e4206aef44d50e6bbcd0ab06354b52e7466d26/boostdesc_lbgm.i> 0ae0675534aa318d9668f2a179c2a052-boostdesc_lbgm.i
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/34e4206aef44d50e6bbcd0ab06354b52e7466d26/boostdesc_binboost_256.i> e6dcfa9f647779eb1ce446a8d759b6ea-boostdesc_binboost_256.i
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/34e4206aef44d50e6bbcd0ab06354b52e7466d26/boostdesc_binboost_128.i> 98ea99d399965c03d555cef3ea502a0b-boostdesc_binboost_128.i
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/34e4206aef44d50e6bbcd0ab06354b52e7466d26/boostdesc_binboost_064.i> 202e1b3e9fec871b04da31f7f016679f-boostdesc_binboost_064.i
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/34e4206aef44d50e6bbcd0ab06354b52e7466d26/boostdesc_bgm_hd.i> 324426a24fa56ad9c5b8e3e0b3e5303e-boostdesc_bgm_hd.i
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/34e4206aef44d50e6bbcd0ab06354b52e7466d26/boostdesc_bgm_bi.i> 232c966b13651bd0e46a1497b0852191-boostdesc_bgm_bi.i
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/34e4206aef44d50e6bbcd0ab06354b52e7466d26/boostdesc_bgm.i> 0ea90e7a8f3f7876d450e4149c97c74f-boostdesc_bgm.i
+
+cd ../vgg
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/fccf7cd6a4b12079f73bbfb21745f9babcd4eb1d/vgg_generated_120.i> 151805e03568c9f490a5e3a872777b75-vgg_generated_120.i
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/fccf7cd6a4b12079f73bbfb21745f9babcd4eb1d/vgg_generated_64.i> 7126a5d9a8884ebca5aea5d63d677225-vgg_generated_64.i
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/fccf7cd6a4b12079f73bbfb21745f9babcd4eb1d/vgg_generated_48.i> e8d0dcd54d1bcfdc29203d011a797179-vgg_generated_48.i
+curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/fccf7cd6a4b12079f73bbfb21745f9babcd4eb1d/vgg_generated_80.i> 7cd47228edec52b6d82f46511af325c5-vgg_generated_80.i
+
+# 注意文件大小如果是0，手动下载
+# 如果缓存不可用，将这些文件添加到“npm\node_modules\opencv4nodejs\node_modules\opencv-build\opencv\opencv_contrib\modules\xfeatures2d\src”文件夹中
+
+```
+
+手动构建：
+
+1. 安装opencv release，可以在[这里](https://opencv.org/releases/)找到
+
+2. 禁用自动构建，添加环境变量，并SET OPENCV4NODEJS_DISABLE_AUTOBUILD=1
+
+   ```
+   OPENCV4NODEJS_DISABLE_AUTOBUILD=1
+   ```
+
+3. 设置系统环境变量
+
+   ![image-20210704194516243](https://qwq.lsaiah.cn//image-20210704194516243.png)
+
+   ```
+   npm install opencv4nodejs
+   ```
+
+**bundletool.jar**
+
+在https://github.com/google/bundletool/releases 下载bundletool.jar，改名为bundletool.jar
+
+在android sdk目录下创建bundle-tool目录，把jar包放入，属性-安全-完全控制，然后添加到**用户环境变量**，并在系统环境变量`PATHEXT`中加入`;.jar`
 
 ### 驱动程序
 
