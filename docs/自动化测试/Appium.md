@@ -84,11 +84,11 @@ curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/fccf7cd6a4b12079f7
 
 ### 驱动程序
 
-- 该[XCUITest驱动程序](http://appium.io/docs/en/drivers/ios-xcuitest/index.html)（iOS和tvOS应用程序）
-- 在[咖啡驱动器](http://appium.io/docs/en/drivers/android-espresso/index.html)（适用于Android应用）
-- 该[UiAutomator2驱动程序](http://appium.io/docs/en/drivers/android-uiautomator2/index.html)（适用于Android应用）
-- 在[Windows驱动程序](http://appium.io/docs/en/drivers/windows/index.html)（用于Windows桌面应用程序）
-- 在[Mac驱动](http://appium.io/docs/en/drivers/mac/index.html)（适用于Mac的桌面应用程序）
+- The [XCUITest Driver](https://github.com/Kwaiyu/appium/blob/master/docs/en/drivers/ios-xcuitest.md) (for iOS and tvOS apps)
+- The [Espresso Driver](https://github.com/Kwaiyu/appium/blob/master/docs/en/drivers/android-espresso.md) (for Android apps)
+- The [UiAutomator2 Driver](https://github.com/Kwaiyu/appium/blob/master/docs/en/drivers/android-uiautomator2.md) (for Android apps)
+- The [Windows Driver](https://github.com/Kwaiyu/appium/blob/master/docs/en/drivers/windows.md) (for Windows Desktop apps)
+- The [Mac Driver](https://github.com/Kwaiyu/appium/blob/master/docs/en/drivers/mac.md) (for Mac Desktop apps)
 
 ### 客户端
 
