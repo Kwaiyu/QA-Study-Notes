@@ -57,6 +57,8 @@
 # 接口测试
  * [网络协议](/接口测试/网络协议.md)
  * [抓包工具](/接口测试/抓包工具.md)
+ * [HttpClient](/接口测试/HttpClient.md)
+ * [Requests](/接口测试/Requests.md)
 
 # 单元测试
  * [Junit](/单元测试/Junit.md)

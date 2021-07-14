@@ -99,11 +99,50 @@ curl https://raw.githubusercontent.com/opencv/opencv_3rdparty/fccf7cd6a4b12079f7
 Maven项目：
 
 ```xml
-<dependency>
-    <groupId>io.appium</groupId>
-    <artifactId>java-client</artifactId>
-    <version>7.3.0</version>
-</dependency>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.example</groupId>
+    <artifactId>TestAppium</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/io.appium/java-client -->
+        <dependency>
+            <groupId>io.appium</groupId>
+            <artifactId>java-client</artifactId>
+            <version>7.5.1</version>
+        </dependency>
+<!--        &lt;!&ndash; https://mvnrepository.com/artifact/junit/junit &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>junit</groupId>-->
+<!--            <artifactId>junit</artifactId>-->
+<!--            <version>4.13.2</version>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
+        <!-- https://mvnrepository.com/artifact/org.testng/testng -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>7.4.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.30</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.30</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
 ```
 
 Gradle项目根目录build.gradle：
@@ -204,6 +243,38 @@ dependencies {
 }
 ```
 
+**java-client BUG**
+
+```
+//报错 1. More than one file was found with OS independent path 'META-INF/spring.tooling'
+...
+// 在build.gradle(app)中排除
+android{
+	    packagingOptions{
+        exclude 'META-INF/spring.tooling'
+        exclude 'META-INF/versions/9'
+        exclude 'META-INF/spring.handlers'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/spring.schemas'
+        exclude 'META-INF/notice.txt'
+    }
+}
+//报错 2. Duplicate class org.apache.commons.logging.Log found in modules jetified-commons-logging-1.2 (commons-logging:commons-logging:1.2) and jetified-spring-jcl-5.3.4 (org.springframework:spring-jcl:5.3.4)
+...
+// 
+    compileOnly ('org.seleniumhq.selenium:selenium-java:3.141.59')
+    androidTestImplementation('org.seleniumhq.selenium:selenium-java:3.141.59')
+    testImplementation('org.seleniumhq.selenium:selenium-java:3.141.59')
+    implementation (group: 'io.appium', name: 'java-client', version: '7.5.1') {
+        ['org.apache.commons','commons-logging',
+         'junit'].each {
+            exclude group: "$it"
+        }
+        exclude group: "org.seleniumhq.selenium", module: "selenium-api"
+    }
+```
+
 [JAVA client API](https://www.javadoc.io/doc/io.appium/java-client)
 
 [Appium API](http://appium.io/docs/en/about-appium/api/)
@@ -228,17 +299,24 @@ dependencies {
 新建driver的时候必须要指定一个DesiredCapabilities 对象配置发送给Appium Server：
 
 ```
-public class Test01 {
-    public static void main(String[] args) throws MalformedURLException {
+    public void setUp() throws Exception {
+        service = AppiumDriverLocalService.buildDefaultService();
+        File classpathRoot = new File(System.getProperty("user.dir"));
+        File appDir = new File(classpathRoot, "../Appium/apps");
+        File app = new File(appDir.getCanonicalPath(), "ApiDemos-debug.apk");
         DesiredCapabilities capabilities = new DesiredCapabilities();
-        capabilities.setCapability("deviceName","Android Emulator");
-        capabilities.setCapability("platformVersion", "10");
-        capabilities.setCapability("platformName","Android");
+        capabilities.setCapability("automationName", "uiautomator2");
+        capabilities.setCapability("platformName", "Android");
+        capabilities.setCapability("platformVersion", "11");
+        capabilities.setCapability("deviceName","emulator-5554");
+//        capabilities.setCapability("noReset", true);
+        capabilities.setCapability("app", app.getAbsolutePath());
         capabilities.setCapability("appPackage", "io.appium.android.apis");
-        capabilities.setCapability("appActivity", ".ApiDemos");
-        AppiumDriver driver = new AppiumDriver(new URL("http://127.0.0.1:4723"), capabilities);
+        capabilities.setCapability("appActivity", "io.appium.android.apis.ApiDemos");
+        service.start();
+        driver = new AppiumDriver(new URL("http://127.0.0.1:4723/wd/hub"), capabilities);
+//        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
     }
-}
 ```
 
 adb获取App Activity和包名
@@ -247,58 +325,331 @@ adb获取App Activity和包名
 adb shell dumpsys window | findstr mCurrentFocus
 or
 adb shell logcat|grep -i displayed
-```
-
-### Maven pom.xml
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>org.example</groupId>
-    <artifactId>TestAppium</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <dependencies>
-        <!-- https://mvnrepository.com/artifact/io.appium/java-client -->
-        <dependency>
-            <groupId>io.appium</groupId>
-            <artifactId>java-client</artifactId>
-            <version>7.5.1</version>
-        </dependency>
-<!--        &lt;!&ndash; https://mvnrepository.com/artifact/junit/junit &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>junit</groupId>-->
-<!--            <artifactId>junit</artifactId>-->
-<!--            <version>4.13.2</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-        <!-- https://mvnrepository.com/artifact/org.testng/testng -->
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>7.4.0</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.30</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.30</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-</project>
+or
+adb logcat ActivityManager:I *:s
+{包名：io.appium.android.apis/Activity名:io.appium.android.apis.ApiDemos}
 ```
 
 ## Android
+
+### 模拟器
+
+```java
+import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.MobileElement;
+import io.appium.java_client.TouchAction;
+import io.appium.java_client.service.local.AppiumDriverLocalService;
+import io.appium.java_client.touch.offset.PointOption;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.touch.TouchActions;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.Assert;
+import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+
+public class EmulatorUiTest {
+    private AppiumDriver driver;
+    public static AppiumDriverLocalService service=null;
+
+    @BeforeSuite
+    public void setUp() throws Exception {
+        service = AppiumDriverLocalService.buildDefaultService();
+        File classpathRoot = new File(System.getProperty("user.dir"));
+        File appDir = new File(classpathRoot, "../Appium/apps");
+        File app = new File(appDir.getCanonicalPath(), "ApiDemos-debug.apk");
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability("automationName", "uiautomator2");
+        capabilities.setCapability("platformName", "Android");
+        capabilities.setCapability("platformVersion", "11");
+        capabilities.setCapability("deviceName","emulator-5554");
+        capabilities.setCapability("noReset", true);
+        capabilities.setCapability("app", app.getAbsolutePath());
+        capabilities.setCapability("appPackage", "io.appium.android.apis");
+        capabilities.setCapability("appActivity", "io.appium.android.apis.ApiDemos");
+        service.start();
+        driver = new AppiumDriver(new URL("http://127.0.0.1:4723/wd/hub"), capabilities);
+        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+    }
+    @AfterSuite
+    public void tearDown() {
+        service.stop();
+//        driver.quit();
+    }
+
+    @Test
+    public void testFindElementsByAccessibilityId() {
+        List<WebElement> searchParametersElement = (List<WebElement>)
+                driver.findElementsByAccessibilityId("Content");
+        Assert.assertEquals(searchParametersElement.size(),1);
+    }
+    @Test
+    public void testFindElementsById () {
+        // Look for element by ID. In Android this is the "resource-id"
+        List<WebElement> actionBarContainerElements = (List<WebElement>)
+                driver.findElementsById("android:id/action_bar_container");
+        Assert.assertEquals(actionBarContainerElements.size(), 1);
+    }
+
+    @Test
+    public void testFindElementsByClassName () {
+        // Look for elements by the class name. In Android this is the Java Class Name of the view.
+        List<WebElement> linearLayoutElements = (List<WebElement>)
+                driver.findElementsByClassName("android.widget.FrameLayout");
+        Assert.assertTrue(linearLayoutElements.size() > 1);
+    };
+
+    @Test
+    public void testFindElementsByXPath () {
+        // Find elements by XPath
+        List<WebElement> linearLayoutElements = (List<WebElement>)
+                driver.findElementsByXPath("//*[@class=\"android.widget.FrameLayout\"]");
+        Assert.assertTrue(linearLayoutElements.size() > 1);
+    }
+
+    @Test
+    public void testTouchActionSwipe() {
+        MobileElement el1 = (MobileElement) driver.findElementByAccessibilityId("App");
+        el1.click();
+        new TouchAction(driver).press(PointOption.point(993,1753))
+                .moveTo(PointOption.point(982,1240)).release().perform();
+
+        MobileElement el2 = (MobileElement) driver.findElementByAccessibilityId("Text-To-Speech");
+        el2.click();
+        MobileElement el3 = (MobileElement) driver.findElementByAccessibilityId("Again");
+        el3.click();
+    }
+    @Test
+    public void testSendKeys() throws InterruptedException {
+        MobileElement el1 = (MobileElement) driver.findElementByAccessibilityId("App");
+        el1.click();
+        MobileElement el2 = (MobileElement) driver.findElementByAccessibilityId("Search");
+        el2.click();
+        MobileElement el3 = (MobileElement) driver.findElementByAccessibilityId("Invoke Search");
+        el3.click();
+        MobileElement el4 = (MobileElement) driver.findElementById("io.appium.android.apis:id/txt_query_prefill");
+        el4.sendKeys("hello");
+        MobileElement el5 = (MobileElement) driver.findElementById("io.appium.android.apis:id/txt_query_appdata");
+        el5.sendKeys("world");
+        MobileElement el6 = (MobileElement) driver.findElementByAccessibilityId("onSearchRequested()");
+        el6.click();
+        Thread.sleep(1000);
+    }
+    @Test
+    public void testGetText(){
+        MobileElement el1 = (MobileElement) driver.findElementByAccessibilityId("Text");
+        el1.click();
+        MobileElement el2 = (MobileElement) driver.findElementByAccessibilityId("LogTextBox");
+        el2.click();
+        MobileElement el3 = (MobileElement) driver.findElementByAccessibilityId("Add");
+        el3.click();
+        MobileElement el4 = (MobileElement) driver.findElement(By.id("io.appium.android.apis:id/text"));
+//        el1.getText();
+        Logger logger = LoggerFactory.getLogger(EmulatorUiTest.class);
+        logger.info("文本内容是: " + el4.getText());
+        Assert.assertEquals("This is a test\n", el4.getText());
+    }
+}
+```
+
+### 真机
+
+```java
+import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.MobileElement;
+import io.appium.java_client.TouchAction;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.functions.ExpectedCondition;
+import io.appium.java_client.service.local.AppiumDriverLocalService;
+import io.appium.java_client.touch.offset.PointOption;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+public class RealMachineTest {
+    private AppiumDriver driver;
+    public static AppiumDriverLocalService service=null;
+    @BeforeSuite
+    public void setUp() throws Exception {
+        service = AppiumDriverLocalService.buildDefaultService();
+        File classpathRoot = new File(System.getProperty("user.dir"));
+        File appDir = new File(classpathRoot, "../Appium/apps");
+        File app = new File(appDir.getCanonicalPath(), "ApiDemos-debug.apk");
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability("automationName", "uiautomator2");
+        capabilities.setCapability("platformName", "Android");
+        capabilities.setCapability("platformVersion", "6");
+        capabilities.setCapability("deviceName","6DSOTWGMPB6HSGZH");
+        capabilities.setCapability("noReset", true);
+        capabilities.setCapability("app", app.getAbsolutePath());
+        capabilities.setCapability("appPackage", "io.appium.android.apis");
+        capabilities.setCapability("appActivity", "io.appium.android.apis.ApiDemos");
+        service.start();
+        driver = new AppiumDriver(new URL("http://127.0.0.1:4723/wd/hub"), capabilities);
+        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+    }
+
+    @AfterSuite
+    public void tearDown() {
+        service.stop();
+//        driver.quit();
+    }
+
+    @Test
+    public void testFindElementsByAccessibilityId() {
+        List<WebElement> searchParametersElement = (List<WebElement>)
+                driver.findElementsByAccessibilityId("Content");
+        Assert.assertEquals(searchParametersElement.size(),1);
+    }
+
+    @Test
+    public void testFindElementsById () {
+        // Look for element by ID. In Android this is the "resource-id"
+        List<WebElement> actionBarContainerElements = (List<WebElement>)
+                driver.findElementsById("android:id/action_bar_container");
+        Assert.assertEquals(actionBarContainerElements.size(), 1);
+    }
+
+    @Test
+    public void testFindElementsByClassName () {
+        // Look for elements by the class name. In Android this is the Java Class Name of the view.
+        List<WebElement> linearLayoutElements = (List<WebElement>)
+                driver.findElementsByClassName("android.widget.FrameLayout");
+        Assert.assertTrue(linearLayoutElements.size() > 1);
+    };
+
+    @Test
+    public void testFindElementsByXPath () {
+        // Find elements by XPath
+        List<WebElement> linearLayoutElements = (List<WebElement>)
+                driver.findElementsByXPath("//*[@class=\"android.widget.FrameLayout\"]");
+        Assert.assertTrue(linearLayoutElements.size() > 1);
+    }
+
+    @Test
+    public void testTouchActionSwipe() {
+        MobileElement el1 = (MobileElement) driver.findElementByAccessibilityId("App");
+        el1.click();
+        new TouchAction(driver).press(PointOption.point(993,1753))
+                .moveTo(PointOption.point(982,1240)).release().perform();
+
+            MobileElement el2 = (MobileElement) driver.findElementByAccessibilityId("Text-To-Speech");
+            el2.click();
+            MobileElement el3 = (MobileElement) driver.findElementByAccessibilityId("Again");
+            el3.click();
+
+    }
+    @Test
+    public void testSendKeys() throws InterruptedException {
+        MobileElement el1 = (MobileElement) driver.findElementByAccessibilityId("App");
+        el1.click();
+        MobileElement el2 = (MobileElement) driver.findElementByAccessibilityId("Search");
+        el2.click();
+        MobileElement el3 = (MobileElement) driver.findElementByAccessibilityId("Invoke Search");
+        el3.click();
+        MobileElement el4 = (MobileElement) driver.findElementById("io.appium.android.apis:id/txt_query_prefill");
+        el4.sendKeys("hello");
+        MobileElement el5 = (MobileElement) driver.findElementById("io.appium.android.apis:id/txt_query_appdata");
+        el5.sendKeys("world");
+        MobileElement el6 = (MobileElement) driver.findElementByAccessibilityId("onSearchRequested()");
+        el6.click();
+        Thread.sleep(1000);
+    }
+    @Test
+    public void testGetText(){
+        MobileElement el1 = (MobileElement) driver.findElementByAccessibilityId("Text");
+        el1.click();
+        MobileElement el2 = (MobileElement) driver.findElementByAccessibilityId("LogTextBox");
+        el2.click();
+        MobileElement el3 = (MobileElement) driver.findElementByAccessibilityId("Add");
+        el3.click();
+        MobileElement el4 = (MobileElement) driver.findElement(By.id("io.appium.android.apis:id/text"));
+//        el1.getText();
+        Logger logger = LoggerFactory.getLogger(RealMachineTest.class);
+        logger.info("文本内容是: " + el4.getText());
+        Assert.assertEquals("This is a test\n", el4.getText());
+    }
+
+    @Test
+    public void testWaitUntil() {
+        MobileElement el1 = (MobileElement) new WebDriverWait(driver, 10)
+          .until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//android.widget.TextView[@content-desc=\"App\"]")));
+        el1.click();
+    }
+}
+
+```
+
+### 等待
+
+1. 强制等待（1秒）
+
+   ```java
+   time.sleep(1)
+   Thread.sleep(1000)
+   driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.SECONDS);
+   ```
+
+2. 隐式等待
+
+   implicitlywait()方法用来等待页面加载完成，implicitly_wait(1)，1秒内一旦加载完成就执行下一条语句，如果11秒内页面都没有加载完，就超时抛出异常。但是隐式等待依然存在一个问题，那就是程序会一直等待整个页面加载完成，但有时候页面想要的元素已经加载完成，因为个别加载慢，仍然要等到页面全部完成才能执行下一步。
+
+   ```java
+   driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+   ```
+
+3. 显示等待/动态等待
+
+   1. 等待指定时间内加载完成；
+
+   ```
+   WebDriverWait(driver,timeout,poll_frequency=0.5,ignored_exceptions=None)
+   ```
+
+   - driver：浏览器驱动
+   - timeout：最长超时时间，默认以秒为单位
+   - poll_frequency：检测的间隔，默认为0.5s
+   - ignored_exceptions：超时后的抛出的异常信息，默认抛出NoSuchElementExeception异常。
+   2. 等待页面加载出现某个具体的元素后继续执行；
+   
+      ```java
+      WebDriverWait(driver,10).until(method，message="")
+      WebDriverWait(driver,10).until_not(method，message="")
+      WebDriverWait(driver, 10).until(lambda x:x.find_element_by_id('elementid'))
+      
+      MobileElement el1 = (MobileElement) new WebDriverWait(driver, 10)             .until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//android.widget.TextView[@content-desc=\"App\"]")));
+              el1.click();
+      ```
+   
+      
+   
+   
+
+
 
 ### 基类
 
@@ -907,7 +1258,8 @@ public class AndroidCreateWebSessionTest extends BaseTest {
         DesiredCapabilities capabilities = new DesiredCapabilities();
         capabilities.setCapability("deviceName", "Android Emulator");
         capabilities.setCapability("browserName", "Chrome");
-        capabilities.setCapability("chromedriverExecutable", "C:\\Users\\lsaia\\node_modules\\appium\\node_modules\\appium-chromedriver\\chromedriver\\win\\chromedriver_win32_v74.0.3729.6.exe");
+        capabilities.setCapability("chromedriverExecutable",
+                "B:\\IdeaProject\\Appium\\apps\\chromedriver.exe");
         driver = new AndroidDriver<WebElement>(getServiceUrl(), capabilities);
     }
 
