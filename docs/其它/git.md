@@ -21,6 +21,8 @@ Git官网直接[下载安装程序](https://git-scm.com/downloads)
 ```
 $ git config --global user.name "Your Name"
 $ git config --global user.email "email@example.com"
+创建公钥和私钥
+ssh-keygen -t rsa -b 4096 -C "email@example.com
 ```
 
 ### 添加修改删除
