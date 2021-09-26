@@ -1,13 +1,17 @@
 ## 开始
 
+[appium-demo](https://github.com/Kwaiyu/appium-demo)
+
 - 安装Node.js通过NPM安装appium：
   
   ```
   npm install -g appium
   ```
+  
 - Appium Desktop
   
   [Release page](https://github.com/appium/appium-desktop/releases)
+  
 - 验证安装
   
   ```
@@ -1971,17 +1975,23 @@ class TestIOSBasicInteractions():
 
 ### WindowsDesktopAppTest
 
+"app" 应用程序固定开始屏幕 - 创建桌面快捷方式 - 查看目标
+
+- Appium Windows Driver 仅支持 Windows 10 作为主机。
+- 必须开启开发者设置 - 开发人员模式
+- Appium 会在执行其安装脚本时自动下载并安装 WinAppDriver 包，但实际的二进制版本可能已过时。在这种情况下，您可以从[GitHub 发布](https://github.com/microsoft/WinAppDriver/releases)页面手动下载并安装最新版本的 WinAppDriver 。并添加到PATH
+- 元素检查工具inspect.exe在C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64
+
 ```java
+import io.appium.java_client.windows.WindowsDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.testng.Assert;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import io.appium.java_client.windows.WindowsDriver;
-
 public class WindowsDesktopAppTest extends BaseTest {
-	
+
     public static WindowsDriver<?> driver;
 
     @BeforeTest
@@ -2002,12 +2012,12 @@ public class WindowsDesktopAppTest extends BaseTest {
 
     @Test
     public void test() {
-        driver.findElementByName("One").click();
-        driver.findElementByName("Plus").click();
-        driver.findElementByName("Two").click();
-        driver.findElementByName("Equals").click();
-        Assert.assertEquals(driver.findElementByAccessibilityId("CalculatorResults").getText(), "Display is 3");
-    }   
+        driver.findElementByName("一").click();
+        driver.findElementByName("加").click();
+        driver.findElementByName("二").click();
+        driver.findElementByName("等于").click();
+        Assert.assertEquals(driver.findElementByAccessibilityId("CalculatorResults").getText(), "显示为 3");
+    }
 }
 ```
 
