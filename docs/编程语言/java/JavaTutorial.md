@@ -1097,17 +1097,21 @@ public class StringJoinerDemo {
 Java是一种面向对象的编程语言，而基本数据类型的值不是对象，将简单数据类型的数据进行封装而得到的类就是包装类。
 下表显示了原始类型和等效的包装器类：
 
+包装类型不赋值就是 `Null` ，而基本类型有默认值且不是 `Null`。
 
-| 基础数据类型 | 引用类型            |
-| :----------- | :------------------ |
-| byte         | java.lang.Byte      |
-| short        | java.lang.Short     |
-| int          | java.lang.Integer   |
-| long         | java.lang.Long      |
-| float        | java.lang.Float     |
-| double       | java.lang.Double    |
-| boolean      | java.lang.Boolean   |
-| char         | java.lang.Character |
+局部变量表主要存放了编译期可知的基本数据类型 **（boolean、byte、char、short、int、float、long、double）**占用的空间非常小，而**对象引用**（reference 类型，它不同于对象本身，存在于堆中，可能是一个指向对象起始地址的引用指针，也可能是指向一个代表对象的句柄或其他与此对象相关的位置）。
+
+
+| 基础数据类型 | 引用类型            | 基本类型默认值（包装类型默认null） |
+| :----------- | :------------------ | ---------------------------------- |
+| byte         | java.lang.Byte      | 0                                  |
+| short        | java.lang.Short     | 0                                  |
+| int          | java.lang.Integer   | 0                                  |
+| long         | java.lang.Long      | 0L                                 |
+| float        | java.lang.Float     | 0f                                 |
+| double       | java.lang.Double    | 0d                                 |
+| boolean      | java.lang.Boolean   | false                              |
+| char         | java.lang.Character | 'u0000'                            |
 
 - Java核心库提供的包装类型可以把基本类型包装为`class`；
 - 自动装箱和自动拆箱都是在编译期完成的（JDK>=1.5）；
