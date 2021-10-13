@@ -539,6 +539,174 @@ class Person {
 }
 ```
 
+**Java 程序设计语言总是采用按值调用。也就是说，方法得到的是所有参数值的一个拷贝，也就是说，方法不能修改传递给它的任何参数变量的内容。**
+
+> **example 1**
+
+```java
+public static void main(String[] args) {
+    int num1 = 10;
+    int num2 = 20;
+
+    swap(num1, num2);
+
+    System.out.println("num1 = " + num1);
+    System.out.println("num2 = " + num2);
+}
+
+public static void swap(int a, int b) {
+    int temp = a;
+    a = b;
+    b = temp;
+
+    System.out.println("a = " + a);
+    System.out.println("b = " + b);
+}
+```
+
+**结果：**
+
+```
+a = 20
+b = 10
+num1 = 10
+num2 = 20
+```
+
+在 swap 方法中，a、b 的值进行交换，并不会影响到 num1、num2。因为，a、b 中的值，只是从 num1、num2 的复制过来的。也就是说，a、b 相当于 num1、num2 的副本，副本的内容无论怎么修改，都不会影响到原件本身。
+
+**通过上面例子，我们已经知道了一个方法不能修改一个基本数据类型的参数，而对象引用作为参数就不一样，请看 example2.**
+
+> **example 2**
+
+```java
+	public static void main(String[] args) {
+		int[] arr = { 1, 2, 3, 4, 5 };
+		System.out.println(arr[0]);
+		change(arr);
+		System.out.println(arr[0]);
+	}
+
+	public static void change(int[] array) {
+		// 将数组的第一个元素变为0
+		array[0] = 0;
+	}
+```
+
+**结果：**
+
+```
+1
+0
+```
+
+array 被初始化 arr 的拷贝也就是一个对象的引用，也就是说 array 和 arr 指向的是同一个数组对象。 因此，外部对引用对象的改变会反映到所对应的对象上。
+
+**通过 example2 我们已经看到，实现一个改变对象参数状态的方法并不是一件难事。理由很简单，方法得到的是对象引用的拷贝，对象引用及其他的拷贝同时引用同一个对象。**
+
+**很多程序设计语言（特别是，C++和 Pascal)提供了两种参数传递的方式：值调用和引用调用。有些程序员（甚至本书的作者）认为 Java 程序设计语言对对象采用的是引用调用，实际上，这种理解是不对的。由于这种误解具有一定的普遍性，所以下面给出一个反例来详细地阐述一下这个问题。**
+
+> **example 3**
+
+```java
+public class Test {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		Student s1 = new Student("小张");
+		Student s2 = new Student("小李");
+		Test.swap(s1, s2);
+		System.out.println("s1:" + s1.getName());
+		System.out.println("s2:" + s2.getName());
+	}
+
+	public static void swap(Student x, Student y) {
+		Student temp = x;
+		x = y;
+		y = temp;
+		System.out.println("x:" + x.getName());
+		System.out.println("y:" + y.getName());
+	}
+}
+```
+
+**结果：**
+
+```
+x:小李
+y:小张
+s1:小张
+s2:小李
+```
+
+通过上面两张图可以很清晰的看出： **方法并没有改变存储在变量 s1 和 s2 中的对象引用。swap 方法的参数 x 和 y 被初始化为两个对象引用的拷贝，这个方法交换的是这两个拷贝**
+
+> **总结**
+
+Java 程序设计语言对对象采用的不是引用调用，实际上，对象引用是按 值传递的。
+
+下面再总结一下 Java 中方法参数的使用情况：
+
+- 一个方法不能修改一个基本数据类型的参数（即数值型或布尔型）。
+- 一个方法可以改变一个对象参数的状态。
+- 一个方法不能让对象参数引用一个新的对象。
+
+### 方法（函数）类型
+
+**1.无参数无返回值的方法**
+
+```
+// 无参数无返回值的方法(如果方法没有返回值，不能不写，必须写void，表示没有返回值)
+public void f1() {
+    System.out.println("无参数无返回值的方法");
+}
+```
+
+**2.有参数无返回值的方法**
+
+```java
+/**
+* 有参数无返回值的方法
+* 参数列表由零组到多组“参数类型+形参名”组合而成，多组参数之间以英文逗号（,）隔开，形参类型和形参名之间以英文空格隔开
+*/
+public void f2(int a, String b, int c) {
+    System.out.println(a + "-->" + b + "-->" + c);
+}
+```
+
+**3.有返回值无参数的方法**
+
+```java
+// 有返回值无参数的方法（返回值可以是任意的类型,在函数里面必须有return关键字返回对应的类型）
+public int f3() {
+    System.out.println("有返回值无参数的方法");
+    return 2;
+}
+```
+
+**4.有返回值有参数的方法**
+
+```java
+// 有返回值有参数的方法
+public int f4(int a, int b) {
+    return a * b;
+}
+```
+
+**5.return 在无返回值方法的特殊使用**
+
+```java
+// return在无返回值方法的特殊使用
+public void f5(int a) {
+    if (a > 10) {
+        return;//表示结束所在方法 （f5方法）的执行,下方的输出语句不会执行
+    }
+    System.out.println(a);
+}
+```
+
+
+
 ### 构造方法、封装
 
 - 实例在创建时通过`new`操作符会调用其对应的构造方法，构造方法用于初始化实例，方法名就是类名，没有返回值；
@@ -880,6 +1048,33 @@ class Royalty02 implements Income02{
 
 ### 静态字段和静态方法
 
+在外部调用静态方法时，可以使用 `类名.方法名` 的方式，也可以使用 `对象.方法名` 的方式，而实例方法只有后面这种方式。也就是说**调用静态方法可以无需创建对象** 。一般建议使用 `类名.方法名` 的方式来调用静态方法。
+
+```java
+public class Person {
+    public void method() { 
+      //......
+    }
+ 
+    public static void staicMethod(){
+      //......
+    }
+    public static void main(String[] args) {
+        Person person = new Person();
+        // 调用实例方法
+        person.method(); 
+        // 调用静态方法
+        Person.staicMethod()
+    }
+}
+```
+
+在一个静态方法内调用一个非静态成员为什么是非法的?
+
+因为静态方法是属于类的，在类加载的时候就会分配内存，可以通过类名直接访问。而非静态成员属于实例对象，只有在对象实例化之后才存在，然后通过类的实例对象去访问。在类的非静态成员不存在的时候静态成员就已经存在了，此时调用在内存中还不存在的非静态成员，属于非法操作。
+
+静态方法在访问本类的成员时，只允许访问静态成员（即静态成员变量和静态方法），不允许访问实例成员（即实例成员变量和实例方法），而实例方法不存在这个限制。
+
 - 静态字段属于所有实例“共享”的字段，实际上是属于`class`的字段；
 - 调用静态方法不需要实例，无法访问`this`，但可以访问静态字段和其他静态方法；
 - 静态方法常用于工具类和辅助方法，如Arrays.sort();。
@@ -1113,12 +1308,47 @@ Java是一种面向对象的编程语言，而基本数据类型的值不是对�
 | boolean      | java.lang.Boolean   | false                              |
 | char         | java.lang.Character | 'u0000'                            |
 
+装箱：将基本类型用它们对应的引用类型包装起来；`Integer i = 10;` 在字节码中，等价于`Integer i = Integer.valueOf(10)`
+
+拆箱：将包装类型转换为基本数据类型；`int n = i` 在字节码中，等价于`int n = i.intValue();`
+
 - Java核心库提供的包装类型可以把基本类型包装为`class`；
 - 自动装箱和自动拆箱都是在编译期完成的（JDK>=1.5）；
 - 装箱和拆箱会影响执行效率，装箱是将基础数据类型变为引用类型的赋值，拆箱是将引用类型变为基础数据类型可能发生`NullPointerException`；
 - 包装类型的比较必须使用`equals()`；
 - 整数和浮点数的包装类型都继承自`Number`；
 - 包装类型提供了大量实用方法。
+
+```
+Integer i1 = 33;
+
+Integer i2 = 33;
+
+System.out.println(i1 == i2);// 输出 true
+
+Float i11 = 333f;
+
+Float i22 = 333f;
+
+System.out.println(i11 == i22);// 输出 false
+
+Double i3 = 1.2;
+
+Double i4 = 1.2;
+
+System.out.println(i3 == i4);// 输出 false
+
+Integer i1 = 40;// 这一行代码会发生装箱，也就是这行代码等价于 Integer i1=Integer.valueOf(40) 。因此，i1 直接使用的是常量池中的对象。
+Integer i2 = new Integer(40);// 而Integer i1 = new Integer(40) 会直接创建新的对象。
+System.out.println(i1==i2);// 因此输出 false 
+```
+
+**==比较的是值，对于引用数据类型来说==比较的是对象的内存地址。**
+
+- **类没有覆盖 `equals()`方法** ：通过`equals()`比较该类的两个对象时，等价于通过“==”比较这两个对象，使用的默认是 `Object`类`equals()`方法。
+- **类覆盖了 `equals()`方法** ：一般我们都覆盖 `equals()`方法来比较两个对象中的属性是否相等；若它们的属性相等，则返回 true(即，认为这两个对象相等)。
+
+**所有整型包装类对象之间值的比较，全部使用 equals 方法比较**。说明：对于`Integer var= ?`在-128至127之间的赋值， `Integer`对象是在`IntegerCache.cache`产生，会复用已有对象，这个区间内的`Integer`值可以直接使用`==`进行判断，但是这个区间之外的所有数据，都会在堆上产生，并不会复用已有对象，这是一个大坑，推荐使用`equals`方法进行判断。
 
 ### JavaBean
 
