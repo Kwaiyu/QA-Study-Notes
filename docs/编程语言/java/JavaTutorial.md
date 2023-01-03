@@ -478,7 +478,7 @@ public class Myclass {
 
   static关键字用法：
 
-  java中的`static`关键字主要用于内存管理。我们可以应用java `static`关键字在变量，方法，块和嵌套类中。 `static`关键字属于类，而不是类的实例。
+  java中的`static`关键字主要用于内存管理。我们可以应用java `static`关键字在变量，方法，块和嵌套类中。 `static`关键字属于类，而不是类的实例。方便在没有创建对象的情况下调用变量/方法。
 
   静态(`static`)可以是：
 
@@ -538,6 +538,31 @@ class Person {
     private int age;
 }
 ```
+
+static访问特点： 
+
+非静态成员方法： 
+
+能够访问静态/非静态的成员变量/成员方法
+
+静态成员方法：
+
+能够访问静态成员变量/成员方法，但是不能直接访问非静态成员变量/成员方法，可以通过类名.静态成员变量/静态成员方法访问。
+
+5. static修饰常量（constant）
+```java
+public class Constant{
+    public static final int CODE_200 = 200;
+}
+public class TestConstant{
+    public static void main(String[] args) {
+        if (Constant.CODE_200 == 200){
+            System.out.println("成功");
+        }
+    }
+}
+```
+
 
 **Java 程序设计语言总是采用按值调用。也就是说，方法得到的是所有参数值的一个拷贝，也就是说，方法不能修改传递给它的任何参数变量的内容。**
 
