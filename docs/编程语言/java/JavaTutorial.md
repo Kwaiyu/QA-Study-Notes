@@ -1526,7 +1526,7 @@ public class Main {
 ### 内部类
 
 嵌套类（类中的一个类），要访问内部类需要先创建外部类的对象，然后创建内部类的对象。
-**示例：**
+**成员内部类（定义在方法外面）示例：**
 
 ```java
 class OuterClass {
@@ -1540,16 +1540,59 @@ class OuterClass {
 }
 public class MyMainClass {
     public static void main(String[] args) {
+        
         OuterClass myOuter = new OuterClass();
+//        在外界访问内部类格式：外部类.内部类 = new 外部类.new 内部类();
+        OuterClass.InnerClass = new OuterClass.new InnerClass();
+        
         OuterClass.InnerClass myInner = myOuter.new InnerClass();
         System.out.println(myInner.y + myOuter.x);
         System.out.println(myInner.myInnerMethod());
     }
 }
 ```
-
 当Private修饰内部类时，外部对象将无法访问内部类。
 当Static修饰内部类时，可以不创建外部类对象访问内部类，无法访问外部类的成员。
+
+方法内部类（定义在方法里面）
+静态内部类（定义在方法外面，且被static修饰）
+```java
+
+public class TestA {
+
+    private static int code = 200;
+    public static void show(){
+        System.out.println("外部类中的show方法");
+    }
+
+    /**
+     * 在静态内部类中访问的成员属性和方法必须是静态的
+     */
+    public static class TestB{
+        public void testB(){
+            show();
+            System.out.println(code);
+            System.out.println("静态内部类中的testB方法");
+        }
+    }
+
+    public static void main(String[] args) {
+        TestB testB = new TestB();
+    }
+}
+
+package com.company.test05;
+public class Test01 {
+    public static void main(String[] args) {
+//        外界访问静态内部类格式：外部类.内部类 = new 外部类.内部类
+        TestA.TestB testB = new TestA.TestB();
+        testB.testB();
+    }
+}
+
+```
+
+匿名内部类
 
 ## 异常处理
 
