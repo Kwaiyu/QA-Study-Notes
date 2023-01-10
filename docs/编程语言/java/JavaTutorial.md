@@ -1138,11 +1138,12 @@ class Person04 {
 ### 包/API
 
 - Java内建的`package`机制是为了避免`class`命名冲突；
-- JDK的核心类使用`java.lang`包，编译器会自动导入；
+- JDK的核心类使用`java.lang`包，编译器会自动导入；官方类库在rt.jar包
 - JDK的其它常用类定义在`java.util.*`，`java.math.*`，`java.text.*`，……；
 - 包名推荐使用倒置的域名，例如`org.apache`。
 - 使用完整类名或使用import语句导入
-- JAVA 提供API：https://docs.oracle.com/javase/8/docs/api/
+- JAVA JDK提供API：https://docs.oracle.com/javase/8/docs/api/
+
 
 ### 作用域
 
@@ -1581,7 +1582,7 @@ public class TestA {
     }
 }
 
-package com.company.test05;
+
 public class Test01 {
     public static void main(String[] args) {
 //        外界访问静态内部类格式：外部类.内部类 = new 外部类.内部类
@@ -1593,6 +1594,61 @@ public class Test01 {
 ```
 
 匿名内部类
+```java
+
+public interface TestA {
+    void TestA();
+}
+
+public class Test01 {
+    public static void main(String[] args) {
+        /**
+         * 匿名内部类
+         * 使用匿名内部类不需要创建实现类和子类，可以通过new 内部类的形式创建实现类和子类
+         */
+        TestA testA = new TestA() {
+            @Override
+            public void TestA() {
+                System.out.println("匿名内部类TestA方法");
+            }
+        };
+        testA.TestA();
+    }
+}
+```
+```java
+public abstract class AnimalParent {
+
+    public abstract void eat();
+}
+public class Dog extends AnimalParent{
+    /**
+     * 正常实现抽象类是需要继承父类重写父类方法
+     * 如果新增一个Cat类，也是需要继承父类重写父类方法
+     * 而直接使用匿名内部类不需要创建子类或者实现类
+     */
+    @Override
+    public void eat() {
+        System.out.println("我是狗类，吃骨头");
+    }
+}
+public class Test01 {
+    public static void main(String[] args) {
+//        正常实现抽象类是需要继承父类重写父类方法
+        AnimalParent dog = new Dog();
+        dog.eat();
+//        使用匿名内部类不需要创建子类或者实现类，底层在编译阶段自动创建一个null子类继承抽象类/接口
+        AnimalParent cat = new AnimalParent() {
+            @Override
+            public void eat() {
+                System.out.println("我是猫类，吃鱼");
+            }
+        };
+        cat.eat();
+    }
+}
+
+```
 
 ## 异常处理
 
