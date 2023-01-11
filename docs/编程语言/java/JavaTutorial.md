@@ -1650,6 +1650,18 @@ public class Test01 {
 
 ```
 
+### Object类
+所有类默认继承Object类，如果该类已继承则间接继承Object类
+1. 无参构造方法
+2. clone()
+3. equals(Object obj)
+4. finalize() 过时
+5. getClass()
+6. hashCode()
+7. notify()、notifyAll()、wait()
+8. synchronized()
+9. toString()
+
 ## 异常处理
 
 - 必须捕获的异常，包括`Exception`及其子类，但不包括`RuntimeException`及其子类，这种类型的异常称为Checked Exception，或者用throws声明；
