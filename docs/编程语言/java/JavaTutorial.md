@@ -825,7 +825,6 @@ public class Main {
         }
     }
 }
-package com.lsaiah.java;
 
 public class ExtendsDemo {
     public static void main(String[] args) {
@@ -876,6 +875,28 @@ class PrimaryStudent extends Student{
     }
 }
 ```
+```java
+public class Test01 {
+    public static void main(String[] args) {
+        AnimalParent cat = new Cat();
+//        instanceof判断对象引用是否为该类型（自身类、自身类的父类、Object）返回true,其他情况返回false
+//        对象的引用(cat) instanceof 具体类型(Dog)类或者接口
+        if (cat instanceof Dog){
+            System.out.println("cat是Dog类型");
+        }else {
+            System.out.println("cat不是Dog类型");
+        }
+        if (cat instanceof AnimalParent){
+            System.out.println("cat是AnimalParent类型");
+        }else {
+            System.out.println("cat不是AnimalParent类型");
+        }
+//        类型转换异常：猫类不能强制转换成狗类
+//        Dog dog = (Dog) cat;
+    }
+}
+```
+
 
 ### 多态
 
@@ -1242,6 +1263,37 @@ $ jre/bin/java --module hello.world
 - Java使用Unicode编码表示`String`和`char`；
 - 转换编码就是将`String`和`byte[]`转换，需要指定编码；
 - 转换为`byte[]`时，始终优先考虑`UTF-8`编码。
+
+### String
+```java
+public class Login {
+    public static void main(String[] args) {
+        String userName = "admin";
+        String userPwd = "123456";
+
+        Scanner scanner = new Scanner(System.in);
+        int pwdCount = 3;
+        for (int i = 1; i <= pwdCount; i++) {
+            System.out.println("请输入用户名：");
+            String user = scanner.nextLine();
+            System.out.println("请输入密码：");
+            String pwd = scanner.nextLine();
+//        正确的.equals(输入的)，如果用户输入null也不会报错
+//        输入的.equals(正确的)，如果用户输入null则抛异常NOP
+            if (userName.equals(user) && userPwd.equals(pwd)) {
+                System.out.println("用户名和密码正确，登录成功");
+                break;
+            }else{
+                if (i==pwdCount){
+                    System.out.println("账户和密码输入错误达到"+ pwdCount +"次，已被冻结");
+                    return;
+                }
+            System.out.println("用户名或密码错误，登录失败. 剩余机会：" + (pwdCount - i));
+            }
+        }
+    }
+}
+```
 
 ### StringBuilder
 
@@ -1655,6 +1707,43 @@ public class Test01 {
 1. 无参构造方法
 2. clone()
 3. equals(Object obj)
+如果自定义对象没有重写Object中的equals()，则比较两个对象的内存地址
+如果重写Object中的equals()，则比较两个对象的值
+```java
+public class Student {
+    public int age;
+    public String name;
+
+    public Student(int age, String name) {
+        this.age = age;
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return "Student{" +
+                "age=" + age +
+                ", name='" + name + '\'' +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object object) {
+//        如果两个对象的内存地址相同，返回true
+        if(this == object){
+            return true;
+        }
+//        如果比较对象为null或者两个对象的类型不一致，返回false
+        if (object == null || this.getClass()!= object.getClass()){
+            return false;
+        }
+//        如果两个对象的类型一致，则比较两个对象的值
+//        多态强转类型；String类型重写了Object中的equals(),所以比较两个字符串的值
+        Student s2 = (Student) object;
+        return this.age == s2.age && this.name.equals(s2.name);
+    }
+}
+```
 4. finalize() 过时
 5. getClass()
 6. hashCode()
