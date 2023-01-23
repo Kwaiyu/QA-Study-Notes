@@ -1165,6 +1165,79 @@ class Person04 {
 - 使用完整类名或使用import语句导入
 - JAVA JDK提供API：https://docs.oracle.com/javase/8/docs/api/
 
+```java
+String类中equals()方法
+public class Test02 {
+    public static void main(String[] args) {
+        char[] str1 ={'a','b','c','c'};
+        char[] str2 ={'a','b','1','c'};
+        System.out.println(compare(str1, str2));
+    }
+
+    public static boolean compare(char[] str1, char[] str2){
+//        比较两个char类型数组长度是否相同
+        if(str1.length != str2.length){
+            return false;
+        }
+//        获取到str1的长度
+        int n = str1.length;
+//        定义初始索引
+        int i = 0;
+//        通过循环比较两个数组索引元素值是否相等
+        while (n-- != 0){
+            if (str1[i] != str2[i]){
+                return false;
+            }
+            i++;
+        }
+        return true;
+    }
+}
+```
+
+```java
+public class Test03 {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("请输入一个字符串：");
+        String str = scanner.nextLine();
+        for (int i=0; i<str.length(); i++){
+            System.out.println(str.charAt(i));
+        }
+    }
+}
+str.split("\\|");
+```
+
+```java
+public class Test01 {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("请输入一串字符：");
+        String s = scanner.nextLine();
+        int bigCount = 0;
+        int smallCount = 0;
+        int numberCount = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+//            底层代码会转换成对应的ASCII码十进制判断
+//            if (c >= 65 && c <= 90) {
+            if (c >= 'A' && c <= 'Z') {
+                bigCount++;
+//            } else if (c >= 97 && c <= 122) {
+            } else if (c >= 'a' && c <= 'z') {
+                smallCount++;
+//            } else if (c >= 48 && c <= 57) {
+            } else if (c >= '0' && c <= '9') {
+                numberCount++;
+            }
+        }
+        System.out.println("大写字母的次数："+ bigCount);
+        System.out.println("小写字母的次数："+ smallCount);
+        System.out.println("数字的次数："+ numberCount);
+    }
+}
+```
 
 ### 作用域
 
@@ -1174,7 +1247,6 @@ class Person04 {
 - 一个`.java`文件只能包含一个`public`类，但可以包含多个非`public`类。
 
 #### 访问修饰符
-
 修饰类：
 
 - public：该类可以被任何其他类访问
@@ -1387,7 +1459,7 @@ Java是一种面向对象的编程语言，而基本数据类型的值不是对�
 | char         | java.lang.Character | 'u0000'                            |
 
 装箱：将基本类型用它们对应的引用类型包装起来；`Integer i = 10;` 在字节码中，等价于`Integer i = Integer.valueOf(10)`
-
+-
 拆箱：将包装类型转换为基本数据类型；`int n = i` 在字节码中，等价于`int n = i.intValue();`
 
 - Java核心库提供的包装类型可以把基本类型包装为`class`；
@@ -1421,12 +1493,62 @@ Integer i2 = new Integer(40);// 而Integer i1 = new Integer(40) 会直接创建�
 System.out.println(i1==i2);// 因此输出 false 
 ```
 
+转换成Integer:
+Integer.valueOf("30");
+转换成String:
+int a = 66;
+boolean b = true;
+String.valueOf(a + b);
+转换成int:
+String s = "123";
+Integer integerA = Integer.valueOf(s);
+返回int类型：
+int intA = integerA.intValue();
+转换成int方式二：
+int intB = Integer.parseInt(s);
+将字符串中的数据转换成int排序：
+```java
+public class Test01 {
+    /**
+     * 将字符串中的数据排序
+     */
+    public static void main(String[] args) {
+        String str = "97,16,36,18,50";
+//        以，号分隔返回字符串数组
+        String[] strArr = str.split(",");
+//        将字符串数组转换成int数组
+        int[] intArr = new int[strArr.length];
+//        遍历字符串数组
+        for (int i=0; i<strArr.length;i++){
+//            将字符串转换成int，赋值给int类型数组
+            intArr[i] = Integer.parseInt(strArr[i]);
+        }
+//        对int数组排序，遍历
+        Arrays.sort(intArr);
+        for (int i=0; i<intArr.length;i++){
+            System.out.print(intArr[i]);
+            if (i!=intArr.length-1){
+                System.out.print(",");
+            }
+        }
+    }
+}
+```
+
+
 **==比较的是值，对于引用数据类型来说==比较的是对象的内存地址。**
 
 - **类没有覆盖 `equals()`方法** ：通过`equals()`比较该类的两个对象时，等价于通过“==”比较这两个对象，使用的默认是 `Object`类`equals()`方法。
 - **类覆盖了 `equals()`方法** ：一般我们都覆盖 `equals()`方法来比较两个对象中的属性是否相等；若它们的属性相等，则返回 true(即，认为这两个对象相等)。
 
 **所有整型包装类对象之间值的比较，全部使用 equals 方法比较**。说明：对于`Integer var= ?`在-128至127之间的赋值， `Integer`对象是在`IntegerCache.cache`产生，会复用已有对象，这个区间内的`Integer`值可以直接使用`==`进行判断，但是这个区间之外的所有数据，都会在堆上产生，并不会复用已有对象，这是一个大坑，推荐使用`equals`方法进行判断。
+
+基本数据类型和包装类型的区别：
+1. 包装类是对象，拥有方法和属性，通过引用对象地址调用。基本数据类型不是
+2. 声明方式不同，包装类需要new在堆内存中分配内存空间
+3. 存储位置不同，基本数据类型存在栈中
+4. 初始值不同
+5. 包装类是引用传递，基本数据类型是值传递
 
 ### JavaBean
 
@@ -1554,9 +1676,7 @@ Java提供的常用工具类有：
 - Math.log()：底数计算
 - Random：生成伪随机数
 - SecureRandom：生成安全的随机数
-
 实际上真正的真随机数只能通过量子力学原理来获取，`SecureRandom`无法指定种子，它使用RNG（random number generator）算法。JDK的`SecureRandom`实际上有多种不同的底层实现，有的使用安全随机种子加上伪随机数算法来产生安全的随机数，有的使用真正的随机数生成器。实际使用的时候，可以优先获取高强度的安全随机数生成器，如果没有提供，再使用普通等级的安全随机数生成器，`SecureRandom`的安全性是通过操作系统提供的安全的随机种子来生成随机数。这个种子是通过CPU的热噪声、读写磁盘的字节、网络流量等各种随机事件产生的“熵”。在密码学中，安全的随机数非常重要。如果使用不安全的伪随机数，所有加密体系都将被攻破。因此，时刻牢记必须使用`SecureRandom`来产生安全的随机数。
-
 ```java
 import java.util.Arrays;
 import java.security.SecureRandom;
@@ -1575,6 +1695,38 @@ public class Main {
     }
 }
 ```
+设计工具类：
+```java
+public class ArraysTool {
+    /**
+     * 工具类设计：
+     * 1. 构造方法用private修饰，外部不能new
+     * 2. 成员方法用public static修饰，通过类名.方法名访问
+     */
+    private ArraysTool() {
+    }
+
+    public static void sort(int[] arrs){
+        Arrays.sort(arrs);
+        System.out.print("从大到小排序后的结果：");
+        for (int i=arrs.length-1; i>=0;i--){
+            if (i>0){
+                System.out.print(arrs[i] +",");
+            }else{
+                System.out.print(arrs[i]);
+            }
+        }
+    }
+}
+
+public class Test01 {
+    public static void main(String[] args) {
+        int[] arrs = {6,1,8,7};
+        ArraysTool.sort(arrs);
+    }
+}
+```
+
 
 ### 内部类
 
@@ -1751,6 +1903,8 @@ public class Student {
 8. synchronized()
 9. toString()
 
+
+
 ## 异常处理
 
 - 必须捕获的异常，包括`Exception`及其子类，但不包括`RuntimeException`及其子类，这种类型的异常称为Checked Exception，或者用throws声明；
@@ -1920,7 +2074,6 @@ class LoginFailedException extends BaseException{
         super(error_mess);
     }
 }
-package com.lsaiah.java;
 //在主类中调用异常
 public class Main {
     public static void main(String[] args) {
@@ -1944,6 +2097,46 @@ public class Main {
     }
 }
 
+```
+
+```java
+public class LoginException extends Exception{
+    /**
+     * 自定义异常分为编译异常和运行时异常
+     * 编译时异常继续Exception
+     * 运行时异常继承RuntimeException
+     * @param message
+     */
+    public LoginException(String message) {
+        super(message);
+    }
+}
+
+public class Test01 {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("请输入用户名：");
+        String userName = scanner.nextLine();
+        System.out.println("请输入密码：");
+        String pwd = scanner.nextLine();
+//        login(userName,pwd);//如果选择向上抛出异常，后面的代码不会执行
+//        如果选择捕获异常，则会继续执行后面的代码
+        try {
+            login(userName,pwd);
+        } catch (LoginException e) {
+            System.out.println("异常是：" + e.getMessage());
+        }
+        System.out.println("结束");
+    }
+
+    public static void login(String userName, String pwd) throws LoginException {
+        if (!("admin".equals(userName) && "123456".equals(pwd))){
+//            如果输入的用户名和密码不正确，直接抛出异常：自定义异常
+            throw new LoginException("用户输入用户名或密码错误");
+        }
+        System.out.println("用户名和密码正确");
+    }
+}
 ```
 
 ### NullPointerException
@@ -2899,8 +3092,11 @@ Java集合使用统一的`Iterator`遍历，尽量不要使用遗留接口。
 - `Vector`：一种线程安全的`List`实现；
 - `Stack`：基于`Vector`实现的`LIFO`的栈。
 
-### 使用List
+![img](https://qwq.lsaiah.cn/usr/uploads/Picture/202301232009640.png)
 
+
+### 使用List
+- 在集合中使用<泛型>,必须使用引用类型，如果使用基本数据类型，则用包装类如<Integer>
 - `List`是按索引顺序访问的长度可变的有序表，允许`null`元素和重复元素。优先使用`ArrayList`（底层数据结构为数组，可以自动扩容，查询快，增删慢）而不是`LinkedList`（底层数据结构为双向链表，查询慢，增删快），；
 - 可以直接使用`for each`遍历`List`，它会自动把`for each`循环变成`Iterator`的调用，原因就在于`Iterable`接口定义了一个`Iterator<E> iterator()`方法，强迫集合类必须返回一个`Iterator`实例；
 - `List`可以和`Array`相互转换
@@ -2983,6 +3179,22 @@ public class ListDemo {
     }
 }
 
+```
+
+```java
+public class ArrayListDemo {
+    public static void main(String[] args) {
+        List<String> arrayList = new ArrayList<String>();
+        arrayList.add("张三");
+        arrayList.add("李四");
+        arrayList.add("王五");
+        arrayList.set(0, "葵语");
+        arrayList.remove(1);
+        for (int i = 0; i < arrayList.size(); i++) {
+            System.out.println("arr[" + i + "]" + arrayList.get(i));
+        }
+    }
+}
 ```
 
 ### 编写List的equals方法
@@ -3980,6 +4192,24 @@ public class Main {
     }
 }
 ```
+```java
+public class Test02 {
+    public static void main(String[] args) {
+        System.out.println("请输入年份：");
+        Scanner scanner = new Scanner(System.in);
+        int year = scanner.nextInt();
+        Calendar c = Calendar.getInstance();
+//        设置月份为3月1日
+        c.set(year, 2, 1);
+//        修改日-1天
+        c.add(Calendar.DATE, -1);
+//        获取2月有多少天
+        System.out.println(year + "年2月有" + c.get(Calendar.DATE) + "天");
+        int date = c.get(Calendar.DATE);
+        System.out.println(date == 29 ? "闰年" : "平年");
+    }
+}
+```
 
 ### LocalDateTime
 
@@ -4086,6 +4316,31 @@ public class Main {
 }
 ```
 
+### SimpleDateFormat
+```java
+public class Test02 {
+    public static void main(String[] args) throws ParseException {
+        /**
+         * 将date日期转换成指定格式字符串
+         */
+        Date date = new Date();
+        System.out.println(date);
+//        SimpleDateFormat simpleDateFormat = new SimpleDateFormat();
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy年MM月dd日 HH时mm分ss秒");
+        String format = simpleDateFormat.format(date);
+        System.out.println("格式化后的日期："+format);
+
+        /**
+         * 将字符串日期2023-01-20 15:21:29转换成date
+         */
+        String date2 = "2023-01-20 15:21:29";
+        SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date parse = simpleDateFormat2.parse(date2);
+        System.out.println(parse);
+    }
+}
+```
+
 ### Instant
 
 `Instant`表示高精度时间戳，它可以和`ZonedDateTime`以及`long`互相转换。
@@ -4152,6 +4407,47 @@ public class Main {
         Instant ins = Instant.ofEpochMilli(epochMilli);
         DateTimeFormatter f = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT);
         return f.withLocale(lo).format(ZonedDateTime.ofInstant(ins, ZoneId.of(zoneId)));
+    }
+}
+```
+
+**日期工具类设计**
+```java
+public class DateTool {
+    private DateTool() {
+    }
+    /**
+     * 获取当前时间字符串
+     */
+    private static final String Format_1 = "yyyy-MM-dd HH:mm:ss";
+
+    public static String getCurrentTime(){
+        return dateToString(new Date(), Format_1);
+    }
+
+    /**
+     * 将date转换成string
+     */
+    public static String dateToString(Date date, String format){
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
+        return simpleDateFormat.format(date);
+    }
+    /**
+     * 将string转换成date
+     */
+    public static Date StringToDate(String date, String format) throws ParseException {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
+        return simpleDateFormat.parse(date);
+    }
+}
+
+public class Test01 {
+    public static void main(String[] args) throws ParseException {
+//        String s1 = DateTool.dateToString(new Date(), "yyyy-MM-dd HH:mm:ss");
+//        System.out.println(s1);
+//        Date date = DateTool.StringToDate(s1, "yyyy-MM-dd HH:mm:ss");
+//        System.out.println(date);
+        System.out.println(DateTool.getCurrentTime());
     }
 }
 ```
