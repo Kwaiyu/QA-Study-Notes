@@ -3197,6 +3197,183 @@ public class ArrayListDemo {
 }
 ```
 
+```java
+public class Student {
+    private String name;
+    //Integer默认值null, int默认值0
+    private Integer age;
+
+    private String address;
+
+    private String uid;
+
+    public Student(String name, Integer age, String address, String uid) {
+        this.name = name;
+        this.age = age;
+        this.address = address;
+        this.uid = uid;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
+}
+
+
+public class StudentManage {
+
+    private static ArrayList<Student> students = new ArrayList<Student>();
+//    private volatile static boolean isRun = true; //保证isRun线程可见性
+
+    public static void main(String[] args) {
+        while (true) {
+            System.out.println("学生管理系统");
+            System.out.println("1. 新增学生");
+            System.out.println("2. 修改学生");
+            System.out.println("3. 删除学生");
+            System.out.println("4. 查询学生");
+            System.out.println("5. 退出");
+            System.out.println("请选择[1-5]");
+            Scanner sc = new Scanner(System.in);
+            int number = sc.nextInt();
+            switch (number) {
+                case 1:
+                    System.out.println("新增学生");
+                    addStudent();
+                    break;
+                case 2:
+                    System.out.println("修改学生");
+                    updateStudent();
+                    break;
+                case 3:
+                    System.out.println("删除学生");
+                    deleteStudent();
+                    break;
+                case 4:
+                    System.out.println("查询学生");
+                    showStudent();
+                    break;
+                case 5:
+                    System.out.println("系统退出");
+//                    isRun = false;
+//                    System.exit(0);
+                    return;
+            }
+        }
+    }
+
+    public static void addStudent() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("请输入学生学号：");
+        String uid = sc.nextLine();
+        Student studentById = getStudentById(uid);
+        if (studentById != null) {
+            System.out.println("该学号已经被" + studentById.getName() + "占用，不能插入相同学号");
+            return;
+        }
+        System.out.println("请输入学生姓名：");
+        String name = sc.nextLine();
+        System.out.println("请输入学生地址：");
+        String address = sc.nextLine();
+        System.out.println("请输入学生年龄：");
+        Integer age = sc.nextInt();
+        students.add(new Student(name, age, address, uid));
+        System.out.println("新增完成");
+    }
+
+    public static void showStudent() {
+        if (students.size() == 0) {
+            System.out.println("该集合中没有任何学生对象");
+            return;
+        }
+        System.out.println("学号\t姓名\t年龄\t地址\t");
+        for (int i = 0; i < students.size(); i++) {
+            Student student = students.get(i);
+            System.out.println(student.getUid() + "\t" + student.getName() + "\t" + student.getAge() + "\t" + student.getAddress());
+        }
+    }
+
+    public static Student getStudentById(String uid) {
+        return getStudentById(uid, false);
+    }
+
+    public static Student getStudentById(String uid, boolean isDelete) {
+        for (int i = 0; i < students.size(); i++) {
+            Student student = students.get(i);
+            if (student.getUid().equals(uid)) {
+                if (isDelete) {
+                    return students.remove(i);
+                }
+                return student;
+            }
+        }
+        return null;
+    }
+
+    public static void deleteStudent() {
+        System.out.println("请输入删除学号：");
+        Scanner sc = new Scanner(System.in);
+        String uid = sc.nextLine();
+        Student student = getStudentById(uid, true);
+        if (student==null){
+            System.out.println("没有找到删除学号的学生");
+            return;
+        }
+        System.out.println("删除学号"+uid+"成功");
+    }
+
+    public static void updateStudent(){
+        System.out.println("请输入修改学号：");
+        Scanner sc = new Scanner(System.in);
+        String uid = sc.nextLine();
+        Student student = getStudentById(uid);
+        if (student==null){
+            System.out.println("没有找到修改学号的学生");
+            return;
+        }
+        System.out.println("请输入修改后的名称：");
+        String newName = sc.nextLine();
+        System.out.println("请输入学生地址：");
+        String newAddress = sc.nextLine();
+        System.out.println("请输入修改后的年龄：");
+        Integer newAge = sc.nextInt();
+        student.setName(newName);
+        student.setAddress(newAddress);
+        student.setAge(newAge);
+        System.out.println("修改成功");
+    }
+}
+```
+
+
 ### 编写List的equals方法
 
 - 在`List`中查找元素时，`List`的实现类通过元素的`equals()`方法比较两个元素是否相等，因此放入的元素必须正确覆写`equals()`方法，Java标准库提供的`String`、`Integer`等已经覆写了`equals()`方法；
