@@ -7,7 +7,6 @@ Java是SUN公司的詹姆斯·高斯林在90年代初开发的一种编程语言
 ### 流程控制
 
 #### if
-
 `if ... else`可以做条件判断，`else`是可选的；
 
 不推荐省略花括号`{}`；
@@ -3001,13 +3000,34 @@ public class Pair<T> {
     }
     public T getFirst() { ... }
     public T getLast() { ... }
+    
+    public <T> T show(T t){
+        return t;
+    }
 
     // 静态泛型方法应该使用其他类型区分:
     public static <K> Pair<K> create(K first, K last) {
         return new Pair<K>(first, last);
     }
 }
+//泛型接口和泛型方法
+public interface MyInterface<T> {
+    <M> T show(T t, M m);
+}
 
+public class MyImpl<T> implements MyInterface<T>{
+    @Override
+    public <M> T show(T t, M m) {
+        System.out.println(m);
+        return t;
+    }
+}
+public class Test01 {
+    public static void main(String[] args) {
+        MyImpl<String> stringMy = new MyImpl<>();
+        stringMy.show("my",10);
+    }
+}
 ```
 
 ### 擦拭法
@@ -3022,6 +3042,18 @@ public class Pair<T> {
 泛型方法要防止重复定义方法，例如：`public boolean equals(T obj)`；
 
 子类可以获取父类的泛型类型``。
+
+```java
+public class Test02 {
+    public static void main(String[] args) {
+        List<String> strs = new ArrayList<String>();
+//        底层编译class擦除机制没有泛型：将一个泛型集合赋值给一个没有泛型的集合去除泛型
+//        strs.add(10);
+        List list = strs;
+        list.add(10);
+    }
+}
+```
 
 ### extends通配符
 
@@ -3049,6 +3081,32 @@ public class Pair<T> {
 
 无限定通配符``很少使用，可以用``替换，同时它是所有``类型的超类。
 
+```java
+public class Test01 {
+    public static void main(String[] args) {
+        ArrayList<String> string = new ArrayList<>();
+        printList(string);
+        ArrayList<MyParent> myParent = new ArrayList<>();
+        printList1(myParent);
+        ArrayList<Student> students = new ArrayList<>();
+        printList1(students);
+        printList2(myParent);
+        printList2(students);
+    }
+
+    public static void printList(List<?> list){
+//        泛型通配符，可接收全部类型。不能添加
+    }
+    public static void printList1 (List<? extends MyParent> list) {
+//        泛型上限：接收上限MyParent和它的子类
+    }
+    public static void printList2 (List<? super Student> list) {
+//        泛型上限：接收下限MyParent和它的父类
+    }
+}
+
+```
+
 ### 泛型和反射
 
 - 部分反射API是泛型，例如：`Class`，`Constructor`；
@@ -3067,6 +3125,9 @@ public class Main {
         // ClassCastException:
         String[] firstTwo = pickTwo("one", "two", "three");
         System.out.println(Arrays.toString(firstTwo));
+//        可变参数
+        int sum1 = sum(1,2,3,4,5);
+        System.out.println(sum1);
     }
     //在pickTwo()方法内部，编译器无法检测K[]的正确类型，因此返回了Object[]
     static <K> K[] pickTwo(K k1, K k2, K k3) {
@@ -3076,6 +3137,15 @@ public class Main {
     static <T> T[] asArray(T... objs) {
         return objs;
     }
+    
+    static int sum(int c, int...a){
+       int sum=0;
+       for (int i=0; i<a.length;i++){
+           sum += a[i];
+       }
+       return sum;
+    }
+}
 ```
 
 ## Java集合简介
@@ -3086,10 +3156,10 @@ Java的集合类定义在`java.util`包中，支持泛型，主要提供了3种�
 - `Set`：一种保证没有重复元素的集合，例如，所有无重复名称的`Student`的`Set`；
 - `Map`：一种通过键值（key-value）查找的映射表集合，例如，根据`Student`的`name`查找对应`Student`的`Map`。
 
-Java集合使用统一的`Iterator`遍历，尽量不要使用遗留接口。
+Java集合使用统一的`Iterator`遍历，尽量不要使用遗留接口。还可以使用for循环、for each循环遍历。
 
 - `Hashtable`：一种线程安全的`Map`实现；
-- `Vector`：一种线程安全的`List`实现；
+- `Vector`（构造方法）：一种线程安全的`List`实现，与`ArrayList`（懒加载）的区别默认初始化容量=10，`Vector`每次扩容是原来的2倍，可设置扩容容量，`ArrayList`每次扩容是原来的1.5倍
 - `Stack`：基于`Vector`实现的`LIFO`的栈。
 
 ![img](https://qwq.lsaiah.cn/usr/uploads/Picture/202301232009640.png)
@@ -3097,7 +3167,7 @@ Java集合使用统一的`Iterator`遍历，尽量不要使用遗留接口。
 
 ### 使用List
 - 在集合中使用<泛型>,必须使用引用类型，如果使用基本数据类型，则用包装类如<Integer>
-- `List`是按索引顺序访问的长度可变的有序表，允许`null`元素和重复元素。优先使用`ArrayList`（底层数据结构为数组，可以自动扩容，查询快，增删慢）而不是`LinkedList`（底层数据结构为双向链表，查询慢，增删快），；
+- `List`是按索引顺序访问的长度可变的有序表，允许`null`元素和重复元素。优先使用`ArrayList`（底层数据结构为数组，可以自动扩容，根据index查询快`ArrayList.get(index)`时间复杂度O(1)，增删（扩容）慢（index向前移，末位null））而不是`LinkedList`（底层数据结构为双向链表，查询慢，增删快），；
 - 可以直接使用`for each`遍历`List`，它会自动把`for each`循环变成`Iterator`的调用，原因就在于`Iterable`接口定义了一个`Iterator<E> iterator()`方法，强迫集合类必须返回一个`Iterator`实例；
 - `List`可以和`Array`相互转换
 
@@ -3420,6 +3490,65 @@ class Person06 {
 }
 
 ```
+
+### LinkedList
+- 基于链表实现，增删快，查询慢，不存在容量不足没有扩容方法
+- 单向链表、双向链表、环形链表
+- LinkedList是双向链表，非线程安全，元素允许为null允许重复元素
+- LinkedList还实现了栈和队列的操作方法，因此也可以作为栈、队列和双端队列使用。
+
+```java
+public class Node<E> {
+    //    定义Node节点存放的值
+    private E v;
+    //    当前节点的下一个节点
+    Node<E> next;
+    //    当前节点的上一个节点
+    Node<E> pred;
+
+    public static void main(String[] args) {
+        Node<String> node3 = new Node<>();
+        node3.v = "c";
+        Node<String> node2 = new Node<>();
+        node2.v = "b";
+        Node<String> node1 = new Node<>();
+        node1.v = "a";
+        node1.next = node2;
+        node2.next = node3;
+//        showNode(node1);
+        Node<String> node4 = new Node<>();
+        node4.v = "d";
+        node3.next=node4;
+//        addNode(node3, node4);
+//        showNode(node1);
+//       删除node2
+//        node1.next = node3;
+//        showNode(node1);
+        node2.pred =node1;
+        node3.pred=node2;
+        node4.pred=node3;
+        showNode(node1);
+    }
+
+    //    从头遍历单向链表,可以接收任何类型
+    public static void showNode(Node<?> node) {
+//        当前Node节点是从头开始
+        Node<?> cuNode = node;
+        while (cuNode != null) {
+            System.out.println(cuNode.v);
+            cuNode = cuNode.next;
+        }
+    }
+
+    public static void addNode(Node<String> tailNode, Node<String> newNode) {
+//        尾节点的下一个=新节点
+        tailNode.next = newNode;
+    }
+}
+
+```
+
+
 
 ### 使用Map
 
@@ -3918,6 +4047,63 @@ class ReverseList<T> implements Iterable<T> {
 
 ```
 
+```java
+public class Test02 {
+    public static void main(String[] args) {
+        Collection<Object> collection = new ArrayList<>();
+        collection.add("a");
+        collection.add("b");
+        collection.add("c");
+//        将collection强转list,使用list集合独有方法
+        List list = (List) collection;
+        list.add("d");
+//        System.out.println(list.get(0));
+//        Iterator<Object> iterator = collection.iterator();
+//        while (iterator.hasNext()){
+//            System.out.println(iterator.next());
+//        }
+        MyIterator myIterator = new MyIterator(list);
+        while (myIterator.hashNext()){
+            System.out.println(myIterator.next());
+        }
+    }
+}
+    
+```
+```java
+public class MyException extends RuntimeException{
+    public MyException(String errorMsg) {
+        super(errorMsg);
+    }
+}
+public class MyIterator {
+    private List list;
+
+    public MyIterator(List list) {
+        this.list = list;
+    }
+
+    //迭代器计数器
+    private int count = 0;
+
+    public Object next() {
+        if (list == null){
+            throw new MyException("数组为空");
+        }
+        if (count >= list.size()) {
+            throw new MyException("数组越界");
+        }
+        return list.get(count++);
+    }
+
+    public boolean hashNext(){
+        return count != list.size();
+    }
+}
+
+```
+
+
 ### Collections
 
 `Collections`类提供了一组工具方法来方便使用集合类：
@@ -3941,6 +4127,10 @@ class ReverseList<T> implements Iterable<T> {
   - 变为线程安全的List：List<T> synchronizedList(List<T> list)
   - 变为线程安全的Set：Set<T> synchronizedSet(Set<T> s)
   - 变为线程安全的Map：Map<K,V> synchronizedMap(Map<K,V> m)
+
+
+
+
 
 ## IO
 
