@@ -164,6 +164,29 @@ WantedBy=multi-user.target
 # 搜索与导航
 
 # 版本与管理
+> 在pycharm中 new PIPENV environment 有什么区别
+
+在 PyCharm 中，创建新的 Pipenv 环境与创建标准的虚拟环境（Virtual Environment）有一些区别：
+
+1.  使用 Pipenv 管理包依赖：Pipenv 是一种 Python 包管理器，与传统的虚拟环境不同之处在于，它不仅可以为您创建虚拟环境，还可以管理您的包依赖。
+
+2.  自动创建 Pipfile 和 Pipfile.lock 文件：在创建 Pipenv 环境时，PyCharm 会自动为您创建 Pipfile 和 Pipfile.lock 文件，其中 Pipfile 包含您项目的依赖信息，而 Pipfile.lock 包含您项目依赖的确切版本信息。
+
+3.  更好的包管理：使用 Pipenv 管理包依赖，可以使您更轻松地管理您项目的包依赖，特别是当您的项目有多个开发者时。
+
+总的来说，使用 Pipenv 管理包依赖可以使您更轻松地创建和管理 Python 环境，并提供更好的包管理体验。如果您需要使用 Python 的包依赖管理器，那么创建 Pipenv 环境是一个不错的选择。
+
+> 用Virtualenv、Poetry、Conda创建环境 有什么区别
+
+Virtualenv、Poetry 和 Conda 是三种流行的 Python 环境管理工具，它们之间有以下区别：
+
+1.  Virtualenv：Virtualenv 是 Python 的默认虚拟环境管理工具之一。它可以创建独立的 Python 环境，并安装需要的包。它还支持使用不同的 Python 版本来创建虚拟环境，因此您可以轻松地切换 Python 版本。但是，虚拟环境的管理可能比较困难，特别是当您需要管理大量不同的虚拟环境时。
+
+2.  Poetry：Poetry 是一个新的 Python 依赖关系管理工具，它可以帮助您定义和安装依赖关系，以及创建和管理虚拟环境。Poetry 可以更好地处理依赖关系之间的冲突，并可以自动更新您的依赖关系。但是，它的学习曲线可能比较陡峭，特别是对于新手来说。
+
+3.  Conda：Conda 是一个跨平台的包管理器和虚拟环境管理器。它可以创建独立的 Python 环境，但不仅仅限于 Python。它还可以管理其他语言的环境和包。Conda 可以更好地处理跨平台问题，因此它是一种流行的科学计算工具和数据科学工具的环境管理工具。但是，Conda 的环境管理可能比较笨重，因为它会下载和安装大量的依赖项。
+
+总的来说，这些工具都可以帮助您创建和管理 Python 环境，并安装和管理依赖关系。但是，每个工具都有其优缺点和适用范围。如果您只需要创建 Python 环境并安装依赖关系，则 Virtualenv 可能是最简单的选择。如果您需要更好地管理依赖关系，则 Poetry 可能是更好的选择。如果您需要处理跨平台问题或管理多语言环境，则 Conda 可能是更好的选择。
 
 # 插件与工具
 

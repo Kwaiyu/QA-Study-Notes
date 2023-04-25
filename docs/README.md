@@ -4,7 +4,7 @@
 # 联系方式
 有任何问题，意见或建议请联系我。同时欢迎加群交流学习经验。
 
-> [邮箱](mailto:lsaiah@126.com) [QQ](tencent://Message/?Uin=814612233) [QQ群](https://jq.qq.com/?_wv=1027&k=ZWqrDa7s) [TG群](https://t.me/kwaiyu)
+> [邮箱](mailto:lsaiah@126.com) [QQ](tencent://Message/?Uin=814612233) [QQ群](https://jq.qq.com/?_wv=1027&k=ZWqrDa7s) [TG群](https://t.me/std9roup)
 
 > [Blog](https://www.lsaiah.cn)
 

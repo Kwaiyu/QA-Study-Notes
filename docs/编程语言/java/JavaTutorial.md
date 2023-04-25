@@ -3162,7 +3162,7 @@ Java集合使用统一的`Iterator`遍历，尽量不要使用遗留接口。还
 - `Vector`（构造方法）：一种线程安全的`List`实现，与`ArrayList`（懒加载）的区别默认初始化容量=10，`Vector`每次扩容是原来的2倍，可设置扩容容量，`ArrayList`每次扩容是原来的1.5倍
 - `Stack`：基于`Vector`实现的`LIFO`的栈。
 
-![img](https://qwq.lsaiah.cn/usr/uploads/Picture/202301232009640.png)
+![img](https://qwq.lsaiah.cn/usr/uploads/Picture/202303222327902.png)
 
 
 ### 使用List
@@ -5675,12 +5675,121 @@ class MyRunnable implements Runnable {
 
 ```java
 public class Main {
-	public static void main(String[] args) {
-		Thread t = new Thread(() -> {
-			System.out.println("Start new thread!");
-		});
-		t.start();
-	}
+    public static void main(String[] args) {
+        System.out.println(Thread.currentThread().getName());
+        new Thread(new ThreadRunnable()).start();
+//        方法三：匿名内部类
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println(Thread.currentThread().getName() + "子线程1");
+            }
+        }).start();
+//        方法四：Lambda表达式
+        new Thread(()->{
+            System.out.println(Thread.currentThread().getName() + "子线程2");
+        }).start();
+
+        new Thread(() -> System.out.println(Thread.currentThread().getName() + "子线程3"), "线程名：").start();
+    }
+}
+```
+方式五：Callable和Future创建线程
+```java
+public class ThreadCallable implements Callable<Integer> {
+//    当前线程执行的返回结果
+    @Override
+    public Integer call() throws Exception {
+        try {
+            Thread.sleep(3000);
+        }catch (Exception e){
+
+        }
+        System.out.println(Thread.currentThread().getName() + "返回1");
+        return 1;
+    }
+}
+
+public class Thread02 {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        ThreadCallable threadCallable = new ThreadCallable();
+        FutureTask<Integer> integerFutureTask = new FutureTask<Integer>(threadCallable);
+        new Thread(integerFutureTask).start();
+//        主线程需要等待子线程返回结果，LockSupport.park()
+        Integer result = integerFutureTask.get();
+        System.out.println(Thread.currentThread().getName() + "," + result);
+        Thread thread01 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("子线程开始");
+                LockSupport.park();
+                System.out.println("子线程结束");
+            }
+        });
+        thread01.start();
+        try {
+            Thread.sleep(3000);
+        }catch (Exception e){
+
+        }
+        LockSupport.unpark(thread01);
+    }
+}
+```
+方式六：线程池创建线程
+```java
+public class Thread03 {
+    public static void main(String[] args) {
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        executorService.execute(() -> System.out.println(Thread.currentThread().getName() + "子线程"));
+        executorService.shutdown();
+    }
+}
+```
+
+方式七：spring @Async 异步注解
+```java
+@Component
+@Slf4j
+public class OrderManage {
+    //    @Async
+    @MyAsync
+    public void asyncLog() {
+        try {
+            log.info(">目标方法开始执行 正在阻塞3s时间<");
+            Thread.sleep(3000);
+            log.info("<2>");
+        } catch (Exception e) {
+
+        }
+    }
+}
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MyAsync {
+}
+
+@Aspect
+@Component
+@Slf4j
+public class ExtThreadAsyncAop {
+    /**
+     * 环绕通知
+     * 拦截方法
+     */
+    @Around(value = "@annotation(com.mayikt.service.annotation.MyAsync)")
+    public void around(ProceedingJoinPoint joinPoint) {
+        log.info(">环绕通知开始执行<");
+        new Thread(() -> {
+            try {
+                joinPoint.proceed();// 目标方法---asyncLog()
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+            }
+        }).start();
+        log.info(">环绕通知结束执行<");
+    }
 }
 ```
 
@@ -6163,6 +6272,104 @@ JVM没有任何机制解除死锁，只能强制结束进程。为了避免死�
 - 在`synchronized`内部可以调用`notify()`或`notifyAll()`唤醒其他等待线程；
 - 必须在已获得的锁对象上调用`notify()`或`notifyAll()`方法；
 - 已唤醒的线程还需要重新获得锁后才能继续执行。
+
+多线程通讯生产者和消费者模型：
+
+```java
+public class ThreadDemo {
+
+    //    共享对象类Res
+    class Res {
+        public String userName;
+        public char sex;
+        /**
+         * flag = false 输入线程 输入值
+         * flag = true 输出线程 输出值
+         */
+        public boolean flag = false;
+    }
+
+    class InputThread extends Thread {
+        private Res res;
+
+        public InputThread(Res res) {
+            this.res = res;
+        }
+
+        @Override
+        public void run() {
+            super.run();
+            int count = 0;
+            for (int i = 0; i < 30; i++) {
+                synchronized (res) {
+                    if (res.flag) {
+                        try {
+                            res.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (count == 0) {
+                        res.userName = "铁蛋";
+                        res.sex = '男';
+                    } else {
+                        res.userName = "丫蛋";
+                        res.sex = '女';
+                    }
+                    // 输出线程 输出值
+                    res.flag = true;
+                    // 唤醒输出线程
+                    res.notify();
+                }
+                count = (count + 1) % 2;
+            }
+        }
+    }
+
+    class OutPutThread extends Thread {
+        private Res res;
+
+        public OutPutThread(Res res) {
+            this.res = res;
+        }
+
+        @Override
+        public void run() {
+            for (int i = 0; i < 30; i++) {
+                synchronized (res) {
+                    if (!res.flag) {
+                        // 如果 res.flag=false 则输出的线程 主动释放锁 同时会阻塞该线程
+                        try {
+                            res.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    System.out.println(res.userName + "," + res.sex);
+                    // 输出完毕 交给我们的输入线程继续的输入
+                    res.flag = false;
+                    res.notify();
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        new ThreadDemo().print();
+    }
+
+    public void print() {
+        // 全局对象
+        Res res = new Res();
+        // 输入线程
+        InputThread inputThread = new InputThread(res);
+        OutPutThread outPutThread = new OutPutThread(res);
+        inputThread.start();
+        outPutThread.start();
+    }
+}
+```
+
 
 ### 多线程协调
 
