@@ -7313,6 +7313,61 @@ InputStream in = sock.getInputStream();
 OutputStream out = sock.getOutputStream();
 ```
 
+并发服务端
+```java
+public class TcpServer {
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(8080);
+        System.out.println("服务器启动成功...");
+        while (true){
+            Socket socket = serverSocket.accept();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        InputStream inputStream = socket.getInputStream();
+                        byte[] bytes = new byte[1024];
+                        int len = inputStream.read(bytes);
+                        System.out.println("服务器收到数据："+ new String(bytes, 0,len));
+                        OutputStream outputStream = socket.getOutputStream();
+                        String resp = "服务端收到客户端请求：" + UUID.randomUUID().toString();
+                        outputStream.write(resp.getBytes());
+                        inputStream.close();
+                        socket.close();
+                    }catch (Exception e){
+
+                    }
+                }
+            }).start();
+        }
+    }
+}
+```
+客户端
+```java
+public class TcpClient {
+    public static void main(String[] args) throws IOException {
+        while (true){
+            System.out.println("请输入发送到服务器的内容：");
+            Scanner sc = new Scanner(System.in);
+            String context = sc.nextLine();
+            if ("退出".equals(context)){
+                break;
+            }
+            Socket socket = new Socket("127.0.0.1", 8080);
+            OutputStream outputStream = socket.getOutputStream();
+            outputStream.write(context.getBytes());
+            InputStream inputStream = socket.getInputStream();
+            byte[] bytes = new byte[1024];
+            int len = inputStream.read(bytes);
+            System.out.println("客户端收到服务端响应："+new String(bytes,0,len));
+            outputStream.close();
+            socket.close();
+        }
+    }
+}
+```
+
 ### UDP编程
 
 使用UDP协议通信时，服务器和客户端双方无需建立连接，UDP端口和TCP端口虽然都使用0~65535，但他们是两套独立的端口：
